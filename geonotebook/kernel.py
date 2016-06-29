@@ -1,8 +1,6 @@
 from ipykernel.ipkernel import IPythonKernel
 import logging
 from logging.handlers import SysLogHandler
-# ns = require('base/js/namespace')
-# var cm = ns.notebook.kernel.comm_manager
 
 class Geonotebook(object):
     def __init__(self, kernel, *args, **kwargs):
@@ -30,6 +28,6 @@ class GeonotebookKernel(IPythonKernel):
         super(GeonotebookKernel, self).__init__(**kwargs)
 
 
-        self.shell.user_ns.update({'map': self.geonotebook})
+        self.shell.user_ns.update({'M': self.geonotebook})
 
         self.comm_manager.register_target('test', self.handle_comm_open)
