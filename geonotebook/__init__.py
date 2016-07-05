@@ -13,10 +13,6 @@ def _jupyter_nbextension_paths():
         require="geonotebook/index")]
 
 
-def comm_opened(comm, msg):
-    import pu.db; pu.db
-
-
 
 def load_jupyter_server_extension(nbapp):
 #    import pudb; pu.db
