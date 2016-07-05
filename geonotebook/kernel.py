@@ -3,11 +3,73 @@ import logging
 from logging.handlers import SysLogHandler
 
 from inspect import getmembers, ismethod, getargspec
+from types import MethodType
 
 class Geonotebook(object):
     msg_types = ['get_protocol', 'set_center', 'set_region']
 
     _protocol = None
+    _remote = None
+
+    class Remote(object):
+        def validate(self, protocol, *args, **kwargs):
+            assert len(args) == len(protocol["required"]), \
+                "Protocol {} has an arity of {}. Called with {}".format(
+                    name, len(args), len(self.protocol[name]["required"]))
+
+        @property
+        def log(self):
+            try:
+                return self.notebook._kernel.log
+            except:
+                return logging
+
+        def _make_protocol_method(self, protocol):
+            """Make a method closure based on a protocol definition
+
+            This takes a protocol and generates a closure that accepts
+            functions to execute the remote proceedure call.  This closure
+            is set on the Notebook _remote object making it possible to do:
+
+            Geonotebook._remote.set_center(-74.25, 40.0, 4)
+
+            which will validate the argumetns and send the message of the
+            comm.
+
+            :param protocol: a protocol dict
+            :returns: a closure that validates and executes the RPC
+            :rtype: MethodType
+
+            """
+
+            def _protocol_closure(self, *args, **kwargs):
+                try:
+                    self.validate(protocol, *args, **kwargs)
+                except Exception as e:
+                    # log something here
+                    raise e
+
+                self.comm.send(
+                    {'msg_type': protocol['proceedure'],
+                     'args': args, 'kwargs': kwargs})
+
+            return MethodType(_protocol_closure, self, self.__class__)
+
+        def __init__(self, comm, notebook, protocol):
+            self.comm = comm
+            self.notebook = notebook
+            self.protocol = protocol
+
+            for p in self.protocol:
+                assert 'proceedure' in p, \
+                    ""
+                assert 'required' in p, \
+                    ""
+                assert 'optional' in p, \
+                    ""
+
+                setattr(self, p['proceedure'], self._make_protocol_method(p))
+
 
     def __init__(self, kernel, *args, **kwargs):
         self._protocol = None
@@ -80,7 +142,10 @@ class Geonotebook(object):
     ### RPC endpoints ###
 
     def set_center(self, x, y, z):
-        pass
+        self.x = x
+        self.y = y
+        self.z = z
+
 
     def set_region(self, bounding_box=None):
         pass
@@ -135,8 +200,10 @@ class GeonotebookKernel(IPythonKernel):
         #       handle comm msg can return a closure that includes the client
         #       side protocol - protocol should be converted to an proxy class
         #       so we can call functions (as promises?)
-        self.comm = comm
-        self.comm.on_msg(self.handle_comm_msg)
+
+        # Check if the msg is empty - no protocol - die
+        self.geonotebook._remote = self.geonotebook.Remote(comm, self.geonotebook, self._unwrap(msg))
+        comm.on_msg(self.handle_comm_msg)
 
 
     def __init__(self, **kwargs):

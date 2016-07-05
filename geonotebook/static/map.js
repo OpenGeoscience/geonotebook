@@ -24,7 +24,11 @@ define(
             this.geojsmap.createLayer('osm');
         };
 
-        Map.prototype.msg_types = ["get_protocol", 'set_center'];
+        Map.prototype.msg_types = ["get_protocol", "set_center", "_debug"];
+
+        Map.prototype._debug = function(msg){
+            console.log(msg);
+        };
 
         Map.prototype.get_protocol = function(){
             return this.msg_types.map(function(msg_type){
