@@ -5,30 +5,34 @@ from logging.handlers import SysLogHandler
 from inspect import getmembers, ismethod, getargspec
 from types import MethodType
 
+from jsonrpc import json_rpc_request, json_rpc_notify
+
 class Geonotebook(object):
-    msg_types = ['get_protocol', 'set_center', 'set_region']
+    msg_types = ['get_protocol', 'set_center']
 
     _protocol = None
     _remote = None
 
     class Remote(object):
+        """Provides an object that proxies procedures on a remote object.
+
+        This takes a protocol definition and dynamically generates methods on
+        the object that reflect that protocol.  Once instantiated it allows for
+        sending one-way messages to the remote client via the kernel's comm object.
+        This object is intended to be used internally because it does not manage
+        the request/reply cycle nessisary to ensure we have consistent
+        client/server state.
+        """
         def validate(self, protocol, *args, **kwargs):
             assert len(args) == len(protocol["required"]), \
                 "Protocol {} has an arity of {}. Called with {}".format(
-                    name, len(args), len(self.protocol[name]["required"]))
-
-        @property
-        def log(self):
-            try:
-                return self.notebook._kernel.log
-            except:
-                return logging
+                    protocol['procedure'], len(protocol["required"]), len(args))
 
         def _make_protocol_method(self, protocol):
             """Make a method closure based on a protocol definition
 
             This takes a protocol and generates a closure that accepts
-            functions to execute the remote proceedure call.  This closure
+            functions to execute the remote procedure call.  This closure
             is set on the Notebook _remote object making it possible to do:
 
             Geonotebook._remote.set_center(-74.25, 40.0, 4)
@@ -49,26 +53,29 @@ class Geonotebook(object):
                     # log something here
                     raise e
 
-                self.comm.send(
-                    {'msg_type': protocol['proceedure'],
-                     'args': args, 'kwargs': kwargs})
+                params = list(args)
+                params.extend([kwargs[k] for k in protocol['optional'] if k in kwargs])
+
+                self._send_msg(json_rpc_request(protocol['procedure'], params))
 
             return MethodType(_protocol_closure, self, self.__class__)
 
-        def __init__(self, comm, notebook, protocol):
-            self.comm = comm
+        def _send_msg(self, msg):
+            self.notebook._send_msg(msg)
+
+        def __init__(self, notebook, protocol):
             self.notebook = notebook
             self.protocol = protocol
 
             for p in self.protocol:
-                assert 'proceedure' in p, \
+                assert 'procedure' in p, \
                     ""
                 assert 'required' in p, \
                     ""
                 assert 'optional' in p, \
                     ""
 
-                setattr(self, p['proceedure'], self._make_protocol_method(p))
+                setattr(self, p['procedure'], self._make_protocol_method(p))
 
 
     def __init__(self, kernel, *args, **kwargs):
@@ -103,14 +110,13 @@ class Geonotebook(object):
 
                 # Would be nice to include whether or to expect a reply, or
                 # If this is just a notification function
-                return {'proceedure': fn,
+                return {'procedure': fn,
                         'required': params[:r],
                         'optional': params[r:]}
 
             cls._protocol = [_method_protocol(fn, method) for fn, method in
                              getmembers(cls, predicate=ismethod) if fn in cls.msg_types]
         return cls._protocol
-
 
     def _send_msg(self, msg):
         """Send a message to the client.
@@ -134,10 +140,9 @@ class Geonotebook(object):
 
         """
 
-        assert 'msg_type' in msg, \
-            u"'msg_type' must be defined!"
-        assert msg['msg_type'] in self.msg_types, \
-            u"'msg_type' must be one of {}".format(",".join(self.msg_types))
+        self.log.info(msg)
+        # Currently not implemented!
+        pass
 
     ### RPC endpoints ###
 
@@ -145,10 +150,6 @@ class Geonotebook(object):
         self.x = x
         self.y = y
         self.z = z
-
-
-    def set_region(self, bounding_box=None):
-        pass
 
     def get_protocol(self):
         return self.__class__.class_protocol()
@@ -196,14 +197,12 @@ class GeonotebookKernel(IPythonKernel):
 
         """
 
-        # TODO: msg should contain a protocol definition for the client side
-        #       handle comm msg can return a closure that includes the client
-        #       side protocol - protocol should be converted to an proxy class
-        #       so we can call functions (as promises?)
+        self.comm = comm
+        self.comm.on_msg(self.handle_comm_msg)
 
         # Check if the msg is empty - no protocol - die
-        self.geonotebook._remote = self.geonotebook.Remote(comm, self.geonotebook, self._unwrap(msg))
-        comm.on_msg(self.handle_comm_msg)
+        self.geonotebook._remote = Geonotebook.Remote(self.geonotebook, self._unwrap(msg))
+
 
 
     def __init__(self, **kwargs):

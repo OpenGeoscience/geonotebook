@@ -22,15 +22,23 @@ define(
             }
         };
 
+        Geonotebook.prototype._unwrap = function(msg){
+            return msg.content.data;
+        };
+
         Geonotebook.prototype.handle_geocomm_msg = function(msg) {
-            console.log(msg);
-            console.log(msg['content']['data']);
+            var rpc_msg = this._unwrap(msg);
+
+            // Do validation etc
+
+            this.map[rpc_msg.method].apply(this.map, rpc_msg.params);
+
         };
 
         Geonotebook.prototype.handle_kernel = function(Jupyter, kernel) {
             if (kernel.comm_manager) {
                 this.comm = kernel.comm_manager.new_comm('geonotebook', this.map.get_protocol());
-                this.comm.on_msg(this.handle_geocomm_msg);
+                this.comm.on_msg(this.handle_geocomm_msg.bind(this));
 
                 // Expose this globaly for testing purposes
                 Jupyter.geo_comm = this.comm;

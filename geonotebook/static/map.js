@@ -35,7 +35,7 @@ define(
 
                 var args = utils.annotate(this[msg_type]);
 
-                return {proceedure: msg_type,
+                return {procedure: msg_type,
                         required: args.filter(function(arg){ return !arg.includes("="); }),
                         optional: args.filter(
                             function(arg){ return arg.includes("="); }).map(
