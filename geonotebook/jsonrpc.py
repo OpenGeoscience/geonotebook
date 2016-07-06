@@ -38,7 +38,7 @@ class InternalError(JSONRPCError):
     code = -32603
     message = "Internal Error."
 
-class InternalError(JSONRPCError):
+class ServerError(JSONRPCError):
     code = -32000
     message = "Server Error."
 

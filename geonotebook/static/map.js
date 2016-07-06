@@ -1,9 +1,10 @@
 define(
     ["jquery",
+     "underscore",
      "require",
      "./lib/geo",
      "./lib/utils"],
-    function($, require, geo, utils){
+    function($, _, require, geo, utils){
         var Map = function(notebook, div){
             this.notebook = notebook;
             this.geo = geo;
@@ -51,7 +52,8 @@ define(
         };
 
         Map.prototype.set_center = function(x, y, z){
-
+            this.geojsmap.center({x: x, y: y});
+            this.geojsmap.zoom(z);
         };
 
 

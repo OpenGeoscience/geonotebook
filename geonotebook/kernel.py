@@ -7,8 +7,12 @@ from types import MethodType
 
 from jsonrpc import json_rpc_request, json_rpc_notify
 
+from collections import namedtuple
+
+BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
+
 class Geonotebook(object):
-    msg_types = ['get_protocol', 'set_center']
+    msg_types = ['get_protocol', 'set_center', 'set_region']
 
     _protocol = None
     _remote = None
@@ -24,7 +28,11 @@ class Geonotebook(object):
         client/server state.
         """
         def validate(self, protocol, *args, **kwargs):
-            assert len(args) == len(protocol["required"]), \
+            assert len(args) >= len(protocol["required"]), \
+                "Protocol {} has an arity of {}. Called with {}".format(
+                    protocol['procedure'], len(protocol["required"]), len(args))
+
+            assert len(args) <= len(protocol["required"]) + len(protocol["optional"]), \
                 "Protocol {} has an arity of {}. Called with {}".format(
                     protocol['procedure'], len(protocol["required"]), len(args))
 
@@ -54,6 +62,7 @@ class Geonotebook(object):
                     raise e
 
                 params = list(args)
+                # Not technically available until ES6
                 params.extend([kwargs[k] for k in protocol['optional'] if k in kwargs])
 
                 self._send_msg(json_rpc_request(protocol['procedure'], params))
@@ -78,10 +87,19 @@ class Geonotebook(object):
                 setattr(self, p['procedure'], self._make_protocol_method(p))
 
 
+    @property
+    def log(self):
+        return self._kernel.log
+
     def __init__(self, kernel, *args, **kwargs):
+
         self._protocol = None
         self.view_port = None
         self.region = None
+        self.x = None
+        self.y = None
+        self.z = None
+
         self._kernel = kernel
 
     @classmethod
@@ -140,9 +158,10 @@ class Geonotebook(object):
 
         """
 
-        self.log.info(msg)
-        # Currently not implemented!
-        pass
+        method, params = msg['method'], msg['params']
+        if method in self.msg_types:
+            getattr(self, method)(*params)
+
 
     ### RPC endpoints ###
 
@@ -150,6 +169,9 @@ class Geonotebook(object):
         self.x = x
         self.y = y
         self.z = z
+
+    def set_region(self, ulx, uly, lrx, lry):
+        self.region = BBox(ulx, uly, lrx, lry)
 
     def get_protocol(self):
         return self.__class__.class_protocol()
@@ -202,11 +224,17 @@ class GeonotebookKernel(IPythonKernel):
 
         # Check if the msg is empty - no protocol - die
         self.geonotebook._remote = Geonotebook.Remote(self.geonotebook, self._unwrap(msg))
-
+        # Reply to the open comm,  this should probably be set up on
+        # self.geonotebook._remote as an actual proceedure call
+        self.comm.send({
+            "method": "set_protocol",
+            "data": self.geonotebook.get_protocol()
+        })
 
 
     def __init__(self, **kwargs):
         kwargs['log'].setLevel(logging.DEBUG)
+        self.log = kwargs['log']
 
         self.geonotebook = Geonotebook(self)
         super(GeonotebookKernel, self).__init__(**kwargs)
