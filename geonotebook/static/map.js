@@ -23,7 +23,21 @@ define(
                                });
 
             this.geojsmap.createLayer('osm');
+
+            this.geojsmap.geoOn('geo_select', this.set_region.bind(this));
+
         };
+
+        Map.prototype.set_region = function(event, args){
+
+            var ul = this.geojsmap.displayToGcs(event.display.upperLeft, "EPSG:4326");
+            var lr = this.geojsmap.displayToGcs(event.display.lowerRight, "EPSG:4326");
+
+            this.notebook._remote.set_region(ul.x, ul.y, lr.x, lr.y);
+
+
+        };
+
 
         Map.prototype.msg_types = ["get_protocol", "set_center", "_debug"];
 
