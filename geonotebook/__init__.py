@@ -15,6 +15,6 @@ def _jupyter_nbextension_paths():
 
 
 def load_jupyter_server_extension(nbapp):
-#    import pudb; pu.db
+
     nbapp.log.info("geonotebook module enabled!")
 #    nbapp.kernel.comm_manager.register_target('test', comm_opened)

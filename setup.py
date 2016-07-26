@@ -19,6 +19,7 @@ setup(
 )
 
 
+# Install the kernel spec when we install the package
 from ipykernel import kernelspec
 from jupyter_client.kernelspec import KernelSpecManager
 
