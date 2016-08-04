@@ -4,19 +4,10 @@ define(
      "underscore",
      "base/js/namespace",
      "base/js/events",
+     "./lib/jsonrpc",
      "./map"],
 
-    function(require, $, _, Jupyter, events, Map){
-        var json_rpc_request = function(method, params, opts){
-            opts = _.defaults((typeof opts === 'undefined') ? {} : opts,
-                              {jsonrpc: "2.0"});
-
-            return _.extend({
-                method: method,
-                params: params,
-                id: "TESTID"}, opts);
-        };
-
+    function(require, $, _, Jupyter, events, jsonrpc, Map){
 
         var Remote = function(notebook, protocols){
             this.notebook = notebook;
@@ -26,7 +17,7 @@ define(
                     var params = Array.from(arguments);
                     // how to handle kwargs?
                     this.notebook.send_msg(
-                        json_rpc_request(protocol.procedure, params));
+                        jsonrpc.request(protocol.procedure, params));
 
                 }.bind(this);
 
@@ -73,8 +64,15 @@ define(
                 // handle a message
 
                 // Validate message
+                try {
+                    var result = this.map[rpc_msg.method].apply(this.map, rpc_msg.params);
+                    this.send_msg(jsonrpc.response(result, null, rpc_msg.id));
+                } catch (ex) {
+                    this.send_msg(jsonrpc.response(null, ex, rpc_msg.id));
+                    console.log(ex);
+                }
 
-                this.map[rpc_msg.method].apply(this.map, rpc_msg.params);
+
             } else {
                 // log an error
                 console.log("ERROR: Recieved a " + rpc_msg.method + " message " +

@@ -5,7 +5,11 @@ from logging.handlers import SysLogHandler
 from inspect import getmembers, ismethod, getargspec
 from types import MethodType
 
-from jsonrpc import json_rpc_request, json_rpc_notify
+from jsonrpc import (json_rpc_request,
+                     json_rpc_notify,
+                     is_response,
+                     is_request,
+                     handle_rpc_response)
 
 from collections import namedtuple
 
@@ -65,12 +69,14 @@ class Geonotebook(object):
                 # Not technically available until ES6
                 params.extend([kwargs[k] for k in protocol['optional'] if k in kwargs])
 
-                self._send_msg(json_rpc_request(protocol['procedure'], params))
+                return self._send_msg(
+                    json_rpc_request(protocol['procedure'], params))
 
             return MethodType(_protocol_closure, self, self.__class__)
 
         def _send_msg(self, msg):
             self.notebook._send_msg(msg)
+            return msg
 
         def __init__(self, notebook, protocol):
             self.notebook = notebook
@@ -86,21 +92,6 @@ class Geonotebook(object):
 
                 setattr(self, p['procedure'], self._make_protocol_method(p))
 
-
-    @property
-    def log(self):
-        return self._kernel.log
-
-    def __init__(self, kernel, *args, **kwargs):
-
-        self._protocol = None
-        self.view_port = None
-        self.region = None
-        self.x = None
-        self.y = None
-        self.z = None
-
-        self._kernel = kernel
 
     @classmethod
     def class_protocol(cls):
@@ -146,7 +137,6 @@ class Geonotebook(object):
         :rtype: None
 
         """
-
         self._kernel.comm.send(msg)
 
     def _recv_msg(self, msg):
@@ -157,18 +147,62 @@ class Geonotebook(object):
         :rtype: None
 
         """
+        if is_response(msg):
+            if msg['id'] in self._callbacks:
+                # TODO Needs to be more sophisticated - add errbacks etc
+                # Some kind of deferred implementation
 
-        method, params = msg['method'], msg['params']
-        if method in self.msg_types:
-            getattr(self, method)(*params)
+                self._callbacks[msg['id']](msg)
+                del self._callbacks[msg['id']]
+            else:
+                self.log.warn("Could not find callback with id %s" % msg['id'])
 
+        elif is_request(msg):
+            method, params = msg['method'], msg['params']
+            if method in self.msg_types:
+                getattr(self, method)(*params)
+        else:
+            raise Exception("Could not parse msg: %s" % msg)
+
+    @property
+    def log(self):
+        return self._kernel.log
+
+    def __init__(self, kernel, *args, **kwargs):
+
+        self._protocol = None
+        self.view_port = None
+        self.region = None
+        self.x = None
+        self.y = None
+        self.z = None
+
+        self._kernel = kernel
+
+        self._callbacks = {}
+
+    def rpc_error(self, error):
+        self.log.error("(%s): %s" % (error['code'], error['message']))
 
     ### RPC endpoints ###
 
     def set_center(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
+
+        @handle_rpc_response(self.rpc_error)
+        def _callback(msg):
+            self.x = x
+            self.y = y
+            self.z = z
+
+
+        msg = self._remote.set_center(x, y, z)
+        self._callbacks[msg['id']] = _callback
+        # TODO:  Need some way to visually make it appear that the cell is
+        #        working, for request/reply messages. We don't want to actually
+        #        tie up the kernel,  but we do need to be able to return
+        #        results and errors to the cell output area as though it were a
+        #        syncrhonous operation.
+        return None
 
     def set_region(self, ulx, uly, lrx, lry):
         self.region = BBox(ulx, uly, lrx, lry)
@@ -233,7 +267,7 @@ class GeonotebookKernel(IPythonKernel):
 
 
     def __init__(self, **kwargs):
-        kwargs['log'].setLevel(logging.DEBUG)
+        kwargs['log'].setLevel(logging.INFO)
         self.log = kwargs['log']
 
         self.geonotebook = Geonotebook(self)
