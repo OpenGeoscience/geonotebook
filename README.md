@@ -13,13 +13,11 @@ pip install -e .
 
 Install the serverextension and nbextenion
 ```bash
-# Sometimes nessisary after installing new binaries (like jupyter) into virtualenv
-rehash
-
 jupyter nbextension install --py geonotebook --sys-prefix
 jupyter nbextension enable --py geonotebook --sys-prefix
 jupyter serverextension enable --py geonotebook --sys-prefix
 ```
+
 Run the notebook:
 ```bash
 jupyter notebook
