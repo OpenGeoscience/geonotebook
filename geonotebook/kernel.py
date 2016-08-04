@@ -149,11 +149,12 @@ class Geonotebook(object):
         """
         if is_response(msg):
             if msg['id'] in self._callbacks:
-                # TODO Needs to be more sophisticated - add errbacks etc
-                # Some kind of deferred implementation
-
-                self._callbacks[msg['id']](msg)
-                del self._callbacks[msg['id']]
+                try:
+                    self._callbacks[msg['id']](msg)
+                except Exception as e:
+                    raise e
+                finally:
+                    del self._callbacks[msg['id']]
             else:
                 self.log.warn("Could not find callback with id %s" % msg['id'])
 
@@ -182,7 +183,7 @@ class Geonotebook(object):
         self._callbacks = {}
 
     def rpc_error(self, error):
-        self.log.error("(%s): %s" % (error['code'], error['message']))
+        self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
 
     ### RPC endpoints ###
 
