@@ -3,6 +3,9 @@ define(
     function(_){
         var JSONRPCError = function(code){
             return function(message, data){
+
+                console.log("JSONRPCError (" +code  + "): " + message);
+
                 if (data !== undefined ){
                     return {
                         code: code,

@@ -67,7 +67,7 @@ class ReplyCallback(object):
 class Remote(object):
     """Provides an object that proxies procedures on a remote object.
 
-    This takes a protocol definition and dynamically generates methods on
+    This takes a list of protocol definitions and dynamically generates methods on
     the object that reflect that protocol.  These methods wrap ReplyCallbacks
     objects which manage the reply and error callbacks of a remote proceedure call.
     Remote defines a '_callbacks' variable which is a dict of message id's to

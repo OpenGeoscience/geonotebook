@@ -9,6 +9,10 @@ define(
 
     function(require, $, _, Jupyter, events, jsonrpc, Map){
 
+        // This class stores a JSONRPC message and callbacks which are evaluated
+        // once the Remote object recieves a 'resolve' call with the message's id.
+        // This is initialized with a JSONRPC message and a function that takes a
+        // message and sends it across some transport mechanism (e.g. Websocket).
         var ReplyCallback = function(msg, send_message) {
             this.state = "CREATED";
             this.msg = msg;
@@ -23,6 +27,11 @@ define(
             this.state = "PENDING";
         };
 
+        // This takes a list of protocol definitions and dynamically generates methods on
+        // the object that reflect that protocol.  These methods wrap ReplyCallback
+        // objects which manage the reply and error callbacks of a remote proceedure call.
+        // Remote defines a '_callbacks' variable which is a dict of message id's to
+        // ReplyCallback objects.
         var Remote = function(transport, protocols){
             this.send_msg = transport;
             this._callbacks = {};
@@ -58,6 +67,10 @@ define(
             }
         };
 
+        // the Geonotebook object manages the comm channel that is opened on
+        // kernel initialization,  the 'Map' object,  which is a wrapper around
+        // a GeoJS map as well as the _remote object for making remote proceedure
+        // calls to the Python kernel.
         var Geonotebook = function(){
             this.comm = null;
             this.map = null;
@@ -98,39 +111,45 @@ define(
                 this.protocol_negotiation_complete = true;
             } else if(this.protocol_negotiation_complete) {
 
-                // Handle a response
+                // Pass response messages on to remote to be resolved
                 if( jsonrpc.is_response(msg) ){
                     this._remote.resolve(msg);
                 }
-                // Handle a request
+
+                // Handle a RPC request
                 else if( jsonrpc.is_request(msg) ) {
                     try {
+                        // Apply the map method from the msg on the paramaters
                         var result = this.map[msg.method].apply(this.map, msg.params);
+
+                        // Reply with the result of the call
                         this.send_msg(jsonrpc.response(result, null, msg.id));
                     } catch (ex) {
+                        // If we catch an error report it back to the RPC caller
                         this.send_msg(jsonrpc.response(null, ex, msg.id));
-                        console.log(ex);
                     }
                 } else {
-                    // Error - could not parse a message
+                    // Not a response or a request - send parse error
+                    this.send_msg(
+                        jsonrpc.response(null, jsonrpc.ParseError("Could not parse message"), msg.id));
                 }
 
             } else {
-                // log an error
-                console.log("ERROR: Recieved a " + msg.method + " message " +
-                            "but protocol negotiation is not complete.");
+                // Protocol negotiation not complete - send internal error
+                this.send_msg(
+                    null, jsonrpc.InternalError("ERROR: Recieved a " + msg.method + " message " +
+                                                "but protocol negotiation is not complete."), msg.id);
             }
-
         };
 
         Geonotebook.prototype.handle_kernel = function(Jupyter, kernel) {
             if (kernel.comm_manager) {
                 this.comm = kernel.comm_manager.new_comm('geonotebook', this.map.get_protocol());
+
                 this.comm.on_msg(this.recv_msg.bind(this));
 
             }
         };
-
 
         Geonotebook.prototype.register_events = function(Jupyter, events) {
             if (Jupyter.notebook && Jupyter.notebook.kernel) {

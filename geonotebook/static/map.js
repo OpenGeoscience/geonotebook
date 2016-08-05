@@ -58,6 +58,11 @@ define(
             console.log(msg);
         };
 
+        // Generate a list of protocol definitions for the white listed functions
+        // in msg_types. This will be passed to the Python geonotebook object and
+        // will initialize its RPC object so JS map frunctions can be called from
+        // the Python environment.
+
         Map.prototype.get_protocol = function(){
             return this.msg_types.map(function(msg_type){
 
