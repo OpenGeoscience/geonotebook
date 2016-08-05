@@ -19,13 +19,43 @@ BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
 
 class ReplyCallback(object):
+    """Stores a message and result/error callbacks for a JSONRPC message.
+
+    This class stores a JSONRPC message and callback which is evaluated
+    once the Remote object recieves a 'resolve' call with the message's id.
+    This is initialized with a JSONRPC message and a function that takes a
+    message and sends it across some transport mechanism (e.g. Websocket).
+    """
 
     def __init__(self, msg, send_message):
+        """Initialize the object.
+
+        Creation of the object does not actually send the message. This only
+        happens once the the 'then' function is called and reply/error
+        callbacks have been set on the object.
+
+        :param msg: a JSONRPC compliant message
+        :param send_message: a function that acts as a transport mechanism
+        :returns: Nothing
+        :rtype: None
+
+        """
         self.state = "CREATED"
         self.msg = msg
         self.send_message = send_message
 
     def then(self, reply_handler, error_handler):
+        """Set reply/error callbacks and send the message.
+
+        :param reply_handler: function that takes the 'result' field
+                              of a JSONRPC response object.
+        :param error_handler: function that takes the 'error' field
+                              of a JSONRPC response object. Should be a
+                              well formed JSONRPC error object.
+        :returns: self
+        :rtype: ReplyCallback
+
+        """
         self.reply_handler = reply_handler
         self.error_handler = error_handler
 
@@ -38,15 +68,21 @@ class Remote(object):
     """Provides an object that proxies procedures on a remote object.
 
     This takes a protocol definition and dynamically generates methods on
-    the object that reflect that protocol.  Once instantiated it allows for
-    sending one-way messages to the remote client via the kernel's comm object.
-    This object is intended to be used internally because it does not manage
-    the request/reply cycle nessisary to ensure we have consistent
-    client/server state.
+    the object that reflect that protocol.  These methods wrap ReplyCallbacks
+    objects which manage the reply and error callbacks of a remote proceedure call.
+    Remote defines a '_callbacks' variable which is a dict of message id's to
+    ReplyCallback objects.
     """
 
 
     def validate(self, protocol, *args, **kwargs):
+        """Validate a protocol definition.
+
+        :param protocol: Dict containing a single function's protocol
+        :returns: Nothing
+        :rtype: None
+
+        """
         assert len(args) >= len(protocol["required"]), \
             "Protocol {} has an arity of {}. Called with {}".format(
                 protocol['procedure'], len(protocol["required"]), len(args))
@@ -58,17 +94,31 @@ class Remote(object):
     def _make_protocol_method(self, protocol):
         """Make a method closure based on a protocol definition
 
-        This takes a protocol and generates a closure that accepts
-        functions to execute the remote procedure call.  This closure
-        is set on the Notebook _remote object making it possible to do:
+        This takes a protocol and generates a closure that has the same arity as
+        the protocol. The closure is dynamically set as a method on the Remote object
+        with the same name as protocol. This makes it possible to do:
 
         Geonotebook._remote.set_center(-74.25, 40.0, 4)
 
-        which will validate the argumetns and send the message of the
-        comm.
+        which will validate the arguments, create a JSONRPC request object, generate a
+        ReplyCallback object and store the callback in the _callbacks dict. The message
+        is not actually sent until the 'then' function is called on the ReplyCallback
+        object ensuring no messages are sent without well defined reply/error callbacks.
+        e.g:
+
+        def handle_error(error):
+            print "JSONError (%s): %s" % (error['code'], error['message'])
+
+        def handle_reply(result):
+            print result
+
+        Geonotebook._remote.set_center(-74.25, 40.0, 4).then(
+            handle_reply, handle_error)
+
+
 
         :param protocol: a protocol dict
-        :returns: a closure that validates and executes the RPC
+        :returns: a closure that validates RPC arguments and returns a ReplyCallback
         :rtype: MethodType
 
         """
@@ -98,6 +148,16 @@ class Remote(object):
 
 
     def resolve(self, msg):
+        """Resolve an open JSONRPC request
+
+        Takes a JSONRPC result message and passes it to either the reply_handler
+        or the error_handler of the ReplyCallback object.
+
+        :param msg: JSONRPC result message
+        :returns: Nothing
+        :rtype: None
+
+        """
         if msg['id'] in self._callbacks:
             try:
                 if msg['error'] is not None:
@@ -114,6 +174,15 @@ class Remote(object):
 
 
     def __init__(self, transport, protocol):
+        """Initialize the Remote object.
+
+        :param transport: function that takes a JSONRPC request message
+        :param protocol: A list of protocol definitions for remote functions
+        :returns: Nothing
+        :rtype: None
+
+        """
+
         self._callbacks = {}
         self._send_msg = transport
         self.protocol = protocol
@@ -139,7 +208,7 @@ class Geonotebook(object):
 
     @classmethod
     def class_protocol(cls):
-        """Initializes the RPC protocol description
+        """Initializes the RPC protocol description.
 
         Provides a static, lazy loaded description of the functions that
         are available to be called by the RPC mechanism.
@@ -191,24 +260,28 @@ class Geonotebook(object):
         :rtype: None
 
         """
+        # If this is a response,  pass it along to the Remote object to be
+        # processesd by the correct reply/error handler
         if is_response(msg):
             self._remote.resolve(msg)
 
+        # Otherwise process the request from the remote RPC client.
         elif is_request(msg):
             method, params = msg['method'], msg['params']
+
             if method in self.msg_types:
                 try:
                     result = getattr(self, method)(*params)
                     self._send_msg(json_rpc_result(result, None, msg['id']))
-                except jsonrpc.JSONRPCError as e:
-                    self._send_msg(json_rpc_result(None, e.toJson(), msg['id']))
                 except Exception as e:
-                    raise jsonrpc.ServerError(str(e))
-
+                    if isinstance(e, jsonrpc.JSONRPCError):
+                        raise e
+                    else:
+                        raise jsonrpc.ServerError(str(e))
             else:
-                raise Exception("Method not allowed")
+                raise jsonrpc.MethodNotFound("Method not allowed")
         else:
-            raise Exception("Could not parse msg: %s" % msg)
+            raise jsonrpc.ParseError("Could not parse msg: %s" % msg)
 
     @property
     def log(self):
@@ -242,6 +315,10 @@ class Geonotebook(object):
 
 
     def set_region(self, ulx, uly, lrx, lry):
+        if ulx == lrx and uly == lry:
+            raise jsonrpc.InvalidParams("Bounding box values cannot be the same!")
+
+
         self.region = BBox(ulx, uly, lrx, lry)
         return ulx, uly, lrx, lry
 
@@ -266,7 +343,7 @@ class GeonotebookKernel(IPythonKernel):
 
         return msg['content']['data']
 
-    def handle_comm_msg(self, msg):
+    def handle_comm_msg(self, message):
         """Handler for incomming comm messages
 
         :param msg: a Comm message
@@ -274,11 +351,15 @@ class GeonotebookKernel(IPythonKernel):
         :rtype: None
 
         """
+        msg = self._unwrap(message)
 
         try:
-            self.geonotebook._recv_msg(self._unwrap(msg))
-        except jsonrpc.ServerError as e:
-            self.geonotebook._send_msg(None, e.toJson(), msg['id'])
+            self.geonotebook._recv_msg(msg)
+
+        except jsonrpc.JSONRPCError as e:
+            self.geonotebook._send_msg(json_rpc_result(None, e.toJson(), msg['id']))
+            self.log.error(u"JSONRPCError (%s): %s" % (e.code, e.message))
+
         except Exception as e:
             self.log.error(u"Error processing msg: {}".format(str(e)))
 
