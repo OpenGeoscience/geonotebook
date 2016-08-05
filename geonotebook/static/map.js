@@ -87,7 +87,8 @@ define(
             }
             this.geojsmap.center({x: x, y: y});
             this.geojsmap.zoom(z);
-            return true;
+
+            return [x, y, z];
         };
 
 

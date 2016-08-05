@@ -17,83 +17,125 @@ from collections import namedtuple
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
+
+class ReplyCallback(object):
+
+    def __init__(self, msg, send_message):
+        self.state = "CREATED"
+        self.msg = msg
+        self.send_message = send_message
+
+    def then(self, reply_handler, error_handler):
+        self.reply_handler = reply_handler
+        self.error_handler = error_handler
+
+        self.send_message(self.msg)
+        self.state = "PENDING"
+
+        return self
+
+class Remote(object):
+    """Provides an object that proxies procedures on a remote object.
+
+    This takes a protocol definition and dynamically generates methods on
+    the object that reflect that protocol.  Once instantiated it allows for
+    sending one-way messages to the remote client via the kernel's comm object.
+    This object is intended to be used internally because it does not manage
+    the request/reply cycle nessisary to ensure we have consistent
+    client/server state.
+    """
+
+
+    def validate(self, protocol, *args, **kwargs):
+        assert len(args) >= len(protocol["required"]), \
+            "Protocol {} has an arity of {}. Called with {}".format(
+                protocol['procedure'], len(protocol["required"]), len(args))
+
+        assert len(args) <= len(protocol["required"]) + len(protocol["optional"]), \
+            "Protocol {} has an arity of {}. Called with {}".format(
+                protocol['procedure'], len(protocol["required"]), len(args))
+
+    def _make_protocol_method(self, protocol):
+        """Make a method closure based on a protocol definition
+
+        This takes a protocol and generates a closure that accepts
+        functions to execute the remote procedure call.  This closure
+        is set on the Notebook _remote object making it possible to do:
+
+        Geonotebook._remote.set_center(-74.25, 40.0, 4)
+
+        which will validate the argumetns and send the message of the
+        comm.
+
+        :param protocol: a protocol dict
+        :returns: a closure that validates and executes the RPC
+        :rtype: MethodType
+
+        """
+
+        def _protocol_closure(self, *args, **kwargs):
+            try:
+                self.validate(protocol, *args, **kwargs)
+            except Exception as e:
+                # TODO: log something here
+                raise e
+
+            # Get the paramaters
+            params = list(args)
+            # Not technically available until ES6
+            params.extend([kwargs[k] for k in protocol['optional'] if k in kwargs])
+
+            # Create the message
+            msg = json_rpc_request(protocol['procedure'], params)
+
+            # Set up the callback
+            self._callbacks[msg['id']] = ReplyCallback(msg, self._send_msg)
+
+            # return the callback
+            return self._callbacks[msg['id']]
+
+        return MethodType(_protocol_closure, self, self.__class__)
+
+
+    def resolve(self, msg):
+        if msg['id'] in self._callbacks:
+            try:
+                if msg['error'] is not None:
+                    self._callbacks[msg['id']].error_handler(msg['error'])
+                else:
+                    self._callbacks[msg['id']].reply_handler(msg['result'])
+
+            except Exception as e:
+                raise e
+            finally:
+                del self._callbacks[msg['id']]
+        else:
+            self.log.warn("Could not find callback with id %s" % msg['id'])
+
+
+    def __init__(self, transport, protocol):
+        self._callbacks = {}
+        self._send_msg = transport
+        self.protocol = protocol
+
+        for p in self.protocol:
+            assert 'procedure' in p, \
+                ""
+            assert 'required' in p, \
+                ""
+            assert 'optional' in p, \
+                ""
+
+            setattr(self, p['procedure'], self._make_protocol_method(p))
+
+
+
+
 class Geonotebook(object):
     msg_types = ['get_protocol', 'set_center', 'set_region']
 
     _protocol = None
     _remote = None
-
-    class Remote(object):
-        """Provides an object that proxies procedures on a remote object.
-
-        This takes a protocol definition and dynamically generates methods on
-        the object that reflect that protocol.  Once instantiated it allows for
-        sending one-way messages to the remote client via the kernel's comm object.
-        This object is intended to be used internally because it does not manage
-        the request/reply cycle nessisary to ensure we have consistent
-        client/server state.
-        """
-        def validate(self, protocol, *args, **kwargs):
-            assert len(args) >= len(protocol["required"]), \
-                "Protocol {} has an arity of {}. Called with {}".format(
-                    protocol['procedure'], len(protocol["required"]), len(args))
-
-            assert len(args) <= len(protocol["required"]) + len(protocol["optional"]), \
-                "Protocol {} has an arity of {}. Called with {}".format(
-                    protocol['procedure'], len(protocol["required"]), len(args))
-
-        def _make_protocol_method(self, protocol):
-            """Make a method closure based on a protocol definition
-
-            This takes a protocol and generates a closure that accepts
-            functions to execute the remote procedure call.  This closure
-            is set on the Notebook _remote object making it possible to do:
-
-            Geonotebook._remote.set_center(-74.25, 40.0, 4)
-
-            which will validate the argumetns and send the message of the
-            comm.
-
-            :param protocol: a protocol dict
-            :returns: a closure that validates and executes the RPC
-            :rtype: MethodType
-
-            """
-
-            def _protocol_closure(self, *args, **kwargs):
-                try:
-                    self.validate(protocol, *args, **kwargs)
-                except Exception as e:
-                    # log something here
-                    raise e
-
-                params = list(args)
-                # Not technically available until ES6
-                params.extend([kwargs[k] for k in protocol['optional'] if k in kwargs])
-
-                return self._send_msg(
-                    json_rpc_request(protocol['procedure'], params))
-
-            return MethodType(_protocol_closure, self, self.__class__)
-
-        def _send_msg(self, msg):
-            self.notebook._send_msg(msg)
-            return msg
-
-        def __init__(self, notebook, protocol):
-            self.notebook = notebook
-            self.protocol = protocol
-
-            for p in self.protocol:
-                assert 'procedure' in p, \
-                    ""
-                assert 'required' in p, \
-                    ""
-                assert 'optional' in p, \
-                    ""
-
-                setattr(self, p['procedure'], self._make_protocol_method(p))
-
 
     @classmethod
     def class_protocol(cls):
@@ -150,15 +192,7 @@ class Geonotebook(object):
 
         """
         if is_response(msg):
-            if msg['id'] in self._callbacks:
-                try:
-                    self._callbacks[msg['id']](msg)
-                except Exception as e:
-                    raise e
-                finally:
-                    del self._callbacks[msg['id']]
-            else:
-                self.log.warn("Could not find callback with id %s" % msg['id'])
+            self._remote.resolve(msg)
 
         elif is_request(msg):
             method, params = msg['method'], msg['params']
@@ -200,21 +234,11 @@ class Geonotebook(object):
 
     def set_center(self, x, y, z):
 
-        @handle_rpc_response(self.rpc_error)
-        def _callback(msg):
-            self.x = x
-            self.y = y
-            self.z = z
+        def _set_center(result):
+            self.x, self.y, self.z  = result
 
-
-        msg = self._remote.set_center(x, y, z)
-        self._callbacks[msg['id']] = _callback
-        # TODO:  Need some way to visually make it appear that the cell is
-        #        working, for request/reply messages. We don't want to actually
-        #        tie up the kernel,  but we do need to be able to return
-        #        results and errors to the cell output area as though it were a
-        #        syncrhonous operation.
-        return None
+        cb = self._remote.set_center(x, y, z).then(_set_center, self.rpc_error)
+        return cb
 
 
     def set_region(self, ulx, uly, lrx, lry):
@@ -275,8 +299,8 @@ class GeonotebookKernel(IPythonKernel):
         self.comm = comm
         self.comm.on_msg(self.handle_comm_msg)
 
-        # Check if the msg is empty - no protocol - die
-        self.geonotebook._remote = Geonotebook.Remote(self.geonotebook, self._unwrap(msg))
+        # TODO: Check if the msg is empty - no protocol - die
+        self.geonotebook._remote = Remote(self.comm.send, self._unwrap(msg))
         # Reply to the open comm,  this should probably be set up on
         # self.geonotebook._remote as an actual proceedure call
         self.comm.send({
