@@ -16,8 +16,10 @@ define(
                 this[protocol.procedure] = function(){
                     var params = Array.from(arguments);
                     // how to handle kwargs?
-                    this.notebook.send_msg(
-                        jsonrpc.request(protocol.procedure, params));
+                    var msg = jsonrpc.request(protocol.procedure, params);
+                    this.notebook.send_msg(msg);
+
+                    return msg;
 
                 }.bind(this);
 
@@ -29,6 +31,7 @@ define(
             this.map = null;
             this.protocol_negotiation_complete = false;
             this._remote = null;
+            this._callbacks = {};
             // Expose the geonotebook object on the Jupyter object
             // This makes the notebook available from the
             // base/js/namespace AMD
@@ -55,23 +58,36 @@ define(
         Geonotebook.prototype.recv_msg = function(msg) {
             var rpc_msg = this._unwrap(msg);
 
+            // TODO: move this into request/response like a
+            //       normal method.
             if(rpc_msg.method == "set_protocol" &&
                this.protocol_negotiation_complete === false){
                 // set up remote object
                 this._remote = new Remote(this, rpc_msg.data);
                 this.protocol_negotiation_complete = true;
             } else if(this.protocol_negotiation_complete) {
-                // handle a message
 
-                // Validate message
-                try {
-                    var result = this.map[rpc_msg.method].apply(this.map, rpc_msg.params);
-                    this.send_msg(jsonrpc.response(result, null, rpc_msg.id));
-                } catch (ex) {
-                    this.send_msg(jsonrpc.response(null, ex, rpc_msg.id));
-                    console.log(ex);
+                // Handle a response
+                if( jsonrpc.is_response(rpc_msg) ){
+                    if( rpc_msg.id in this._callbacks ){
+                        // Resolve the callback
+                        this._callbacks[rpc_msg.id]( rpc_msg );
+                    } else {
+                        // Warning - couldn't find callback
+                    }
                 }
-
+                // Handle a request
+                else if( jsonrpc.is_request(rpc_msg) ) {
+                    try {
+                        var result = this.map[rpc_msg.method].apply(this.map, rpc_msg.params);
+                        this.send_msg(jsonrpc.response(result, null, rpc_msg.id));
+                    } catch (ex) {
+                        this.send_msg(jsonrpc.response(null, ex, rpc_msg.id));
+                        console.log(ex);
+                    }
+                } else {
+                    // Error - could not parse a message
+                }
 
             } else {
                 // log an error

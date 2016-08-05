@@ -9,6 +9,7 @@ define(
         var Map = function(notebook, div){
             this.notebook = notebook;
             this.geo = geo;
+            this.region = null;
 
             $('head').append(
                 $("<link/>")
@@ -25,18 +26,32 @@ define(
 
             this.geojsmap.createLayer('osm');
 
-            this.geojsmap.geoOn('geo_select', this.set_region.bind(this));
+            this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
 
         };
 
-        Map.prototype.set_region = function(event, args){
+        Map.prototype.set_region = function(ulx, uly, lrx, lry){
+
+            var msg = this.notebook._remote.set_region(ulx, uly, lrx, lry);
+
+            this.notebook._callbacks[msg.id] = function(msg){
+                if (msg.error !== null){
+                    // TODO better error handling here
+                    console.log("JSONRPCError(" + msg.error.code + "): " + msg.error.message);
+                } else {
+                    this.region = msg.result;
+                }
+                delete this.notebook._callbacks[msg.id];
+            }.bind(this);
+
+        };
+
+        Map.prototype.geo_select = function(event, args){
 
             var ul = this.geojsmap.displayToGcs(event.display.upperLeft, "EPSG:4326");
             var lr = this.geojsmap.displayToGcs(event.display.lowerRight, "EPSG:4326");
 
-            this.notebook._remote.set_region(ul.x, ul.y, lr.x, lr.y);
-
-
+            this.set_region(ul.x, ul.y, lr.x, lr.y);
         };
 
 

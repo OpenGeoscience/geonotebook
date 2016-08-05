@@ -62,6 +62,12 @@ def handle_rpc_response(errback):
     return _handle_rpc_response
 
 
+def json_rpc_result(result, error, msg_id):
+    return {
+        "result": result,
+        "error": error,
+        "id": msg_id }
+
 def json_rpc_request(method, params=None, jsonrpc="2.0"):
     return {
         "method": method,

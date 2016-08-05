@@ -5,8 +5,10 @@ from logging.handlers import SysLogHandler
 from inspect import getmembers, ismethod, getargspec
 from types import MethodType
 
+import jsonrpc
 from jsonrpc import (json_rpc_request,
                      json_rpc_notify,
+                     json_rpc_result,
                      is_response,
                      is_request,
                      handle_rpc_response)
@@ -161,7 +163,16 @@ class Geonotebook(object):
         elif is_request(msg):
             method, params = msg['method'], msg['params']
             if method in self.msg_types:
-                getattr(self, method)(*params)
+                try:
+                    result = getattr(self, method)(*params)
+                    self._send_msg(json_rpc_result(result, None, msg['id']))
+                except jsonrpc.JSONRPCError as e:
+                    self._send_msg(json_rpc_result(None, e.toJson(), msg['id']))
+                except Exception as e:
+                    raise jsonrpc.ServerError(str(e))
+
+            else:
+                raise Exception("Method not allowed")
         else:
             raise Exception("Could not parse msg: %s" % msg)
 
@@ -205,8 +216,13 @@ class Geonotebook(object):
         #        syncrhonous operation.
         return None
 
+
     def set_region(self, ulx, uly, lrx, lry):
+        if ulx >= lrx or uly >= lry:
+            raise jsonrpc.InvalidParams("Uppler left point must be smaller than lower right point")
+
         self.region = BBox(ulx, uly, lrx, lry)
+        return ulx, uly, lrx, lry
 
     def get_protocol(self):
         return self.__class__.class_protocol()
@@ -240,6 +256,8 @@ class GeonotebookKernel(IPythonKernel):
 
         try:
             self.geonotebook._recv_msg(self._unwrap(msg))
+        except jsonrpc.ServerError as e:
+            self.geonotebook._send_msg(None, e.toJson(), msg['id'])
         except Exception as e:
             self.log.error(u"Error processing msg: {}".format(str(e)))
 

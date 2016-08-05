@@ -38,6 +38,14 @@ define(
                         id: id };
             },
 
+            is_request: function(msg){
+                return 'method' in msg && 'params' in msg && 'id' in msg;
+            },
+
+            is_response: function(msg){
+                return 'result' in msg && 'error' in msg && 'id' in msg;
+            },
+
             ParseError: JSONRPCError(-32700),
             InvalidRequest: JSONRPCError(-32600),
             MethodNotFound: JSONRPCError(-32601),
