@@ -30,20 +30,17 @@ define(
 
         };
 
+        Map.prototype.rpc_error = function(error){
+            console.log("JSONRPCError(" + error.code + "): " + error.message);
+        };
+
         Map.prototype.set_region = function(ulx, uly, lrx, lry){
 
-            var msg = this.notebook._remote.set_region(ulx, uly, lrx, lry);
-
-            this.notebook._callbacks[msg.id] = function(msg){
-                if (msg.error !== null){
-                    // TODO better error handling here
-                    console.log("JSONRPCError(" + msg.error.code + "): " + msg.error.message);
-                } else {
-                    this.region = msg.result;
-                }
-                delete this.notebook._callbacks[msg.id];
-            }.bind(this);
-
+            this.notebook._remote.set_region(ulx, uly, lrx, lry).then(
+                function(result){
+                    this.region = result;
+                }.bind(this),
+                this.rpc_error.bind(this));
         };
 
         Map.prototype.geo_select = function(event, args){

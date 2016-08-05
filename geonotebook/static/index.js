@@ -9,21 +9,53 @@ define(
 
     function(require, $, _, Jupyter, events, jsonrpc, Map){
 
-        var Remote = function(notebook, protocols){
-            this.notebook = notebook;
+        var ReplyCallback = function(msg, send_message) {
+            this.state = "CREATED";
+            this.msg = msg;
+            this.send_message = send_message;
+        };
+
+        ReplyCallback.prototype.then = function(reply_handler, error_handler){
+            this.reply_handler = reply_handler;
+            this.error_handler = error_handler;
+
+            this.send_message(this.msg);
+            this.state = "PENDING";
+        };
+
+        var Remote = function(transport, protocols){
+            this.send_msg = transport;
+            this._callbacks = {};
 
             _.each(protocols, function(protocol){
                 this[protocol.procedure] = function(){
                     var params = Array.from(arguments);
                     // how to handle kwargs?
                     var msg = jsonrpc.request(protocol.procedure, params);
-                    this.notebook.send_msg(msg);
 
-                    return msg;
+                    this._callbacks[msg.id] = new ReplyCallback(msg, this.send_msg);
+
+                    return this._callbacks[msg.id];
 
                 }.bind(this);
 
             }, this);
+        };
+
+        Remote.prototype.resolve = function(msg){
+            if( msg.id in this._callbacks ){
+                // Resolve the callback
+                if (msg.error !== null){
+                    this._callbacks[msg.id].error_handler(msg.error);
+                } else {
+                    this._callbacks[msg.id].reply_handler(msg.result);
+                }
+
+                delete this._callbacks[msg.id];
+
+            } else {
+                console.log("WARNING: Couldn't find callback for message id: " + msg.id);
+            }
         };
 
         var Geonotebook = function(){
@@ -31,7 +63,6 @@ define(
             this.map = null;
             this.protocol_negotiation_complete = false;
             this._remote = null;
-            this._callbacks = {};
             // Expose the geonotebook object on the Jupyter object
             // This makes the notebook available from the
             // base/js/namespace AMD
@@ -55,34 +86,29 @@ define(
             this.comm.send(msg);
         };
 
-        Geonotebook.prototype.recv_msg = function(msg) {
-            var rpc_msg = this._unwrap(msg);
+        Geonotebook.prototype.recv_msg = function(message) {
+            var msg = this._unwrap(message);
 
             // TODO: move this into request/response like a
             //       normal method.
-            if(rpc_msg.method == "set_protocol" &&
+            if(msg.method == "set_protocol" &&
                this.protocol_negotiation_complete === false){
                 // set up remote object
-                this._remote = new Remote(this, rpc_msg.data);
+                this._remote = new Remote(this.send_msg.bind(this), msg.data);
                 this.protocol_negotiation_complete = true;
             } else if(this.protocol_negotiation_complete) {
 
                 // Handle a response
-                if( jsonrpc.is_response(rpc_msg) ){
-                    if( rpc_msg.id in this._callbacks ){
-                        // Resolve the callback
-                        this._callbacks[rpc_msg.id]( rpc_msg );
-                    } else {
-                        // Warning - couldn't find callback
-                    }
+                if( jsonrpc.is_response(msg) ){
+                    this._remote.resolve(msg);
                 }
                 // Handle a request
-                else if( jsonrpc.is_request(rpc_msg) ) {
+                else if( jsonrpc.is_request(msg) ) {
                     try {
-                        var result = this.map[rpc_msg.method].apply(this.map, rpc_msg.params);
-                        this.send_msg(jsonrpc.response(result, null, rpc_msg.id));
+                        var result = this.map[msg.method].apply(this.map, msg.params);
+                        this.send_msg(jsonrpc.response(result, null, msg.id));
                     } catch (ex) {
-                        this.send_msg(jsonrpc.response(null, ex, rpc_msg.id));
+                        this.send_msg(jsonrpc.response(null, ex, msg.id));
                         console.log(ex);
                     }
                 } else {
@@ -91,7 +117,7 @@ define(
 
             } else {
                 // log an error
-                console.log("ERROR: Recieved a " + rpc_msg.method + " message " +
+                console.log("ERROR: Recieved a " + msg.method + " message " +
                             "but protocol negotiation is not complete.");
             }
 

@@ -242,9 +242,6 @@ class Geonotebook(object):
 
 
     def set_region(self, ulx, uly, lrx, lry):
-        if ulx >= lrx or uly >= lry:
-            raise jsonrpc.InvalidParams("Uppler left point must be smaller than lower right point")
-
         self.region = BBox(ulx, uly, lrx, lry)
         return ulx, uly, lrx, lry
 
