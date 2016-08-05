@@ -49,19 +49,6 @@ def is_response(msg):
 def is_request(msg):
     return 'method' in msg and 'params' in msg and 'id' in msg
 
-
-def handle_rpc_response(errback):
-    def _handle_rpc_response(f):
-        def __handle_rpc_response(msg):
-            if msg['error'] is not None:
-                errback(msg['error'])
-            else:
-                f(msg['result'])
-
-        return __handle_rpc_response
-    return _handle_rpc_response
-
-
 def json_rpc_result(result, error, msg_id):
     return {
         "result": result,
