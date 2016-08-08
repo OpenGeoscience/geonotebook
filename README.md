@@ -20,6 +20,7 @@ jupyter serverextension enable --py geonotebook --sys-prefix
 
 Run the notebook:
 ```bash
+cd notebooks/
 jupyter notebook
 
 ```
