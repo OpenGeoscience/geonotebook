@@ -104,8 +104,7 @@ define(
 
             // TODO: move this into request/response like a
             //       normal method.
-            if(msg.method == "set_protocol" &&
-               this.protocol_negotiation_complete === false){
+            if(msg.method == "set_protocol" ){
                 // set up remote object
                 this._remote = new Remote(this.send_msg.bind(this), msg.data);
                 this.protocol_negotiation_complete = true;
@@ -160,9 +159,9 @@ define(
                 this.handle_kernel(Jupyter, Jupyter.notebook.kernel);
             }
 
-            events.on('kernel_created.Kernel kernel_created.Session', function(event, data) {
+            events.on('kernel_created.Kernel kernel_created.Session kernel_restarted.Kernel', function(event, data) {
                 this.handle_kernel(Jupyter, data.kernel);
-            });
+            }.bind(this));
         };
 
 

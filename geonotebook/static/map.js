@@ -14,6 +14,7 @@ define(
         };
 
         Map.prototype.init_map = function(){
+            $('#geonotebook-map').empty();
             this.geojsmap = geo.map({node: '#geonotebook-map',
                                      width: $("#geonotebook-map").width(),
                                      height: $("#geonotebook-map").height()

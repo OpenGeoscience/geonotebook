@@ -356,7 +356,7 @@ class GeonotebookKernel(IPythonKernel):
             self.geonotebook._recv_msg(msg)
 
         except jsonrpc.JSONRPCError as e:
-            self.geonotebook._send_msg(json_rpc_result(None, e.toJson(), msg['id']))
+            self.geonotebook._send_msg(json_rpc_result(None, e.toJson(), 'FOOBAR'))
             self.log.error(u"JSONRPCError (%s): %s" % (e.code, e.message))
 
         except Exception as e:
@@ -386,14 +386,26 @@ class GeonotebookKernel(IPythonKernel):
         })
 
 
+    def do_shutdown(self, restart):
+        self.geonotebook = None;
+
+        super(GeonotebookKernel, self).do_shutdown(restart)
+
+        if restart:
+            self.geonotebook = Geonotebook(self)
+            self.shell.user_ns.update({'M': self.geonotebook})
+
+
+    def start(self):
+        self.geonotebook = Geonotebook(self)
+        self.shell.user_ns.update({'M': self.geonotebook})
+        super(GeonotebookKernel, self).start()
+
+
     def __init__(self, **kwargs):
         kwargs['log'].setLevel(logging.INFO)
         self.log = kwargs['log']
 
-        self.geonotebook = Geonotebook(self)
         super(GeonotebookKernel, self).__init__(**kwargs)
-
-
-        self.shell.user_ns.update({'M': self.geonotebook})
 
         self.comm_manager.register_target('geonotebook', self.handle_comm_open)
