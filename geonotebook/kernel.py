@@ -10,8 +10,7 @@ from jsonrpc import (json_rpc_request,
                      json_rpc_notify,
                      json_rpc_result,
                      is_response,
-                     is_request,
-                     handle_rpc_response)
+                     is_request)
 
 from collections import namedtuple
 

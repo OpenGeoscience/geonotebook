@@ -9,20 +9,15 @@ define(
         var Map = function(notebook, div){
             this.notebook = notebook;
             this.geo = geo;
+            this.geojsmap = null;
             this.region = null;
+        };
 
-            $('head').append(
-                $("<link/>")
-                    .attr("href", require.toUrl('./css/styles.css'))
-                    .attr("rel", "stylesheet")
-                    .attr("type", "text/css")
-            );
-            $(div).after("<div id='geonotebook_panel'><div id='geonotebook-map' /></div>");
-
+        Map.prototype.init_map = function(){
             this.geojsmap = geo.map({node: '#geonotebook-map',
-                           width: $("#geonotebook-map").width(),
-                           height: $("#geonotebook-map").height()
-                               });
+                                     width: $("#geonotebook-map").width(),
+                                     height: $("#geonotebook-map").height()
+                                    });
 
             this.geojsmap.createLayer('osm');
 

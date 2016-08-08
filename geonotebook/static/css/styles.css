@@ -4,6 +4,7 @@ body {
 #ipython-main-app {
     float: left;
     width: 40%;
+    overflow-y: scroll;
 }
 
 #notebook-container {
