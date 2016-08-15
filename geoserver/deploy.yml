@@ -1,0 +1,82 @@
+- hosts: geoserver
+  vars:
+    geoserver_version: 2.9.1
+  tasks:
+    - name: Install add-apt-repostory
+      become: yes
+      become_user: root
+      apt:
+        name: software-properties-common
+        state: latest
+
+    - name: Add Oracle Java Repository
+      become: yes
+      become_user: root
+      apt_repository:
+        repo: 'ppa:webupd8team/java'
+
+    - name: Accept Java 8 License
+      become: yes
+      become_user: root
+      debconf:
+        name: 'oracle-java8-installer'
+        question: 'shared/accepted-oracle-license-v1-1'
+        value: 'true'
+        vtype: 'select'
+
+    - name: Install Oracle Java 8
+      become: yes
+      become_user: root
+      apt:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - oracle-java8-installer
+        - ca-certificates
+        - oracle-java8-set-default
+
+    - name: Install Other dependencies
+      become: yes
+      become_user: root
+      apt:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - tomcat8
+        - tomcat8-docs
+        - tomcat8-admin
+        - unzip
+
+
+    - name: Copy config files
+      become: yes
+      become_user: root
+      template:
+        src: tomcat-users.xml
+        dest: /etc/tomcat8/tomcat-users.xml
+        owner: root
+        group: tomcat8
+        mode: 0640
+
+    # Note:  we probably want to install native JAI and ImageIO extenstions:
+    # http://docs.geoserver.org/latest/en/user/production/java.html#install-native-jai-and-imageio-extensions
+
+    - name: Download and Unarchive Geoserver
+      become: yes
+      become_user: root
+      unarchive:
+        copy: no
+        src: "https://data.kitware.com/api/v1/file/57b22f588d777f126827d9ea/download"
+        dest: "/var/lib/tomcat8/webapps/"
+        owner: tomcat8
+        group: tomcat8
+
+    # Geoserver configuration and tuning?
+
+    - name: Restart Tomcat
+      become: yes
+      become_user: root
+      service:
+        name: tomcat8
+        enabled: yes
+        state: restarted
