@@ -48,15 +48,37 @@
         - unzip
 
 
+    - name: Create Geoserver data directory
+      become: yes
+      become_user: root
+      file:
+        path: /var/lib/geoserver_data
+        state: directory
+        owner: tomcat8
+        group: tomcat8
+
+
     - name: Copy config files
       become: yes
       become_user: root
       template:
-        src: tomcat-users.xml
-        dest: /etc/tomcat8/tomcat-users.xml
-        owner: root
-        group: tomcat8
-        mode: 0640
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: "{{ item.owner | default('root') }}"
+        group: "{{ item.group | default('tomcat8') }}"
+        mode: "{{ item.mode | default(0664) }}"
+      with_items:
+        - src: conf/tomcat-users.xml.j2
+          dest: /etc/tomcat8/tomcat-users.xml
+          mode: '0640'
+        - src: conf/tomcat8.defaults.j2
+          dest: /etc/default/tomcat8
+          group: root
+        - src: conf/setenv.sh.j2
+          dest: /usr/share/tomcat8/bin/setenv.sh
+          group: root
+          mode: '0755'
+
 
     # Note:  we probably want to install native JAI and ImageIO extenstions:
     # http://docs.geoserver.org/latest/en/user/production/java.html#install-native-jai-and-imageio-extensions

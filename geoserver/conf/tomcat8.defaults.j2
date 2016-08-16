@@ -1,0 +1,46 @@
+# Run Tomcat as this user ID. Not setting this or leaving it blank will use the
+# default of tomcat8.
+TOMCAT8_USER=tomcat8
+
+# Run Tomcat as this group ID. Not setting this or leaving it blank will use
+# the default of tomcat8.
+TOMCAT8_GROUP=tomcat8
+
+# The home directory of the Java development kit (JDK). You need at least
+# JDK version 7. If JAVA_HOME is not set, some common directories for
+# OpenJDK and the Oracle JDK are tried.
+#JAVA_HOME=/usr/lib/jvm/java-7-openjdk
+
+# You may pass JVM startup parameters to Java here. If unset, the default
+# options will be: -Djava.awt.headless=true -Xmx128m -XX:+UseConcMarkSweepGC
+#
+# Use "-XX:+UseConcMarkSweepGC" to enable the CMS garbage collector (improved
+# response time). If you use that option and you run Tomcat on a machine with
+# exactly one CPU chip that contains one or two cores, you should also add
+# the "-XX:+CMSIncrementalMode" option.
+JAVA_OPTS="-Djava.awt.headless=true -Xmx256m -Xmx1750m -XX:SoftRefLRUPolicyMSPerMB=36000 -XX:+UseConcMarkSweepGC"
+
+# To enable remote debugging uncomment the following line.
+# You will then be able to use a java debugger on port 8000.
+#JAVA_OPTS="${JAVA_OPTS} -Xdebug -Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=n"
+
+# Java compiler to use for translating JavaServer Pages (JSPs). You can use all
+# compilers that are accepted by Ant's build.compiler property.
+#JSP_COMPILER=javac
+
+# Use the Java security manager? (yes/no, default: no)
+#TOMCAT8_SECURITY=no
+
+# Number of days to keep logfiles in /var/log/tomcat8. Default is 14 days.
+#LOGFILE_DAYS=14
+# Whether to compress logfiles older than today's
+#LOGFILE_COMPRESS=1
+
+# Location of the JVM temporary directory
+# WARNING: This directory will be destroyed and recreated at every startup !
+#JVM_TMP=/tmp/tomcat8-temp
+
+# If you run Tomcat on port numbers that are all higher than 1023, then you
+# do not need authbind.  It is used for binding Tomcat to lower port numbers.
+# (yes/no, default: no)
+#AUTHBIND=no
