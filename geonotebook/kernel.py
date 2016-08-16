@@ -302,7 +302,8 @@ class Geonotebook(object):
     def rpc_error(self, error):
         self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
 
-    ### RPC endpoints ###
+
+    ### Remote RPC wrappers ###
 
     def set_center(self, x, y, z):
 
@@ -312,6 +313,14 @@ class Geonotebook(object):
         cb = self._remote.set_center(x, y, z).then(_set_center, self.rpc_error)
         return cb
 
+    def create_wms_layer(self, base_url, layer_name):
+        # Note that currently create_wms_layer doesn't return anything
+        # meaningful so we just stub out the .then() call.
+        cb = self._remote.create_wms_layer(base_url, layer_name).then(
+            lambda msg: None, lambda msg: None)
+        return cb
+
+    ### RPC endpoints ###
 
     def set_region(self, ulx, uly, lrx, lry):
         if ulx == lrx and uly == lry:

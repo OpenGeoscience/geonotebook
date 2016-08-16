@@ -78,6 +78,10 @@
           dest: /usr/share/tomcat8/bin/setenv.sh
           group: root
           mode: '0755'
+        - src: conf/web.xml.j2
+          dest: /etc/tomcat8/web.xml
+          mode: '0744'
+
 
 
     # Note:  we probably want to install native JAI and ImageIO extenstions:

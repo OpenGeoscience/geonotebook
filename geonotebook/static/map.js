@@ -48,7 +48,7 @@ define(
         };
 
 
-        Map.prototype.msg_types = ["get_protocol", "set_center", "_debug"];
+        Map.prototype.msg_types = ["get_protocol", "set_center", "_debug", "create_wms_layer"];
 
         Map.prototype._debug = function(msg){
             console.log(msg);
@@ -89,6 +89,52 @@ define(
             return [x, y, z];
         };
 
+
+        Map.prototype.create_wms_layer = function(base_url, layer_name){
+
+            var projection = 'EPSG:3785';
+
+            var wms = this.geojsmap.createLayer('osm', {
+                keepLower: false,
+                attribution: null
+            });
+
+
+             wms.url(function (x, y, zoom) {
+
+                 var bb = wms.gcsTileBounds({
+                     x: x,
+                     y: y,
+                     level: zoom
+                 }, projection);
+
+                 var bbox_mercator = bb.left + ',' + bb.bottom + ',' +
+                         bb.right + ',' + bb.top;
+
+
+                 var params = {
+                     'SERVICE': 'WMS',
+                     'VERSION': '1.3.0',
+                     'REQUEST': 'GetMap',
+                     'LAYERS': layer_name, // US Elevation
+                     'STYLES': '',
+                     'BBOX': bbox_mercator,
+                     'WIDTH': 256, //Use 256x256 tiles
+                     'HEIGHT': 256,
+                     'FORMAT': 'image/png',
+                     'TRANSPARENT': true,
+                     'SRS': projection,
+                     'TILED': true
+                     // TODO: What if anythin should be in SLD_BODY?
+                     //'SLD_BODY': sld
+                 };
+
+                 return base_url + '?' + $.param(params);
+             });
+
+            return wms;
+
+        };
 
         return Map;
     });
