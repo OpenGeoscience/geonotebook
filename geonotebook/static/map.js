@@ -92,16 +92,19 @@ define(
         };
 
 
+        Map.prototype.get_layer = function(layer_name){
+            return _.find(this.geojsmap.layers(),
+                          function(l){ return l.name() == layer_name; });
+        };
+
         Map.prototype.remove_wms_layer = function(layer_name) {
-            this.geojsmap.deleteLayer(
-                _.find(this.geojsmap.layers(),
-                       function(l){ return l.name() == 'rgb'; }));
+            this.geojsmap.deleteLayer(this.get_layer(layer_name));
             return layer_name;
         };
 
         Map.prototype.add_wms_layer = function(layer_name, base_url){
 
-            var projection = 'EPSG:3785';
+            var projection = 'EPSG:3857';
 
             var wms = this.geojsmap.createLayer('osm', {
                 keepLower: false,
@@ -109,6 +112,7 @@ define(
             });
 
             wms.name(layer_name);
+            wms.opacity(0.9);
 
             wms.url(function (x, y, zoom) {
 
@@ -129,8 +133,8 @@ define(
                      'LAYERS': layer_name, // US Elevation
                      'STYLES': '',
                      'BBOX': bbox_mercator,
-                     'WIDTH': 256, //Use 256x256 tiles
-                     'HEIGHT': 256,
+                     'WIDTH': 512,
+                     'HEIGHT': 512,
                      'FORMAT': 'image/png',
                      'TRANSPARENT': true,
                      'SRS': projection,
