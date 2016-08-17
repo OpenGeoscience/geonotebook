@@ -20,7 +20,8 @@ define(
                                      height: $("#geonotebook-map").height()
                                     });
 
-            this.geojsmap.createLayer('osm');
+            var osm = this.geojsmap.createLayer('osm');
+            osm.name('osm_base');
 
             this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
 
@@ -48,7 +49,8 @@ define(
         };
 
 
-        Map.prototype.msg_types = ["get_protocol", "set_center", "_debug", "create_wms_layer"];
+        Map.prototype.msg_types = ["get_protocol", "set_center", "_debug",
+                                   "add_wms_layer", "remove_wms_layer"];
 
         Map.prototype._debug = function(msg){
             console.log(msg);
@@ -90,7 +92,14 @@ define(
         };
 
 
-        Map.prototype.create_wms_layer = function(base_url, layer_name){
+        Map.prototype.remove_wms_layer = function(layer_name) {
+            this.geojsmap.deleteLayer(
+                _.find(this.geojsmap.layers(),
+                       function(l){ return l.name() == 'rgb'; }));
+            return layer_name;
+        };
+
+        Map.prototype.add_wms_layer = function(layer_name, base_url){
 
             var projection = 'EPSG:3785';
 
@@ -99,8 +108,9 @@ define(
                 attribution: null
             });
 
+            wms.name(layer_name);
 
-             wms.url(function (x, y, zoom) {
+            wms.url(function (x, y, zoom) {
 
                  var bb = wms.gcsTileBounds({
                      x: x,
@@ -132,7 +142,7 @@ define(
                  return base_url + '?' + $.param(params);
              });
 
-            return wms;
+            return layer_name;
 
         };
 

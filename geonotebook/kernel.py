@@ -11,6 +11,8 @@ from jsonrpc import (json_rpc_request,
                      json_rpc_result,
                      is_response,
                      is_request)
+from layers import GeonotebookStack, GeonotebookLayer
+
 
 from collections import namedtuple
 
@@ -294,10 +296,16 @@ class Geonotebook(object):
         self.x = None
         self.y = None
         self.z = None
+        self.layers = GeonotebookStack([
+            GeonotebookLayer("osm_base")
+        ])
 
         self._kernel = kernel
 
         self._callbacks = {}
+
+
+
 
     def rpc_error(self, error):
         self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
@@ -313,12 +321,30 @@ class Geonotebook(object):
         cb = self._remote.set_center(x, y, z).then(_set_center, self.rpc_error)
         return cb
 
-    def create_wms_layer(self, base_url, layer_name):
-        # Note that currently create_wms_layer doesn't return anything
+    def add_wms_layer(self,  layer_name, base_url):
+        # Note that currently add_wms_layer doesn't return anything
         # meaningful so we just stub out the .then() call.
-        cb = self._remote.create_wms_layer(base_url, layer_name).then(
-            lambda msg: None, lambda msg: None)
+
+        # TODO verify layer exists in geoserver?
+
+        def _add_wms_layer(layer_name):
+            self.layers.append(GeonotebookLayer(layer_name))
+
+        cb = self._remote.add_wms_layer(layer_name, base_url).then(
+            _add_wms_layer, self.rpc_error)
+
         return cb
+
+    def remove_wms_layer(self, layer_name):
+
+        def _remove_layer(layer_name):
+            self.layers.remove(layer_name)
+
+        cb = self._remote.remove_wms_layer(layer_name).then(
+            _remove_layer, self.rpc_error)
+
+        return cb
+
 
     ### RPC endpoints ###
 
