@@ -177,18 +177,17 @@ define(
         };
 
         Geonotebook.prototype.load_ipython_extension = function(){
-            this.map = new Map(this);
-            this.register_events(Jupyter, events);
+            if (Jupyter.kernelselector.current_selection == "geonotebook2") {
+                this.map = new Map(this);
+                this.register_events(Jupyter, events);
 
-            this.init_html_and_css();
+                this.init_html_and_css();
 
 
-
-
-            // Expose globablly for debugging purposes
-            Jupyter.map = this.map;
-            console.log("DEBUG: loaded geonotebook");
-
+                // Expose globablly for debugging purposes
+                Jupyter.map = this.map;
+                console.log("DEBUG: loaded geonotebook");
+            }
         };
 
         return new Geonotebook();
