@@ -20,9 +20,6 @@ define(
                                      height: $("#geonotebook-map").height()
                                     });
 
-            var osm = this.geojsmap.createLayer('osm');
-            osm.name('osm_base');
-
             this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
 
         };
@@ -50,7 +47,7 @@ define(
 
 
         Map.prototype.msg_types = ["get_protocol", "set_center", "_debug",
-                                   "add_wms_layer", "remove_wms_layer"];
+                                   "add_wms_layer", "add_osm_layer", "remove_layer"];
 
         Map.prototype._debug = function(msg){
             console.log(msg);
@@ -97,9 +94,19 @@ define(
                           function(l){ return l.name() == layer_name; });
         };
 
-        Map.prototype.remove_wms_layer = function(layer_name) {
+        Map.prototype.remove_layer = function(layer_name) {
             this.geojsmap.deleteLayer(this.get_layer(layer_name));
             return layer_name;
+        };
+
+
+        Map.prototype.add_osm_layer = function(layer_name, url){
+            var osm = this.geojsmap.createLayer('osm');
+
+            osm.name(layer_name);
+            osm.url = url;
+
+            return layer_name
         };
 
         Map.prototype.add_wms_layer = function(layer_name, base_url){

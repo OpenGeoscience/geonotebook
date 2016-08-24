@@ -1,5 +1,6 @@
 from ipykernel.ipkernel import IPythonKernel
 import logging
+import os
 from logging.handlers import SysLogHandler
 
 from inspect import getmembers, ismethod, getargspec
@@ -296,9 +297,7 @@ class Geonotebook(object):
         self.x = None
         self.y = None
         self.z = None
-        self.layers = GeonotebookStack([
-            GeonotebookLayer("osm_base")
-        ])
+        self.layers = GeonotebookStack([])
 
         self._kernel = kernel
 
@@ -321,26 +320,36 @@ class Geonotebook(object):
         cb = self._remote.set_center(x, y, z).then(_set_center, self.rpc_error)
         return cb
 
-    def add_wms_layer(self,  layer_name, base_url):
-        # Note that currently add_wms_layer doesn't return anything
-        # meaningful so we just stub out the .then() call.
 
+
+    def add_layer(self, data_path, name=None, vis_url=None, layer_type='wms'):
         # TODO verify layer exists in geoserver?
+        if name is None:
+            name = os.path.splitext(os.path.basename(data_path))[0]
 
-        def _add_wms_layer(layer_name):
-            self.layers.append(GeonotebookLayer(layer_name))
+        layer = GeonotebookLayer(name, data_path=data_path, vis_url=vis_url)
 
-        cb = self._remote.add_wms_layer(layer_name, base_url).then(
-            _add_wms_layer, self.rpc_error)
+        def _add_layer(layer_name):
+            self.layers.append(layer)
+
+        if layer_type == 'wms':
+            cb = self._remote.add_wms_layer(name, layer.vis_url).then(
+                _add_layer, self.rpc_error)
+        elif layer_type == 'osm':
+            cb = self._remote.add_osm_layer(name, layer.vis_url).then(
+                _add_layer, self.rpc_error)
+        else:
+            # Exception?
+            pass
 
         return cb
 
-    def remove_wms_layer(self, layer_name):
+    def remove_layer(self, layer_name):
 
         def _remove_layer(layer_name):
             self.layers.remove(layer_name)
 
-        cb = self._remote.remove_wms_layer(layer_name).then(
+        cb = self._remote.remove_layer(layer_name).then(
             _remove_layer, self.rpc_error)
 
         return cb
@@ -420,6 +429,10 @@ class GeonotebookKernel(IPythonKernel):
             "data": self.geonotebook.get_protocol()
         })
 
+        # THis should be handled in a callback that is fired off
+        # When set protocol etc is complete.
+        self.geonotebook.add_layer(None, name="osm_base", layer_type="osm",
+                                   vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
 
     def do_shutdown(self, restart):
         self.geonotebook = None;
