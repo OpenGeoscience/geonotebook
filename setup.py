@@ -14,7 +14,8 @@ setup(
     author='Kitware Inc',
     author_email='chris.kotfila@kitware.com',
     license='Apache License 2.0',
-    packages=find_packages(exclude=['contrib', 'docs', 'tests'])
+    packages=find_packages(exclude=['contrib', 'docs', 'tests']),
+    data_files=[('config', ['geonotebook.ini'])]
 
 )
 

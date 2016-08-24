@@ -1,10 +1,23 @@
+from config import Config
+
 class GeonotebookLayer(object):
-    def __init__(self, name):
+    def __init__(self, name, vis_url=None, data_path=None):
+        self.config = Config()
         self.name = name
+
+        assert vis_url is not None and data_path is not None, \
+            "Must pass in vis_url or data_path to {}".format(
+                self.__class__.__name__)
+
+        if data_path is not None and vis_url is None:
+            self.vis_url = self.config.vis_server.process(self.data_path)
+
+        self.data_path = data_path
 
     def __repr__(self):
         return "<{}('{}')>".format(
             self.__class__.__name__, self.name)
+
 
 # TODO: support slices other list functionality etc
 class GeonotebookStack(object):
