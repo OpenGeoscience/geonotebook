@@ -12,12 +12,12 @@ from jsonrpc import (json_rpc_request,
                      json_rpc_result,
                      is_response,
                      is_request)
-from layers import GeonotebookStack, GeonotebookLayer
+from layers import GeonotebookStack, GeonotebookLayer, BBox
 
 
-from collections import namedtuple
 
-BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
+
+
 
 
 class ReplyCallback(object):
@@ -327,6 +327,10 @@ class Geonotebook(object):
         if name is None:
             name = os.path.splitext(os.path.basename(data_path))[0]
 
+        # Create the GeonotebookLayer -  if vis_url is none,  this will take
+        # data_path and upload it to the configured vis_server,  this will make
+        # the visualization url available through the 'vis_url' attribute
+        # on the layer object.
         layer = GeonotebookLayer(name, data_path=data_path, vis_url=vis_url)
 
         def _add_layer(layer_name):
@@ -361,8 +365,11 @@ class Geonotebook(object):
         if ulx == lrx and uly == lry:
             raise jsonrpc.InvalidParams("Bounding box values cannot be the same!")
 
-
         self.region = BBox(ulx, uly, lrx, lry)
+
+        for l in self.layers:
+            l.region = BBox(ulx, uly, lrx, lry)
+
         return ulx, uly, lrx, lry
 
     def get_protocol(self):

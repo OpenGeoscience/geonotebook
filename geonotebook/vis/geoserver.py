@@ -56,15 +56,16 @@ class Geoserver(object):
 
         # Tweak some properties
         current = self.c.get("/workspaces/test/coveragestores/rgb/coverages/rgb.json").json()
-        current['coverage']['dimensions']['coverageDimension'][0]['nullValues']['double'][0] = 0.0
-        current['coverage']['dimensions']['coverageDimension'][0]['range']['min'] = 1
-        current['coverage']['dimensions']['coverageDimension'][0]['range']['max'] = 255
-        current['coverage']['dimensions']['coverageDimension'][1]['nullValues']['double'][0] = 0.0
-        current['coverage']['dimensions']['coverageDimension'][1]['range']['min'] = 1
-        current['coverage']['dimensions']['coverageDimension'][1]['range']['max'] = 255
-        current['coverage']['dimensions']['coverageDimension'][2]['nullValues']['double'][0] = 0.0
-        current['coverage']['dimensions']['coverageDimension'][2]['range']['min'] = 1
-        current['coverage']['dimensions']['coverageDimension'][2]['range']['max'] = 255
+
+        current['coverage']['dimensions']['coverageDimension'][0]['nullValues']['double'][0] = -32768
+        current['coverage']['dimensions']['coverageDimension'][0]['range']['min'] = 0
+        current['coverage']['dimensions']['coverageDimension'][0]['range']['max'] = 0.4
+        current['coverage']['dimensions']['coverageDimension'][1]['nullValues']['double'][0] = -32768
+        current['coverage']['dimensions']['coverageDimension'][1]['range']['min'] = 0
+        current['coverage']['dimensions']['coverageDimension'][1]['range']['max'] = 0.4
+        current['coverage']['dimensions']['coverageDimension'][2]['nullValues']['double'][0] = -32768
+        current['coverage']['dimensions']['coverageDimension'][2]['range']['min'] = 0
+        current['coverage']['dimensions']['coverageDimension'][2]['range']['max'] = 0.4
 
         self.c.put("/workspaces/test/coveragestores/rgb/coverages/rgb.json", json=current)
 

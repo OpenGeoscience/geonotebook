@@ -1,4 +1,9 @@
 from config import Config
+from collections import namedtuple
+import rasterio
+import numpy as np
+
+BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
 class GeonotebookLayer(object):
     def __init__(self, name, vis_url=None, data_path=None):
@@ -6,6 +11,7 @@ class GeonotebookLayer(object):
         self.name = name
         self.vis_url = vis_url
         self.data_path = data_path
+        self._region = None
 
         assert vis_url is not None or data_path is not None, \
             "Must pass in vis_url or data_path to {}".format(
@@ -13,6 +19,29 @@ class GeonotebookLayer(object):
 
         if data_path is not None and vis_url is None:
             self.vis_url = self.config.vis_server.process(self.data_path, name=self.name)
+
+    @property
+    def region(self):
+        if self._region is None:
+            return None
+
+        with rasterio.open(self.data_path) as dataset:
+            (ulx, uly), (lrx, lry) = dataset.index(self._region.ulx, self._region.uly), \
+                dataset.index(self._region.lrx, self._region.lry)
+
+            if dataset.count == 1:
+                return dataset.read(1, window=((ulx, lrx), (uly, lry)))
+            else:
+                return np.stack(dataset.read(
+                    window=((ulx, lrx), (uly, lry))), axis=2)
+
+
+    @region.setter
+    def region(self, value):
+        assert isinstance(value, BBox), \
+            "Region must be set to a value of type BBox"
+
+        self._region = value
 
     def __repr__(self):
         return "<{}('{}')>".format(
