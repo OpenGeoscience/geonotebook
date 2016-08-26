@@ -5,35 +5,39 @@ import numpy as np
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
+# Note:  GeonotebookLayers must support instances where data is
+#        None. This allows us to use a consistent interface for things
+#        like the OSM base layer,  or more generally for tile server URLs
+#        that don't have any (accessible) data associated with them.
 class GeonotebookLayer(object):
-    def __init__(self, name, vis_url=None, data_path=None):
+    def __init__(self, name, vis_url=None, data=None):
         self.config = Config()
         self.name = name
         self.vis_url = vis_url
-        self.data_path = data_path
+        self.data = data
         self._region = None
 
-        assert vis_url is not None or data_path is not None, \
-            "Must pass in vis_url or data_path to {}".format(
+        assert vis_url is not None or data is not None, \
+            "Must pass in vis_url or data to {}".format(
                 self.__class__.__name__)
 
-        if data_path is not None and vis_url is None:
-            self.vis_url = self.config.vis_server.process(self.data_path, name=self.name)
+        if data is not None and vis_url is None:
+            self.vis_url = self.config.vis_server.process(
+                self.data, name=self.name)
 
     @property
     def region(self):
-        if self._region is None:
+        if self.data is None:
             return None
 
-        with rasterio.open(self.data_path) as dataset:
-            (ulx, uly), (lrx, lry) = dataset.index(self._region.ulx, self._region.uly), \
-                dataset.index(self._region.lrx, self._region.lry)
+        (ulx, uly), (lrx, lry) = self.data.index(self._region.ulx, self._region.uly), \
+            self.data.index(self._region.lrx, self._region.lry)
 
-            if dataset.count == 1:
-                return dataset.read(1, window=((ulx, lrx), (uly, lry)))
-            else:
-                return np.stack(dataset.read(
-                    window=((ulx, lrx), (uly, lry))), axis=2)
+        if self.data.count == 1:
+            return self.data.read(1, window=((ulx, lrx), (uly, lry)))
+        else:
+            return np.stack(self.data.read(
+                window=((ulx, lrx), (uly, lry))), axis=2)
 
 
     @region.setter
@@ -47,6 +51,11 @@ class GeonotebookLayer(object):
         return "<{}('{}')>".format(
             self.__class__.__name__, self.name)
 
+# GeonotebookStack supports dict-like indexing on a list
+# of Geonotebook Layers. We could implement this with an
+# OrderedDict,  but i think we are eventually going to want
+# to support re-ordering,  potentially serializing etc so it
+# Seems like putting it in its own class is best for now.
 
 # TODO: support slices other list functionality etc
 class GeonotebookStack(object):

@@ -35,19 +35,19 @@ class Geoserver(object):
         self.base_url = url
         self.c = Client(self.base_url + "/rest", username=username, password=password)
 
-    def process(self, data_path, name=None):
+    def process(self, data, name=None):
         # Should pull workspace from config probably
         workspace = 'test'
 
         if name is None:
-            name = os.path.splitext(os.path.basename(data_path))[0]
+            name = os.path.splitext(os.path.basename(data.path))[0]
 
         # Create the workspace
         self.c.post("/workspaces.json",
                     json={'workspace': {'name': workspace}})
 
         # Upload the file and convert it to a coveragestore etc
-        with open(data_path, 'rb') as fh:
+        with open(data.path, 'rb') as fh:
             self.c.put("/workspaces/{}/coveragestores/{}/file.geotiff".format(workspace, name),
                        params={"coverageName": name,
                                "configure": "all"},
