@@ -28,27 +28,27 @@ class Client(object):
 
 class Geoserver(object):
 
-    def __init__(self, url=None, username="admin", password="geoserver"):
+    def __init__(self, url=None, username="admin",
+                 password="geoserver", workspace="test"):
         assert url is not None, \
             "Must pass in a URL to Geoserver instance!"
-
+        self.workspace = workspace
         self.base_url = url
-        self.c = Client(self.base_url + "/rest", username=username, password=password)
+        self.c = Client(self.base_url + "/rest", username=username,
+                        password=password)
 
     def process(self, data, name=None):
-        # Should pull workspace from config probably
-        workspace = 'test'
 
         if name is None:
             name = os.path.splitext(os.path.basename(data.path))[0]
 
         # Create the workspace
         self.c.post("/workspaces.json",
-                    json={'workspace': {'name': workspace}})
+                    json={'workspace': {'name': self.workspace}})
 
         # Upload the file and convert it to a coveragestore etc
         with open(data.path, 'rb') as fh:
-            self.c.put("/workspaces/{}/coveragestores/{}/file.geotiff".format(workspace, name),
+            self.c.put("/workspaces/{}/coveragestores/{}/file.geotiff".format(self.workspace, name),
                        params={"coverageName": name,
                                "configure": "all"},
                        headers={"Content-type": "image/tiff"},
