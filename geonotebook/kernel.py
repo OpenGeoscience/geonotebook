@@ -322,7 +322,8 @@ class Geonotebook(object):
 
 
 
-    def add_layer(self, data, name=None, vis_url=None, layer_type='wms'):
+    def add_layer(self, data, name=None, vis_url=None, layer_type='wms',
+                  **kwargs):
         # TODO verify layer exists in geoserver?
         if name is None and data is not None:
             name = os.path.splitext(os.path.basename(data.path))[0]
@@ -331,17 +332,19 @@ class Geonotebook(object):
         # data_path and upload it to the configured vis_server,  this will make
         # the visualization url available through the 'vis_url' attribute
         # on the layer object.
-        layer = GeonotebookLayer(name, data=data, vis_url=vis_url)
+        layer = GeonotebookLayer(name, data=data, vis_url=vis_url, **kwargs)
 
         def _add_layer(layer_name):
             self.layers.append(layer)
 
+        # These should be managed by some kind of handler to allow for
+        # additional types to be added more easily
         if layer_type == 'wms':
-            cb = self._remote.add_wms_layer(name, layer.vis_url).then(
-                _add_layer, self.rpc_error)
+            cb = self._remote.add_wms_layer(name, layer.vis_url, layer.params)\
+                .then(_add_layer, self.rpc_error)
         elif layer_type == 'osm':
-            cb = self._remote.add_osm_layer(name, layer.vis_url).then(
-                _add_layer, self.rpc_error)
+            cb = self._remote.add_osm_layer(name, layer.vis_url)\
+                .then(_add_layer, self.rpc_error)
         else:
             # Exception?
             pass

@@ -74,6 +74,18 @@ class Geoserver(object):
         else:
             return {}
 
+    # get_params should take a generic list of paramaters e.g. 'bands',
+    # 'range', 'gamma' and convert these into a list of vis_server specific
+    # paramaters which will be passed along to the tile render handler in
+    # add_layer. This is intended to allow the vis_server to include style
+    # paramaters and subsetting operations. select bands, set ranges
+    # on a particular dataset etc.
+    def get_params(self, **kwargs):
+
+        # TODO: switch out kwargs for actual API
+        # TODO: Fill in here with SDL stuff
+
+        return kwargs
 
 
     def _process_raster(self, name, data):
@@ -111,10 +123,11 @@ class Geoserver(object):
     # The purpose of the 'ingest' endpoint is to get a file (e.g. as
     # represented by a RasterData object) and move it into whatever
     # system is going to actually render tiles.  It should not rely on
-    # any subsetting info - it is not designed, for instance, to make
+    # any subsetting or style info - it is not designed, for instance, to make
     # specific bands available on the tile server, it is about (as needed)
     # transfering bytes from a source location (data.path) to a destination
-    # Defined as apart of the vis_server config
+    # Defined as apart of the vis_server config along with any metadata
+    # Needed to geospatially reference the data on the remote system
     def ingest(self, data, name=None):
 
         if name is None:

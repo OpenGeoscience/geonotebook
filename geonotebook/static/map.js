@@ -109,7 +109,7 @@ define(
             return layer_name
         };
 
-        Map.prototype.add_wms_layer = function(layer_name, base_url){
+        Map.prototype.add_wms_layer = function(layer_name, base_url, params){
 
             var projection = 'EPSG:3857';
 

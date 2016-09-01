@@ -10,7 +10,7 @@ BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 #        like the OSM base layer,  or more generally for tile server URLs
 #        that don't have any (accessible) data associated with them.
 class GeonotebookLayer(object):
-    def __init__(self, name, vis_url=None, data=None):
+    def __init__(self, name, vis_url=None, data=None, **kwargs):
         self.config = Config()
         self.name = name
         self.vis_url = vis_url
@@ -24,6 +24,8 @@ class GeonotebookLayer(object):
         if data is not None and vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
                 self.data, name=self.name)
+
+        self.params = self.config.vis_server.get_params(**kwargs)
 
     @property
     def region(self):
