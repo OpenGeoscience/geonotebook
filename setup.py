@@ -15,7 +15,17 @@ setup(
     author_email='chris.kotfila@kitware.com',
     license='Apache License 2.0',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    data_files=[('config', ['geonotebook.ini'])]
+    data_files=[('config', ['geonotebook.ini'])],
+    entry_points={
+        'geonotebook.wrappers.raster': [
+            'geotiff = geonotebook.wrappers.image:GeoTiffImage',
+            'tiff = geonotebook.wrappers.image:GeoTiffImage',
+            'tif = geonotebook.wrappers.image:GeoTiffImage'
+        ]
+
+    }
+
+
 
 )
 
