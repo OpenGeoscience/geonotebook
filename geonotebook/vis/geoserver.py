@@ -1,3 +1,4 @@
+from geonotebook.wrappers import RasterData
 import requests
 import os
 
@@ -8,7 +9,10 @@ class Client(object):
 
     def _proxy(self, method, uri, *args, **kwargs):
         kwargs.update(self.auth)
-        return method(self.base_url + uri, *args, **kwargs)
+        if uri.startswith("http"):
+            return method(uri, *args, **kwargs)
+        else:
+            return method(self.base_url + uri, *args, **kwargs)
 
     def get(self, *args, **kwargs):
         return self._proxy(requests.get, *args, **kwargs)
@@ -37,36 +41,100 @@ class Geoserver(object):
         self.c = Client(self.base_url + "/rest", username=username,
                         password=password)
 
-    def process(self, data, name=None):
+    @property
+    def coverage_stores(self):
+        r = self.c.get("/workspaces/{}/coveragestores.json".format(self.workspace))
+
+        if r.status_code == 200:
+            try:
+                # probably need better error checking here
+                cs = r.json()['coverageStores']['coverageStore']
+            except Exception:
+                cs = []
+
+            return {store['name']: store['href'] for store in cs}
+        else:
+            return None
+
+    def coverages(self, store):
+
+        if store in self.coverage_stores:
+            uri = "/workspaces/{}/coveragestores/{}/coverages.json"
+            r = self.c.get(uri.format(self.workspace, store))
+
+            if r.status_code == 200:
+                try:
+                    coverages = r.json()['coverages']['coverage']
+                except Exception:
+                    coverages = []
+
+                return {c['name']: c['href'] for c in coverages}
+            else:
+                return {}
+        else:
+            return {}
+
+
+
+    def _process_raster(self, name, data):
+        # Note: coverage stores and coverages currently
+        # always have the same name
+        coverages = self.coverages(name)
+
+        if name not in coverages:
+            # Upload the file and convert it to a coveragestore etc
+            with open(data.path, 'rb') as fh:
+                uri = "/workspaces/{}/coveragestores/{}/file.geotiff"
+                self.c.put(uri.format(self.workspace, name),
+                           params={"coverageName": name,
+                                   "configure": "all"},
+                           headers={"Content-type": "image/tiff"},
+                           data=fh)
+
+# This code path could be used to tweak raster properties once it was uploaded
+# Curently we don't need to do this,  but i'm keeping it here for reference
+#             r = self.c.get(self.coverages[name])
+#         else:
+#             r = self.c.get(coverages[name])
+#
+#         if r.status_code == 200:
+#             current = r.json()
+#             # TWEAK PROPERTIES HERE
+
+#             self.c.put(coverages[name], json=current)
+#         else:
+#             # Raise exception
+#             pass
+
+        return self.base_url + "/ows"
+
+    # The purpose of the 'ingest' endpoint is to get a file (e.g. as
+    # represented by a RasterData object) and move it into whatever
+    # system is going to actually render tiles.  It should not rely on
+    # any subsetting info - it is not designed, for instance, to make
+    # specific bands available on the tile server, it is about (as needed)
+    # transfering bytes from a source location (data.path) to a destination
+    # Defined as apart of the vis_server config
+    def ingest(self, data, name=None):
 
         if name is None:
             name = os.path.splitext(os.path.basename(data.path))[0]
 
         # Create the workspace
-        self.c.post("/workspaces.json",
-                    json={'workspace': {'name': self.workspace}})
 
-        # Upload the file and convert it to a coveragestore etc
-        with open(data.path, 'rb') as fh:
-            self.c.put("/workspaces/{}/coveragestores/{}/file.geotiff".format(self.workspace, name),
-                       params={"coverageName": name,
-                               "configure": "all"},
-                       headers={"Content-type": "image/tiff"},
-                       data=fh)
+        r = self.c.post("/workspaces.json",
+                        json={'workspace': {'name': self.workspace}})
 
-        # Tweak some properties
-        current = self.c.get("/workspaces/test/coveragestores/rgb/coverages/rgb.json").json()
+        if r.status_code != 201:
+            # Log warning?
+            pass
 
-        current['coverage']['dimensions']['coverageDimension'][0]['nullValues']['double'][0] = -32768
-        current['coverage']['dimensions']['coverageDimension'][0]['range']['min'] = 0
-        current['coverage']['dimensions']['coverageDimension'][0]['range']['max'] = 0.4
-        current['coverage']['dimensions']['coverageDimension'][1]['nullValues']['double'][0] = -32768
-        current['coverage']['dimensions']['coverageDimension'][1]['range']['min'] = 0
-        current['coverage']['dimensions']['coverageDimension'][1]['range']['max'] = 0.4
-        current['coverage']['dimensions']['coverageDimension'][2]['nullValues']['double'][0] = -32768
-        current['coverage']['dimensions']['coverageDimension'][2]['range']['min'] = 0
-        current['coverage']['dimensions']['coverageDimension'][2]['range']['max'] = 0.4
+        if isinstance(data, RasterData):
+            return self._process_raster(name, data)
 
-        self.c.put("/workspaces/test/coveragestores/rgb/coverages/rgb.json", json=current)
+        # elif isinstance(data, VectorData):
+        #     pass
 
-        return self.base_url + "/ows"
+        else:
+            # Raise Error
+            pass

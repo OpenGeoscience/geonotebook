@@ -22,7 +22,7 @@ class GeonotebookLayer(object):
                 self.__class__.__name__)
 
         if data is not None and vis_url is None:
-            self.vis_url = self.config.vis_server.process(
+            self.vis_url = self.config.vis_server.ingest(
                 self.data, name=self.name)
 
     @property
