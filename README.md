@@ -6,7 +6,7 @@ cd geonotebook
 Make a virtualenv and install ```jupyter[notebook]``` and development install geonotebook
 ```bash
 mkvirtualenv -a . geonotebook
-pip install "jupyter[notebook]"
+pip install -r requirements.txt
 
 pip install -e .
 ```
