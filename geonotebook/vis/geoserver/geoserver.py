@@ -1,4 +1,5 @@
 from geonotebook.wrappers import RasterData
+from sld import get_single_band_raster_sld, get_multiband_raster_sld
 import requests
 import os
 
@@ -80,12 +81,22 @@ class Geoserver(object):
     # add_layer. This is intended to allow the vis_server to include style
     # paramaters and subsetting operations. select bands, set ranges
     # on a particular dataset etc.
-    def get_params(self, **kwargs):
+    def get_params(self, name, data, bands=(1, 2, 3),
+                   range=(0, 1), gamma=1.0, opacity=1.0, **kwargs):
 
-        # TODO: switch out kwargs for actual API
-        # TODO: Fill in here with SDL stuff
+        name = "{}:{}".format(self.workspace, name)
 
-        return kwargs
+        if isinstance(bands, int):
+            # TODO: Generate default color map
+            sld_body = get_single_band_raster_sld(
+                name, bands, opacity=opacity, **kwargs)
+        else:
+            # TODO: Get default min/max to set up corrent ranges
+            sld_body = get_multiband_raster_sld(
+                name, bands=bands, range=range, opacity=opacity,
+                gamma=gamma, **kwargs)
+
+        return {"SLD_BODY": sld_body}
 
 
     def _process_raster(self, name, data):

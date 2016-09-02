@@ -25,7 +25,8 @@ class GeonotebookLayer(object):
             self.vis_url = self.config.vis_server.ingest(
                 self.data, name=self.name)
 
-        self.params = self.config.vis_server.get_params(**kwargs)
+        self.params = self.config.vis_server.get_params(
+            self.name, data, **kwargs)
 
     @property
     def region(self):
