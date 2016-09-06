@@ -1,4 +1,4 @@
-from geonotebook.wrappers import RasterData
+from geonotebook.wrappers import BandCollection, Band, RasterData
 from sld import get_single_band_raster_sld, get_multiband_raster_sld
 import requests
 import os
@@ -84,18 +84,16 @@ class Geoserver(object):
     def get_params(self, name, band_collection, **kwargs):
         if band_collection is not None:
             name = "{}:{}".format(self.workspace, name)
+            options = {}
+            if isinstance(band_collection, Band):
+                options['band'] = band_collection.index
 
-            options = {
-                'bands': band_collection.indexes
-            }
-
-            if len(band_collection) == 1:
                 # TODO: Generate default color map
 
                 options.update(kwargs)
                 sld_body = get_single_band_raster_sld(name, **options)
             else:
-
+                options['bands'] = band_collection.indexes
                 options['range'] = zip(band_collection.min, band_collection.max)
 
                 options.update(kwargs)
