@@ -69,6 +69,7 @@ def get_multiband_raster_sld(
         range=(0, 1), gamma=1.0, opacity=1.0,
         channelNames=("RedChannel", "GreenChannel", "BlueChannel")):
 
+
     # Make sure range is a list of ranges - this test
     # is buggy and should be fixed.
     if not all(isinstance(e, list) or isinstance(e, tuple)

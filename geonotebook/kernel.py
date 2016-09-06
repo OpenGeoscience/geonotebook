@@ -14,7 +14,7 @@ from jsonrpc import (json_rpc_request,
                      is_request)
 from layers import GeonotebookStack, GeonotebookLayer, BBox
 
-
+from wrappers import RasterData, BandCollection
 
 
 
@@ -322,17 +322,23 @@ class Geonotebook(object):
 
 
 
-    def add_layer(self, data, name=None, vis_url=None, layer_type='wms',
+    def add_layer(self, band_collection, name=None, vis_url=None, layer_type='wms',
                   **kwargs):
+
+        if isinstance(band_collection, RasterData):
+            band_collection = band_collection.bands
+
+
         # TODO verify layer exists in geoserver?
-        if name is None and data is not None:
-            name = os.path.splitext(os.path.basename(data.path))[0]
+        if name is None and band_collection is not None:
+            name = os.path.splitext(os.path.basename(band_collection.data.path))[0]
 
         # Create the GeonotebookLayer -  if vis_url is none,  this will take
         # data_path and upload it to the configured vis_server,  this will make
         # the visualization url available through the 'vis_url' attribute
         # on the layer object.
-        layer = GeonotebookLayer(name, data=data, vis_url=vis_url, **kwargs)
+        layer = GeonotebookLayer(name, band_collection=band_collection,
+                                 vis_url=vis_url, **kwargs)
 
         def _add_layer(layer_name):
             self.layers.append(layer)

@@ -81,22 +81,30 @@ class Geoserver(object):
     # add_layer. This is intended to allow the vis_server to include style
     # paramaters and subsetting operations. select bands, set ranges
     # on a particular dataset etc.
-    def get_params(self, name, data, bands=(1, 2, 3),
-                   range=(0, 1), gamma=1.0, opacity=1.0, **kwargs):
+    def get_params(self, name, band_collection, **kwargs):
+        if band_collection is not None:
+            name = "{}:{}".format(self.workspace, name)
 
-        name = "{}:{}".format(self.workspace, name)
+            options = {
+                'bands': band_collection.indexes
+            }
 
-        if isinstance(bands, int):
-            # TODO: Generate default color map
-            sld_body = get_single_band_raster_sld(
-                name, bands, opacity=opacity, **kwargs)
+            if len(band_collection) == 1:
+                # TODO: Generate default color map
+
+                options.update(kwargs)
+                sld_body = get_single_band_raster_sld(name, **options)
+            else:
+
+                options['range'] = zip(band_collection.min, band_collection.max)
+
+                options.update(kwargs)
+
+                sld_body = get_multiband_raster_sld(name, **options)
+
+            return {"SLD_BODY": sld_body}
         else:
-            # TODO: Get default min/max to set up corrent ranges
-            sld_body = get_multiband_raster_sld(
-                name, bands=bands, range=range, opacity=opacity,
-                gamma=gamma, **kwargs)
-
-        return {"SLD_BODY": sld_body}
+            return kwargs
 
 
     def _process_raster(self, name, data):
