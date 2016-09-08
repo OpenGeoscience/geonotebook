@@ -68,6 +68,9 @@ class GeoTiffImage(object):
     def get_band_stddev(self, index):
         return self._get_band_tag(index, BandStats.STDDEV)
 
+    def get_band_nodata(self, index):
+        return self.dataset.nodata
+
     def get_band_name(self, index, default=None):
         assert index > 0, \
             IndexError("Bands are indexed from 1")

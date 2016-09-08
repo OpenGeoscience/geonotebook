@@ -39,6 +39,11 @@ class Band(object):
         return self.reader.get_band_name(self.index)
 
     @property
+    def nodata(self):
+        return self.reader.get_band_nodata(self.index)
+
+
+    @property
     def reader(self):
         return self.data.reader
 
@@ -69,6 +74,11 @@ class BandCollection(collections.Sequence):
     @property
     def max(self):
         return [self.band(i).max for i in self.indexes]
+
+    @property
+    def nodata(self):
+        return [self.band(i).nodata for i in self.indexes]
+
 
     def band(self, index):
         return self.band_class(index, self.data)
