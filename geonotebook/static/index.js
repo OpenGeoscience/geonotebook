@@ -101,7 +101,6 @@ define(
 
         Geonotebook.prototype.recv_msg = function(message) {
             var msg = this._unwrap(message);
-            console.log(msg);
             // TODO: move this into request/response like a
             //       normal method.
             if(msg.method == "set_protocol" ){
@@ -186,7 +185,6 @@ define(
 
                 // Expose globablly for debugging purposes
                 Jupyter.map = this.map;
-                console.log("DEBUG: loaded geonotebook");
             }
         };
 

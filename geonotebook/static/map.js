@@ -109,7 +109,7 @@ define(
             return layer_name
         };
 
-        Map.prototype.add_wms_layer = function(layer_name, base_url){
+        Map.prototype.add_wms_layer = function(layer_name, base_url, params){
 
             var projection = 'EPSG:3857';
 
@@ -133,7 +133,7 @@ define(
                          bb.right + ',' + bb.top;
 
 
-                 var params = {
+                 var local_params = {
                      'SERVICE': 'WMS',
                      'VERSION': '1.3.0',
                      'REQUEST': 'GetMap',
@@ -150,8 +150,13 @@ define(
                      //'SLD_BODY': sld
                  };
 
-                 return base_url + '?' + $.param(params);
-             });
+                if( params['SLD_BODY']) {
+                    local_params['SLD_BODY'] = params['SLD_BODY'];
+                }
+
+                return base_url + '?' + $.param(local_params);
+
+            });
 
             return layer_name;
 
