@@ -16,6 +16,7 @@ setup(
     license='Apache License 2.0',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     data_files=[('config', ['geonotebook.ini'])],
+    test_suite="tests",
     entry_points={
         'geonotebook.wrappers.raster': [
             'geotiff = geonotebook.wrappers.image:GeoTiffImage',
