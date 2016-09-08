@@ -153,7 +153,7 @@ define(
                 if( params['SLD_BODY']) {
                     local_params['SLD_BODY'] = params['SLD_BODY'];
                 }
-                console.log(base_url + '?' + $.param(local_params));
+
                 return base_url + '?' + $.param(local_params);
 
             });
