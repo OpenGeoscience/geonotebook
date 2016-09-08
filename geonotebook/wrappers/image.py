@@ -1,6 +1,8 @@
 import gdal
 import rasterio as rio
+import numpy as np
 from collections import namedtuple
+from functools import wraps
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -9,6 +11,20 @@ class BandStats(object):
     MAX = u'STATISTICS_MAXIMUM'
     MEAN = u'STATISTICS_MEAN'
     STDDEV = u'STATISTICS_STDDEV'
+
+
+def validate_index(func):
+    @wraps(func)
+    def _validate_index(self, index, *args, **kwargs):
+        assert not index < 0, \
+            IndexError("Bands are indexed from 1")
+
+        assert not index > self.count, \
+            IndexError("Band index out of range")
+
+        return func(self, index, *args, **kwargs)
+    return _validate_index
+
 
 
 class GeoTiffImage(object):
@@ -47,30 +63,41 @@ class GeoTiffImage(object):
                     self.dataset.bounds.bottom)
 
     def _get_band_tag(self, index, prop, convert=float):
-        assert not index < 0, \
-            IndexError("Bands are indexed from 1")
-
-        assert not index > self.count, \
-            IndexError("Band index out of range")
-
         return convert(self.dataset.tags(index)[prop])
 
     # Band level API
+    @validate_index
     def get_band_min(self, index):
-        return self._get_band_tag(index, BandStats.MIN)
+        try:
+            return self._get_band_tag(index, BandStats.MIN)
+        except KeyError:
+            return self.get_band_data(index, masked=True).min()
 
+    @validate_index
     def get_band_max(self, index):
-        return self._get_band_tag(index, BandStats.MAX)
-
+        try:
+            return self._get_band_tag(index, BandStats.MAX)
+        except KeyError:
+            return self.get_band_data(index, masked=True).max()
+    @validate_index
     def get_band_mean(self, index):
-        return self._get_band_tag(index, BandStats.MEAN)
+        try:
+            return self._get_band_tag(index, BandStats.MEAN)
+        except KeyError:
+            return self.get_band_data(index, masked=True).mean()
 
+    @validate_index
     def get_band_stddev(self, index):
-        return self._get_band_tag(index, BandStats.STDDEV)
+        try:
+            return self._get_band_tag(index, BandStats.STDDEV)
+        except KeyError:
+            return self.get_band_data(index, masked=True).std()
 
+    @validate_index
     def get_band_nodata(self, index):
         return self.dataset.nodata
 
+    @validate_index
     def get_band_name(self, index, default=None):
         assert index > 0, \
             IndexError("Bands are indexed from 1")
@@ -86,10 +113,18 @@ class GeoTiffImage(object):
         except KeyError:
             return default
 
-    def get_band_data(self, index, window=None):
-        if window is None:
-            return self.dataset.read(index)
+    @validate_index
+    def get_band_data(self, index, window=None, **kwargs):
 
-        (ulx, uly), (lrx, lry) = window
+        def _get_band_data():
+            if window is None:
+                return self.dataset.read(index)
 
-        return self.dataset.read(index, window=((ulx, lrx), (uly, lry)))
+            (ulx, uly), (lrx, lry) = window
+
+            return self.dataset.read(index, window=((ulx, lrx), (uly, lry)))
+
+        if kwargs.get('masked', False):
+            return np.ma.masked_values(_get_band_data(), self.get_band_nodata(index))
+        else:
+            return _get_band_data()

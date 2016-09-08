@@ -12,11 +12,8 @@ class Band(object):
         return "<{}('{}')>".format(self.__class__.__name__,
                                    self.name)
 
-    def get_data(self, window=None):
-        if window is None:
-            return self.reader.get_band_data(self.index)
-
-        return self.reader.get_band_data(self.index, window=window)
+    def get_data(self, window=None, **kwargs):
+        return self.reader.get_band_data(self.index, **kwargs)
 
     @property
     def min(self):
@@ -83,11 +80,11 @@ class BandCollection(collections.Sequence):
     def band(self, index):
         return self.band_class(index, self.data)
 
-    def get_data(self, window=None, axis=2):
+    def get_data(self, window=None, axis=2, **kwargs):
         if len(self) == 1:
-            return self.band(self.indexes[0]).get_data(window=window)
+            return self.band(self.indexes[0]).get_data(window=window, **kwargs)
         else:
-            return np.stack([self.band(i).get_data(window=window)
+            return np.stack([self.band(i).get_data(window=window, **kwargs)
                              for i in self.indexes], axis=axis)
 
     def __iter__(self):
