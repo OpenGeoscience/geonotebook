@@ -1,5 +1,6 @@
 ansible==2.1.1.0
+GDAL==2.1.0
 jupyter==1.0.0
-matplotlib==1.5.2
+numpy==1.11.1
 rasterio==0.36.0
 requests==2.11.1

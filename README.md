@@ -7,7 +7,6 @@ Make a virtualenv and install ```jupyter[notebook]``` and development install ge
 ```bash
 mkvirtualenv -a . geonotebook
 pip install -r requirements.txt
-
 pip install -e .
 ```
 
