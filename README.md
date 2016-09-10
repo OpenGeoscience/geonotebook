@@ -24,3 +24,8 @@ cd notebooks/
 jupyter notebook
 
 ```
+
+Run the tests
+```bash
+python setup.py test
+```
