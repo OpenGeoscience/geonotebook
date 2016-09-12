@@ -15,7 +15,9 @@ class GeonotebookLayer(object):
         self.name = name
         self.vis_url = vis_url
         self.band_collection = band_collection
-        self._region = None
+
+        # index into data in the form of ((ulx, uly), (lrx, lry))
+        self._window = None
 
         assert vis_url is not None or band_collection is not None, \
             "Must pass in vis_url or band_collection to {}".format(
@@ -30,17 +32,13 @@ class GeonotebookLayer(object):
 
     @property
     def region(self):
-        if self.data is None:
+        if self.band_collection is None:
             return None
 
-        (ulx, uly), (lrx, lry) = self.data.index(self._region.ulx, self._region.uly), \
-            self.data.index(self._region.lrx, self._region.lry)
-
-        if self.data.count == 1:
-            return self.data.read(1, window=((ulx, lrx), (uly, lry)))
+        if self._window is None:
+            return self.band_collection.get_data()
         else:
-            return np.stack(self.data.read(
-                window=((ulx, lrx), (uly, lry))), axis=2)
+            return self.band_collection.get_data(window=self._window)
 
 
     @region.setter
@@ -48,7 +46,9 @@ class GeonotebookLayer(object):
         assert isinstance(value, BBox), \
             "Region must be set to a value of type BBox"
 
-        self._region = value
+        if self.band_collection is not None:
+            self._window = self.band_collection.data.index(value.ulx, value.uly), \
+                self.band_collection.data.index(value.lrx, value.lry)
 
     def __repr__(self):
         return "<{}('{}')>".format(
