@@ -86,8 +86,16 @@ class BandCollection(collections.Sequence):
         if len(self) == 1:
             return self.band(self.indexes[0]).get_data(window=window, **kwargs)
         else:
-            return np.stack([self.band(i).get_data(window=window, **kwargs)
-                             for i in self.indexes], axis=axis)
+            if kwargs.get('masked', False):
+                # TODO: fix masked array hack here
+                kwargs["masked"] = False
+                return np.ma.masked_values(
+                    np.stack([self.band(i).get_data(window=window, **kwargs)
+                              for i in self.indexes], axis=axis), self.band(0).nodata)
+            else:
+                return np.stack([self.band(i).get_data(window=window, **kwargs)
+                                 for i in self.indexes], axis=axis)
+
 
     def __iter__(self):
         for i in self.indexes:

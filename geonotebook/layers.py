@@ -36,9 +36,9 @@ class GeonotebookLayer(object):
             return None
 
         if self._window is None:
-            return self.band_collection.get_data()
+            return self.band_collection.get_data(masked=True)
         else:
-            return self.band_collection.get_data(window=self._window)
+            return self.band_collection.get_data(window=self._window, masked=True)
 
 
     @region.setter
