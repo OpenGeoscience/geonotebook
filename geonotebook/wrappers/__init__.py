@@ -139,6 +139,20 @@ class RasterData(object):
         for ep in pr.iter_entry_points(group='geonotebook.wrappers.raster'):
             cls.register(ep.name, ep.load())
 
+    @classmethod
+    def is_valid(cls, path):
+        try:
+            f = open(path, "r")
+        except OSError:
+            return False
+        finally:
+            f.close()
+
+        kind = os.path.splitext(path)[1][1:]
+
+        return kind in cls._concrete_data_types.keys()
+
+
     def __init__(self, path, kind=None):
         if kind is None:
             # Get kind from the extension
@@ -171,3 +185,33 @@ class RasterData(object):
 
 
 RasterData.discover_concrete_types()
+
+
+class RasterDataCollection(collections.Sequence):
+    def __init__(self, items, verify=True):
+        if verify:
+            assert all(RasterData.is_valid(i) for i in items), \
+                TypeError("{} only takes a list of paths to supported raster data files"\
+                          .format(self.__class__.__name__))
+
+        self._cur = 0
+        self._items = items
+
+    def __iter__(self):
+        for i in self._items:
+            yield RasterData(i)
+
+    def __len__(self):
+        return len(self._items)
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            idx = key.indices(len(self._items))
+            return RasterDataCollection([i for i in self._items if i in idx],
+                                        verify=False)
+
+        elif isinstance(key, (list, tuple)):
+            return RasterDataCollection([p for i,p in enumerate(self._items) if i in key],
+                                        verify=False)
+        else:
+            return RasterData(self._items[key])
