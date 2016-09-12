@@ -13,7 +13,9 @@ class Band(object):
                                    self.name)
 
     def get_data(self, window=None, **kwargs):
-        return self.reader.get_band_data(self.index, **kwargs)
+        return self.reader.get_band_data(self.index,
+                                         window=window,
+                                         **kwargs)
 
     @property
     def min(self):
