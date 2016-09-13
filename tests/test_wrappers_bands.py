@@ -1,4 +1,111 @@
+import numpy as np
 import unittest
+from geonotebook.wrappers.image import validate_index
+
+DATA = {"coords.mock": np.array([ [[ 1.0, 21.0, 31.0, 41.0, 51.0],
+                                   [12.0, 22.0, 32.0, 42.0, 52.0],
+                                   [13.0, 23.0, 33.0, 43.0, 53.0],
+                                   [14.0, 24.0, 34.0, 44.0, 54.0],
+                                   [15.0, 25.0, 35.0, 45.0, 55.0]],
+                                  [[ 2.0, 21.0, 31.0, 41.0, 51.0],
+                                   [12.0, 22.0, 32.0, 42.0, 52.0],
+                                   [13.0, 23.0, 33.0, 43.0, 53.0],
+                                   [14.0, 24.0, 34.0, 44.0, 54.0],
+                                   [15.0, 25.0, 35.0, 45.0, 56.0]],
+                                  [[ 3.0, 21.0, 31.0, 41.0, 51.0],
+                                   [12.0, 22.0, 32.0, 42.0, 52.0],
+                                   [13.0, 23.0, 33.0, 43.0, 53.0],
+                                   [14.0, 24.0, 34.0, 44.0, 54.0],
+                                   [15.0, 25.0, 35.0, 45.0, 57.0]],
+                                  [[ 4.0, 21.0, 31.0, 41.0, 51.0],
+                                   [12.0, 22.0, 32.0, 42.0, 52.0],
+                                   [13.0, 23.0, 33.0, 43.0, 53.0],
+                                   [14.0, 24.0, 34.0, 44.0, 54.0],
+                                   [15.0, 25.0, 35.0, 45.0, 58]]]),
+        "missing.mock": np.array([ [[ 1.0,    21.0,    31.0,    41.0,    51.0],
+                                    [12.0,    22.0,    32.0,    42.0,    52.0],
+                                    [13.0,    23.0,    33.0,    43.0, -9999.0],
+                                    [14.0,    24.0,    34.0, -9999.0, -9999.0],
+                                    [15.0,    25.0, -9999.0, -9999.0, -9999.0]],
+                                   [[ 2.0,    21.0,    31.0,    41.0,    51.0],
+                                    [12.0,    22.0,    32.0,    42.0,    52.0],
+                                    [13.0,    23.0,    33.0,    43.0, -9999.0],
+                                    [14.0,    24.0,    34.0, -9999.0, -9999.0],
+                                    [15.0,    25.0, -9999.0, -9999.0, -9999.0]],
+                                   [[ 3.0,    21.0,    31.0,      41,      51],
+                                    [12.0,    22.0,    32.0,      42,      52],
+                                    [13.0,    23.0,    33.0,      43, -9999.0],
+                                    [14.0,    24.0,    34.0, -9999.0, -9999.0],
+                                    [15.0,    25.0, -9999.0, -9999.0, -9999.0]],
+                                   [[ 4.0,    21.0,    31.0,    41.0,    51.0],
+                                    [12.0,    22.0,    32.0,    42.0,    52.0],
+                                    [13.0,    23.0,    33.0,    43.0, -9999.0],
+                                    [14.0,    24.0,    34.0, -9999.0, -9999.0],
+                                    [15.0,    25.0, -9999.0, -9999.0, -9999.0]]])
+    }
+
+
+class MockReader(object):
+    def __init__(self, path):
+        self.path = path
+        self.bands = np.copy(DATA[path])
+        self.nodata = -9999.0
+
+    def index(self, *args):
+        return args
+
+    @property
+    def count(self):
+        return len(self.bands)
+    @property
+    def height(self):
+        return self.bands.shape[2]
+    @property
+    def width(self):
+        return self.bands.shape[1]
+
+    @validate_index
+    def get_band_min(self, index):
+        return self.bands[index-1].min()
+
+    @validate_index
+    def get_band_max(self, index):
+        return self.bands[index-1].max()
+
+    @validate_index
+    def get_band_mean(self, index):
+        return self.bands[index-1].mean()
+
+    @validate_index
+    def get_band_stddev(self, index):
+        return self.bands[index-1].std()
+
+    @validate_index
+    def get_band_nodata(self, index):
+        return self.nodata
+
+    @validate_index
+    def get_band_name(self, index, default=None):
+        return u"Band {}".format(index)
+
+    @validate_index
+    def get_band_data(self, index, window=None, **kwargs):
+        def _get_band_data():
+            if window is None:
+                return self.bands[index-1]
+
+            (ulx, uly), (lrx, lry) = window
+
+            return self.bands[index-1][uly:lry,ulx:lrx]
+
+        if kwargs.get('masked', False):
+            return np.ma.masked_values(_get_band_data(), self.get_band_nodata(index))
+        else:
+            return _get_band_data()
+
+# m = MockReader("coords.mock")
+
+
 
 # Band tests
 ## Mock out Band.reader
