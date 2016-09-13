@@ -1,4 +1,4 @@
-from geonotebook.wrappers import BandCollection, Band, RasterData
+from geonotebook.wrappers import Band, RasterData
 from sld import get_single_band_raster_sld, get_multiband_raster_sld
 import requests
 import os

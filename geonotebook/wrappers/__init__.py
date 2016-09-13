@@ -19,19 +19,19 @@ class Band(object):
 
     @property
     def min(self):
-        return self.reader.get_band_min(self.index)
+        return self.reader.get_band_min(self.index, masked=True)
 
     @property
     def max(self):
-        return self.reader.get_band_max(self.index)
+        return self.reader.get_band_max(self.index, masked=True)
 
     @property
     def mean(self):
-        return self.reader.get_band_mean(self.index)
+        return self.reader.get_band_mean(self.index, masked=True)
 
     @property
     def stddev(self):
-        return self.reader.get_band_stddev(self.index)
+        return self.reader.get_band_stddev(self.index, masked=True)
 
     @property
     def name(self):
@@ -47,7 +47,7 @@ class Band(object):
         return self.data.reader
 
 
-class RasterData(object):
+class RasterData(collections.Sequence):
 
     _concrete_data_types = {}
     band_class = Band
@@ -129,7 +129,7 @@ class RasterData(object):
             return RasterData(self.path, indexes=range(*idx))
 
         elif isinstance(key, (list, tuple)):
-            return BandCollection(self.path, indexes=key)
+            return RasterData(self.path, indexes=key)
 
         else:
             return self.band(key)
@@ -137,19 +137,26 @@ class RasterData(object):
 
     @property
     def min(self):
-        return [self.band(i).min for i in self.indexes]
+        return [self.band(i).min for i in self.band_indexes]
 
     @property
     def max(self):
-        return [self.band(i).max for i in self.indexes]
+        return [self.band(i).max for i in self.band_indexes]
+
+    @property
+    def mean(self):
+        return [self.band(i).mean for i in self.band_indexes]
+
+    @property
+    def stddev(self):
+        return [self.band(i).stddev for i in self.band_indexes]
 
     @property
     def nodata(self):
-        return [self.band(i).nodata for i in self.indexes]
-
+        return [self.band(i).nodata for i in self.band_indexes]
 
     def band(self, index):
-        return self.band_class(index, self.data)
+        return self.band_class(index, self)
 
     @property
     def count(self):
@@ -159,9 +166,6 @@ class RasterData(object):
     def path(self):
         return self.reader.path
 
-    @property
-    def bands(self):
-        return BandCollection(self)
 
 
 RasterData.discover_concrete_types()

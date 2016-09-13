@@ -114,7 +114,7 @@ class GeoTiffImage(object):
             return default
 
     @validate_index
-    def get_band_data(self, index, window=None, **kwargs):
+    def get_band_data(self, index, window=None, masked=True, **kwargs):
 
         def _get_band_data():
             if window is None:
@@ -124,7 +124,7 @@ class GeoTiffImage(object):
 
             return self.dataset.read(index, window=((ulx, lrx), (uly, lry)))
 
-        if kwargs.get('masked', False):
+        if masked:
             return np.ma.masked_values(_get_band_data(), self.get_band_nodata(index))
         else:
             return _get_band_data()
