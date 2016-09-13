@@ -10,35 +10,35 @@ BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 #        like the OSM base layer,  or more generally for tile server URLs
 #        that don't have any (accessible) data associated with them.
 class GeonotebookLayer(object):
-    def __init__(self, name, vis_url=None, band_collection=None, **kwargs):
+    def __init__(self, name, vis_url=None, data=None, **kwargs):
         self.config = Config()
         self.name = name
         self.vis_url = vis_url
-        self.band_collection = band_collection
+        self.data = data
 
         # index into data in the form of ((ulx, uly), (lrx, lry))
         self._window = None
 
-        assert vis_url is not None or band_collection is not None, \
-            "Must pass in vis_url or band_collection to {}".format(
+        assert vis_url is not None or data is not None, \
+            "Must pass in vis_url or data to {}".format(
                 self.__class__.__name__)
 
-        if band_collection is not None and vis_url is None:
+        if self.data is not None and vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
-                self.band_collection.data, name=self.name)
+                self.data, name=self.name)
 
         self.params = self.config.vis_server.get_params(
-            self.name, band_collection, **kwargs)
+            self.name, self.data, **kwargs)
 
     @property
     def region(self):
-        if self.band_collection is None:
+        if self.data is None:
             return None
 
         if self._window is None:
-            return self.band_collection.get_data()
+            return self.data.get_data()
         else:
-            return self.band_collection.get_data(window=self._window)
+            return self.data.get_data(window=self._window)
 
 
     @region.setter
@@ -46,9 +46,9 @@ class GeonotebookLayer(object):
         assert isinstance(value, BBox), \
             "Region must be set to a value of type BBox"
 
-        if self.band_collection is not None:
-            self._window = self.band_collection.data.index(value.ulx, value.uly), \
-                self.band_collection.data.index(value.lrx, value.lry)
+        if self.data is not None:
+            self._window = self.data.index(value.ulx, value.uly), \
+                self.data.index(value.lrx, value.lry)
 
     def __repr__(self):
         return "<{}('{}')>".format(

@@ -16,7 +16,7 @@ class BandStats(object):
 def validate_index(func):
     @wraps(func)
     def _validate_index(self, index, *args, **kwargs):
-        assert not index < 0, \
+        assert not index < 1, \
             IndexError("Bands are indexed from 1")
 
         assert not index > self.count, \
@@ -67,27 +67,27 @@ class GeoTiffImage(object):
 
     # Band level API
     @validate_index
-    def get_band_min(self, index):
+    def get_band_min(self, index, **kwargs):
         try:
             return self._get_band_tag(index, BandStats.MIN)
         except KeyError:
             return self.get_band_data(index, masked=True).min()
 
     @validate_index
-    def get_band_max(self, index):
+    def get_band_max(self, index, **kwargs):
         try:
             return self._get_band_tag(index, BandStats.MAX)
         except KeyError:
             return self.get_band_data(index, masked=True).max()
     @validate_index
-    def get_band_mean(self, index):
+    def get_band_mean(self, index, **kwargs):
         try:
             return self._get_band_tag(index, BandStats.MEAN)
         except KeyError:
             return self.get_band_data(index, masked=True).mean()
 
     @validate_index
-    def get_band_stddev(self, index):
+    def get_band_stddev(self, index, **kwargs):
         try:
             return self._get_band_tag(index, BandStats.STDDEV)
         except KeyError:
@@ -114,7 +114,7 @@ class GeoTiffImage(object):
             return default
 
     @validate_index
-    def get_band_data(self, index, window=None, **kwargs):
+    def get_band_data(self, index, window=None, masked=True, **kwargs):
 
         def _get_band_data():
             if window is None:
@@ -124,7 +124,7 @@ class GeoTiffImage(object):
 
             return self.dataset.read(index, window=((ulx, lrx), (uly, lry)))
 
-        if kwargs.get('masked', False):
+        if masked:
             return np.ma.masked_values(_get_band_data(), self.get_band_nodata(index))
         else:
             return _get_band_data()
