@@ -81,6 +81,18 @@ def get_multiband_raster_sld(
         title = "Style for bands {} of layer {}".format(
             ",".join(str(b) for b in bands), name)
 
+    # Bands parameter must be a tuple or list
+    assert isinstance(bands, (list, tuple))
+
+    # Bands must be length of 3
+    assert(len(bands) == 3)
+
+    # Gamma must be a number or list
+    assert isinstance(gamma, (int, float, list))
+
+    # Opacity must be a number
+    assert isinstance(opacity, (int, float))
+
     # All bands must be integers greater than 1
     assert all(isinstance(e, int) and e > 0 for e in bands), \
         "Bands must be specified as integer indexes starting from 1!"
