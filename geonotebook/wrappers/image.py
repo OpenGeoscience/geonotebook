@@ -16,7 +16,7 @@ class BandStats(object):
 def validate_index(func):
     @wraps(func)
     def _validate_index(self, index, *args, **kwargs):
-        assert not index < 0, \
+        assert not index < 1, \
             IndexError("Bands are indexed from 1")
 
         assert not index > self.count, \
