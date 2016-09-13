@@ -176,30 +176,48 @@ RasterData.discover_concrete_types()
 
 
 class RasterDataCollection(collections.Sequence):
-    def __init__(self, items, verify=True):
+    def __init__(self, items, verify=True, indexes=None):
         if verify:
-            assert all(RasterData.is_valid(i) for i in items), \
-                TypeError("{} only takes a list of paths to supported raster data files"\
-                          .format(self.__class__.__name__))
+            assert len(set([RasterData(i).count for i in items])) == 1, \
+                "Not all items have the same number of bands!"
 
         self._cur = 0
         self._items = items
 
+        band_count = RasterData(self._items[self._cur]).count
+        self.band_indexes = range(1, band_count) if indexes is None else indexes
+
+        assert not min(self.band_indexes) < 1, \
+            IndexError("Bands are indexed from 1")
+
+        assert not max(self.band_indexes) > band_count, \
+            IndexError("Band index out of range")
+
     def __iter__(self):
         for i in self._items:
-            yield RasterData(i)
+            yield RasterData(i, indexes=self.band_indexes)
 
     def __len__(self):
         return len(self._items)
 
-    def __getitem__(self, key):
+    def __getitem__(self, args):
+        try:
+            key, bands = args[0], args[1]
+        except (KeyError, TypeError):
+            key, bands = args, None
+
         if isinstance(key, slice):
             idx = key.indices(len(self._items))
             return RasterDataCollection([i for i in self._items if i in idx],
+                                        indexes=self.band_indexes,
                                         verify=False)
 
         elif isinstance(key, (list, tuple)):
             return RasterDataCollection([p for i,p in enumerate(self._items) if i in key],
+                                        indexes=self.band_indexes if bands is None else bands,
                                         verify=False)
         else:
-            return RasterData(self._items[key])
+            return RasterData(self._items[key])[bands] if bands is not None \
+                else RasterData(self._items[key])
+
+
