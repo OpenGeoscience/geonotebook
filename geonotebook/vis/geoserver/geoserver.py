@@ -81,20 +81,20 @@ class Geoserver(object):
     # add_layer. This is intended to allow the vis_server to include style
     # paramaters and subsetting operations. select bands, set ranges
     # on a particular dataset etc.
-    def get_params(self, name, band_collection, **kwargs):
-        if band_collection is not None:
+    def get_params(self, name, data, **kwargs):
+        if data is not None:
             name = "{}:{}".format(self.workspace, name)
             options = {}
-            if isinstance(band_collection, Band):
-                options['band'] = band_collection.index
+            if isinstance(data, Band):
+                options['band'] = data.index
 
                 # TODO: Generate default color map
 
                 options.update(kwargs)
                 sld_body = get_single_band_raster_sld(name, **options)
             else:
-                options['bands'] = band_collection.indexes
-                options['range'] = zip(band_collection.min, band_collection.max)
+                options['bands'] = data.band_indexes
+                options['range'] = zip(data.min, data.max)
 
                 options.update(kwargs)
 

@@ -67,27 +67,27 @@ class GeoTiffImage(object):
 
     # Band level API
     @validate_index
-    def get_band_min(self, index):
+    def get_band_min(self, index, **kwargs):
         try:
             return self._get_band_tag(index, BandStats.MIN)
         except KeyError:
             return self.get_band_data(index, masked=True).min()
 
     @validate_index
-    def get_band_max(self, index):
+    def get_band_max(self, index, **kwargs):
         try:
             return self._get_band_tag(index, BandStats.MAX)
         except KeyError:
             return self.get_band_data(index, masked=True).max()
     @validate_index
-    def get_band_mean(self, index):
+    def get_band_mean(self, index, **kwargs):
         try:
             return self._get_band_tag(index, BandStats.MEAN)
         except KeyError:
             return self.get_band_data(index, masked=True).mean()
 
     @validate_index
-    def get_band_stddev(self, index):
+    def get_band_stddev(self, index, **kwargs):
         try:
             return self._get_band_tag(index, BandStats.STDDEV)
         except KeyError:
