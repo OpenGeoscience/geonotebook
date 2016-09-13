@@ -47,86 +47,10 @@ class Band(object):
         return self.data.reader
 
 
-
-class BandCollection(collections.Sequence):
-    band_class = Band
-
-    def __init__(self, data, indexes=None):
-        self.data = data
-        self.indexes = range(1, self.reader.count + 1) \
-            if indexes is None else indexes
-
-        assert not min(self.indexes) < 1, \
-            IndexError("Bands are indexed from 1")
-
-        assert not max(self.indexes) > self.reader.count, \
-            IndexError("Band index out of range")
-
-    @property
-    def reader(self):
-        return self.data.reader
-
-    @property
-    def min(self):
-        return [self.band(i).min for i in self.indexes]
-
-    @property
-    def max(self):
-        return [self.band(i).max for i in self.indexes]
-
-    @property
-    def nodata(self):
-        return [self.band(i).nodata for i in self.indexes]
-
-
-    def band(self, index):
-        return self.band_class(index, self.data)
-
-    def get_data(self, window=None, axis=2, **kwargs):
-        if len(self) == 1:
-            return self.band(self.indexes[0]).get_data(window=window, **kwargs)
-        else:
-            if kwargs.get('masked', False):
-                # TODO: fix masked array hack here
-                kwargs["masked"] = False
-                return np.ma.masked_values(
-                    np.stack([self.band(i).get_data(window=window, **kwargs)
-                              for i in self.indexes], axis=axis), self.band(0).nodata)
-            else:
-                return np.stack([self.band(i).get_data(window=window, **kwargs)
-                                 for i in self.indexes], axis=axis)
-
-
-    def __iter__(self):
-        for i in self.indexes:
-            yield self.band(i)
-
-    def __repr__(self):
-        if self.reader.count > 6:
-            return "<{}({})>".format(self.__class__.__name__,
-                                     len(self.indexes))
-        else:
-            return "<{}({})>".format(self.__class__.__name__,
-                                     len(self.indexes))
-
-    def __len__(self):
-        return len(self.indexes)
-
-    def __getitem__(self, key):
-        if isinstance(key, slice):
-            idx = key.indices(len(self.indexes))
-            return BandCollection(self.data, range(*idx))
-
-        elif isinstance(key, (list, tuple)):
-            return BandCollection(self.data, key)
-
-        else:
-            return self.band(key)
-
-
 class RasterData(object):
 
     _concrete_data_types = {}
+    band_class = Band
 
     @classmethod
     def register(cls, name, concrete_class):
@@ -153,7 +77,7 @@ class RasterData(object):
         return kind in cls._concrete_data_types.keys()
 
 
-    def __init__(self, path, kind=None):
+    def __init__(self, path, kind=None, indexes=None):
         if kind is None:
             # Get kind from the extension
             kind = os.path.splitext(path)[1][1:]
@@ -165,11 +89,67 @@ class RasterData(object):
                 "{} cannot parse files of type '{}'".format(
                     self.__class__.__name__, kind))
 
+        self.band_indexes = range(1, self.reader.count + 1) \
+            if indexes is None else indexes
+
+        assert not min(self.band_indexes) < 1, \
+            IndexError("Bands are indexed from 1")
+
+        assert not max(self.band_indexes) > self.reader.count, \
+            IndexError("Band index out of range")
+
+
     def index(self, *args, **kwargs):
         return self.reader.index(*args, **kwargs)
 
     def read(self, *args, **kwargs):
         return self.reader.read(*args, **kwargs)
+
+
+    def get_data(self, window=None, axis=2, **kwargs):
+        if len(self) == 1:
+            return self.band(self.band_indexes[0]).get_data(window=window, **kwargs)
+        else:
+            if kwargs.get('masked', False):
+                # TODO: fix masked array hack here
+                kwargs["masked"] = False
+                return np.ma.masked_values(
+                    np.stack([self.band(i).get_data(window=window, **kwargs)
+                              for i in self.band_indexes], axis=axis), self.band(0).nodata)
+            else:
+                return np.stack([self.band(i).get_data(window=window, **kwargs)
+                                 for i in self.band_indexes], axis=axis)
+
+    def __len__(self):
+        return len(self.band_indexes)
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            idx = key.indices(len(self.indexes))
+            return RasterData(self.path, indexes=range(*idx))
+
+        elif isinstance(key, (list, tuple)):
+            return BandCollection(self.path, indexes=key)
+
+        else:
+            return self.band(key)
+
+
+    @property
+    def min(self):
+        return [self.band(i).min for i in self.indexes]
+
+    @property
+    def max(self):
+        return [self.band(i).max for i in self.indexes]
+
+    @property
+    def nodata(self):
+        return [self.band(i).nodata for i in self.indexes]
+
+
+    def band(self, index):
+        return self.band_class(index, self.data)
 
     @property
     def count(self):
