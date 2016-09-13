@@ -106,18 +106,22 @@ class RasterData(collections.Sequence):
         return self.reader.read(*args, **kwargs)
 
 
-    def get_data(self, window=None, axis=2, **kwargs):
+    def get_data(self, window=None, masked=True, axis=2, **kwargs):
         if len(self) == 1:
-            return self.band(self.band_indexes[0]).get_data(window=window, **kwargs)
+            return self.band(self.band_indexes[0]).get_data(window=window,
+                                                            masked=masked,
+                                                            **kwargs)
         else:
-            if kwargs.get('masked', False):
+            if masked:
                 # TODO: fix masked array hack here
                 kwargs["masked"] = False
                 return np.ma.masked_values(
                     np.stack([self.band(i).get_data(window=window, **kwargs)
-                              for i in self.band_indexes], axis=axis), self.band(0).nodata)
+                              for i in self.band_indexes], axis=axis), self.band(1).nodata)
             else:
-                return np.stack([self.band(i).get_data(window=window, **kwargs)
+                return np.stack([self.band(i).get_data(window=window,
+                                                       masked=masked,
+                                                       **kwargs)
                                  for i in self.band_indexes], axis=axis)
 
     def __len__(self):
@@ -125,7 +129,7 @@ class RasterData(collections.Sequence):
 
     def __getitem__(self, key):
         if isinstance(key, slice):
-            idx = key.indices(len(self.indexes))
+            idx = key.indices(len(self.band_indexes))
             return RasterData(self.path, indexes=range(*idx))
 
         elif isinstance(key, (list, tuple)):
