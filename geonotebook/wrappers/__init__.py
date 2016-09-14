@@ -136,6 +136,9 @@ class RasterData(collections.Sequence):
     def path(self):
         return self.reader.path
 
+    @property
+    def name(self):
+        return os.path.splitext(os.path.basename(self.path))[0]
 
 
 RasterData.discover_concrete_types()

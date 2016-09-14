@@ -147,8 +147,7 @@ class Geoserver(object):
     # Needed to geospatially reference the data on the remote system
     def ingest(self, data, name=None):
 
-        if name is None:
-            name = os.path.splitext(os.path.basename(data.path))[0]
+        name = data.name if name is None else name
 
         # Create the workspace
 
