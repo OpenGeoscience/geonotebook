@@ -196,29 +196,3 @@ class RasterDataCollection(collections.Sequence):
 
     def index(self, *args, **kwargs):
         raise NotImplementedError("index(...) Not implemented yet")
-
-
-###### DELETE EVERYTHING AFTER ME ##########
-
-DATA_DIR="/data/kotfic/NEX/golden_tile_layer/WELD/golden_tiles/geotiff/NBAR/"
-def sort_NBAR(a, b):
-  am, ay = int(a.split(".")[2][-2:]), int(a.split(".")[3])
-  bm, by = int(b.split(".")[2][-2:]), int(b.split(".")[3])
-
-  if ay < by:
-    return -1
-  elif ay > by:
-    return 1
-  elif by == ay:
-    if am < bm:
-      return -1
-    elif am > bm:
-      return 1
-    else:
-      return 0
-
-
-PATHS = [DATA_DIR + p for p in sorted(os.listdir(DATA_DIR), sort_NBAR)]
-
-if __name__ == "__main__":
-    rdc = RasterDataCollection(PATHS)
