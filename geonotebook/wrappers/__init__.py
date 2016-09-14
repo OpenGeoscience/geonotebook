@@ -187,6 +187,12 @@ class RasterDataCollection(collections.Sequence):
         else:
             raise IndexError("{} must be of type slice, or int")
 
+    def get_data(self, *args, **kwargs):
+        raise NotImplementedError("get_data(...) Not implemented yet")
+
+    def index(self, *args, **kwargs):
+        raise NotImplementedError("index(...) Not implemented yet")
+
 
 ###### DELETE EVERYTHING AFTER ME ##########
 

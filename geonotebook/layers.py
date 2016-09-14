@@ -9,12 +9,31 @@ BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 #        None. This allows us to use a consistent interface for things
 #        like the OSM base layer,  or more generally for tile server URLs
 #        that don't have any (accessible) data associated with them.
+
+
+
 class GeonotebookLayer(object):
-    def __init__(self, name, vis_url=None, data=None, **kwargs):
+    def __init__(self, name, remote, **kwargs):
         self.config = Config()
+        self.remote = remote
         self.name = name
+
+    def __repr__(self):
+        return "<{}('{}')>".format(
+            self.__class__.__name__, self.name)
+
+
+class NoDataLayer(GeonotebookLayer):
+    def __init__(self, name, remote, vis_url, **kwargs):
+        super(NoDataLayer, self).__init__(name, remote, **kwargs)
         self.vis_url = vis_url
+
+
+class DataLayer(GeonotebookLayer):
+    def __init__(self, name, remote, data, vis_url=None, **kwargs):
+        super(DataLayer, self).__init__(name, remote, **kwargs)
         self.data = data
+        self.vis_url = vis_url
 
         # index into data in the form of ((ulx, uly), (lrx, lry))
         self._window = None
@@ -22,13 +41,6 @@ class GeonotebookLayer(object):
         assert vis_url is not None or data is not None, \
             "Must pass in vis_url or data to {}".format(
                 self.__class__.__name__)
-
-        if self.data is not None and vis_url is None:
-            self.vis_url = self.config.vis_server.ingest(
-                self.data, name=self.name)
-
-        self.params = self.config.vis_server.get_params(
-            self.name, self.data, **kwargs)
 
     @property
     def region(self):
@@ -50,9 +62,25 @@ class GeonotebookLayer(object):
             self._window = self.data.index(value.ulx, value.uly), \
                 self.data.index(value.lrx, value.lry)
 
-    def __repr__(self):
-        return "<{}('{}')>".format(
-            self.__class__.__name__, self.name)
+
+class SimpleLayer(DataLayer):
+    def __init__(self, name, remote, data, vis_url=None, **kwargs):
+        super(SimpleLayer, self).__init__(name, remote, data, vis_url=vis_url, **kwargs)
+
+        if self.data is not None and self.vis_url is None:
+            self.vis_url = self.config.vis_server.ingest(
+                self.data, name=self.name)
+
+        self.params = self.config.vis_server.get_params(
+            self.name, self.data, **kwargs)
+
+
+
+class TimeSeriesLayer(GeonotebookLayer):
+    def __init__(self, name, remote, kernel, vis_url=None, data=None, **kwargs):
+        super(SimpleLayer, self).__init__(name, vis_url=None, data=None, **kwargs)
+
+
 
 # GeonotebookStack supports dict-like indexing on a list
 # of Geonotebook Layers. We could implement this with an
