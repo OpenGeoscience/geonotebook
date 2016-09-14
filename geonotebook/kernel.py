@@ -330,9 +330,6 @@ class Geonotebook(object):
                   **kwargs):
 
 
-        # TODO verify layer exists in geoserver?
-        if name is None and data is not None:
-            name = data.name
 
         # Create the GeonotebookLayer -  if vis_url is none,  this will take
         # data_path and upload it to the configured vis_server,  this will make
@@ -341,10 +338,20 @@ class Geonotebook(object):
 
         # HACK:  figure out a way to do this without so many conditionals
         if isinstance(data, RasterData):
+            # TODO verify layer exists in geoserver?
+            name = data.name if name is None else name
+
             layer = SimpleLayer(name, self._remote, data=data, vis_url=vis_url, **kwargs)
         elif isinstance(data, RasterDataCollection):
+            assert name is not None, \
+                RuntimeError("RasterDataCollection layers require a 'name'")
+
             layer = TimeSeriesLayer(name, self._remote, data=data, vis_url=vis_url, **kwargs)
+
         else:
+            assert name is not None, \
+                RuntimeError("Non data layers require a 'name'")
+
             layer = NoDataLayer(name, self._remote, vis_url=vis_url, **kwargs)
 
         def _add_layer(layer_name):
@@ -353,10 +360,10 @@ class Geonotebook(object):
         # These should be managed by some kind of handler to allow for
         # additional types to be added more easily
         if layer_type == 'wms':
-            cb = self._remote.add_wms_layer(name, layer.vis_url, layer.params)\
+            cb = self._remote.add_wms_layer(layer.name, layer.vis_url, layer.params)\
                 .then(_add_layer, self.rpc_error)
         elif layer_type == 'osm':
-            cb = self._remote.add_osm_layer(name, layer.vis_url)\
+            cb = self._remote.add_osm_layer(layer.name, layer.vis_url)\
                 .then(_add_layer, self.rpc_error)
         else:
             # Exception?

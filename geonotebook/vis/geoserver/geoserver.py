@@ -135,7 +135,7 @@ class Geoserver(object):
 #             # Raise exception
 #             pass
 
-        return self.base_url + "/ows"
+        return self.base_url + "/ows?LAYERS={}".format(name)
 
     # The purpose of the 'ingest' endpoint is to get a file (e.g. as
     # represented by a RasterData object) and move it into whatever

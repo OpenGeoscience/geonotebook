@@ -73,7 +73,6 @@ define(
                        };
 
 
-
             }.bind(this));
 
         };
@@ -119,7 +118,6 @@ define(
             });
 
             wms.name(layer_name);
-            wms.opacity(0.9);
 
             wms.url(function (x, y, zoom) {
 
@@ -137,7 +135,7 @@ define(
                      'SERVICE': 'WMS',
                      'VERSION': '1.3.0',
                      'REQUEST': 'GetMap',
-                     'LAYERS': layer_name, // US Elevation
+//                     'LAYERS': layer_name, // US Elevation
                      'STYLES': '',
                      'BBOX': bbox_mercator,
                      'WIDTH': 512,
@@ -154,7 +152,7 @@ define(
                     local_params['SLD_BODY'] = params['SLD_BODY'];
                 }
 
-                return base_url + '?' + $.param(local_params);
+                return base_url + '&' + $.param(local_params);
 
             });
 

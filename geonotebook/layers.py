@@ -33,7 +33,6 @@ class DataLayer(GeonotebookLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
         super(DataLayer, self).__init__(name, remote, **kwargs)
         self.data = data
-        self.vis_url = vis_url
 
         # index into data in the form of ((ulx, uly), (lrx, lry))
         self._window = None
@@ -66,8 +65,9 @@ class DataLayer(GeonotebookLayer):
 class SimpleLayer(DataLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
         super(SimpleLayer, self).__init__(name, remote, data, vis_url=vis_url, **kwargs)
+        self.vis_url = vis_url
 
-        if self.data is not None and self.vis_url is None:
+        if self.vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
                 self.data, name=self.name)
 
@@ -75,12 +75,39 @@ class SimpleLayer(DataLayer):
             self.name, self.data, **kwargs)
 
 
+class TimeSeriesLayer(DataLayer):
+    def __init__(self, name, remote, data, vis_url=None, **kwargs):
+        super(TimeSeriesLayer, self).__init__(name, remote, data, vis_url=None, **kwargs)
+        self._cur = 0
 
-class TimeSeriesLayer(GeonotebookLayer):
-    def __init__(self, name, remote, kernel, vis_url=None, data=None, **kwargs):
-        super(SimpleLayer, self).__init__(name, vis_url=None, data=None, **kwargs)
+        # TODO: check vis_url is valid length etc
+        self._vis_url = vis_url if vis_url is not None else [None] * len(self.data)
+        self._params = [None] * len(self.data)
 
+        if self.vis_url is None:
+            self.vis_url = self.config.vis_server.ingest(
+                self.current, name=self.current.name)
 
+        self.vis_server_kwargs = kwargs
+
+    @property
+    def params(self):
+        if self._params[self._cur] is None:
+            self._params[self._cur] = self.config.vis_server.get_params(
+                self.current.name, self.current, **self.vis_server_kwargs)
+        return self._params[self._cur]
+
+    @property
+    def vis_url(self):
+        return self._vis_url[self._cur]
+
+    @vis_url.setter
+    def vis_url(self, value):
+        self._vis_url[self._cur] = value
+
+    @property
+    def current(self):
+        return self.data[self._cur]
 
 # GeonotebookStack supports dict-like indexing on a list
 # of Geonotebook Layers. We could implement this with an

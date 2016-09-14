@@ -144,14 +144,17 @@ RasterData.discover_concrete_types()
 
 class RasterDataCollection(collections.Sequence):
     def __init__(self, items, verify=True, indexes=None):
+
         if verify:
             assert len(set([RasterData(i).count for i in items])) == 1, \
                 "Not all items have the same number of bands!"
 
-        self._cur = 0
         self._items = items
 
-        band_count = RasterData(self._items[self._cur]).count
+        # All band counts will be the same unless verify=False
+        # in which case you've made your own bed.
+        band_count = RasterData(self._items[0]).count
+
         self.band_indexes = range(1, band_count + 1) if indexes is None else indexes
 
         assert not min(self.band_indexes) < 1, \
@@ -186,6 +189,7 @@ class RasterDataCollection(collections.Sequence):
                               indexes=self.band_indexes if bands is None else bands)
         else:
             raise IndexError("{} must be of type slice, or int")
+
 
     def get_data(self, *args, **kwargs):
         raise NotImplementedError("get_data(...) Not implemented yet")
