@@ -1,4 +1,4 @@
-from geonotebook.wrappers import Band, RasterData
+from geonotebook.wrappers import RasterData
 from sld import get_single_band_raster_sld, get_multiband_raster_sld
 import requests
 import os
@@ -85,8 +85,8 @@ class Geoserver(object):
         if data is not None:
             name = "{}:{}".format(self.workspace, name)
             options = {}
-            if isinstance(data, Band):
-                options['band'] = data.index
+            if len(data) == 1:
+                options['band'] = data.band_indexes[0]
 
                 # TODO: Generate default color map
 

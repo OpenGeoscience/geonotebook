@@ -273,10 +273,6 @@ class TestRasterData(unittest.TestCase):
                         [ True,  True,  True,  True],
                         [ True,  True,  True,  True]]])).all())
 
-    def test_getitem_single_index_band_class(self):
-        rd = RasterData("coords.mock")
-        self.assertTrue(isinstance(rd[0], RasterData.band_class))
-
 
     def test_getitem_slice_returns_raster_data(self):
         rd = RasterData("coords.mock")

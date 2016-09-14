@@ -3,54 +3,9 @@ import numpy as np
 import pkg_resources as pr
 import collections
 
-class Band(object):
-    def __init__(self, index, data):
-        self.data = data
-        self.index = index
-
-    def __repr__(self):
-        return "<{}('{}')>".format(self.__class__.__name__,
-                                   self.name)
-
-    def get_data(self, window=None, **kwargs):
-        return self.reader.get_band_data(self.index,
-                                         window=window,
-                                         **kwargs)
-
-    @property
-    def min(self):
-        return self.reader.get_band_min(self.index, masked=True)
-
-    @property
-    def max(self):
-        return self.reader.get_band_max(self.index, masked=True)
-
-    @property
-    def mean(self):
-        return self.reader.get_band_mean(self.index, masked=True)
-
-    @property
-    def stddev(self):
-        return self.reader.get_band_stddev(self.index, masked=True)
-
-    @property
-    def name(self):
-        return self.reader.get_band_name(self.index)
-
-    @property
-    def nodata(self):
-        return self.reader.get_band_nodata(self.index)
-
-
-    @property
-    def reader(self):
-        return self.data.reader
-
-
 class RasterData(collections.Sequence):
 
     _concrete_data_types = {}
-    band_class = Band
 
     @classmethod
     def register(cls, name, concrete_class):
@@ -102,26 +57,26 @@ class RasterData(collections.Sequence):
     def index(self, *args, **kwargs):
         return self.reader.index(*args, **kwargs)
 
-    def read(self, *args, **kwargs):
-        return self.reader.read(*args, **kwargs)
-
 
     def get_data(self, window=None, masked=True, axis=2, **kwargs):
         if len(self) == 1:
-            return self.band(self.band_indexes[0]).get_data(window=window,
-                                                            masked=masked,
-                                                            **kwargs)
+            return self.reader.get_band_data(self.band_indexes[0],
+                                             window=window,
+                                             maksed=masked,
+                                             **kwargs)
         else:
             if masked:
                 # TODO: fix masked array hack here
+                # Note that this also assumes nodata for first band is the
+                # same for all other bands.  all around kind of a hack
                 kwargs["masked"] = False
                 return np.ma.masked_values(
-                    np.stack([self.band(i).get_data(window=window, **kwargs)
-                              for i in self.band_indexes], axis=axis), self.band(1).nodata)
+                    np.stack([self.reader.get_band_data(i, window=window, **kwargs)
+                              for i in self.band_indexes], axis=axis), self.nodata[0])
             else:
-                return np.stack([self.band(i).get_data(window=window,
-                                                       masked=masked,
-                                                       **kwargs)
+                return np.stack([self.reader.get_band_data(i, window=window,
+                                                           masked=masked,
+                                                           **kwargs)
                                  for i in self.band_indexes], axis=axis)
 
     def __len__(self):
@@ -134,33 +89,44 @@ class RasterData(collections.Sequence):
 
         elif isinstance(key, (list, tuple)):
             return RasterData(self.path, indexes=key)
-
         else:
-            return self.band(key)
+            return RasterData(self.path, indexes=[key])
 
 
     @property
     def min(self):
-        return [self.band(i).min for i in self.band_indexes]
+        if len(self) == 1:
+            return self.reader.get_band_min(self.band_indexes[0])
+        else:
+            return [self.reader.get_band_min(i) for i in self.band_indexes]
 
     @property
     def max(self):
-        return [self.band(i).max for i in self.band_indexes]
+        if len(self) == 1:
+            return self.reader.get_band_min(self.band_indexes[0])
+        else:
+            return [self.reader.get_band_max(i) for i in self.band_indexes]
 
     @property
     def mean(self):
-        return [self.band(i).mean for i in self.band_indexes]
+        if len(self) == 1:
+            return self.reader.get_band_mean(self.band_indexes[0])
+        else:
+            return [self.reader.get_band_mean(i) for i in self.band_indexes]
 
     @property
     def stddev(self):
-        return [self.band(i).stddev for i in self.band_indexes]
+        if len(self) == 1:
+            return self.reader.get_band_stddev(self.band_indexes[0])
+        else:
+            return [self.reader.get_band_stddev(i) for i in self.band_indexes]
 
     @property
     def nodata(self):
-        return [self.band(i).nodata for i in self.band_indexes]
-
-    def band(self, index):
-        return self.band_class(index, self)
+        if len(self) == 1:
+            return self.reader.get_band_nodata(self.band_indexes[0])
+        else:
+            return [self.reader.get_band_nodata(i) for i in self.band_indexes]
 
     @property
     def count(self):
@@ -221,3 +187,27 @@ class RasterDataCollection(collections.Sequence):
                 else RasterData(self._items[key])
 
 
+###### DELETE EVERYTHING AFTER ME ##########
+
+DATA_DIR="/data/kotfic/NEX/golden_tile_layer/WELD/golden_tiles/geotiff/NBAR/"
+def sort_NBAR(a, b):
+  am, ay = int(a.split(".")[2][-2:]), int(a.split(".")[3])
+  bm, by = int(b.split(".")[2][-2:]), int(b.split(".")[3])
+
+  if ay < by:
+    return -1
+  elif ay > by:
+    return 1
+  elif by == ay:
+    if am < bm:
+      return -1
+    elif am > bm:
+      return 1
+    else:
+      return 0
+
+
+PATHS = [DATA_DIR + p for p in sorted(os.listdir(DATA_DIR), sort_NBAR)]
+
+if __name__ == "__main__":
+    rdc = RasterDataCollection(PATHS)
