@@ -83,14 +83,12 @@ class RasterData(collections.Sequence):
         return len(self.band_indexes)
 
     def __getitem__(self, key):
-        if isinstance(key, slice):
-            idx = key.indices(len(self.band_indexes))
-            return RasterData(self.path, indexes=range(*idx))
-
-        elif isinstance(key, (list, tuple)):
+        if isinstance(key, (list, tuple)):
             return RasterData(self.path, indexes=key)
-        else:
+        elif isinstance(key, int):
             return RasterData(self.path, indexes=[key])
+        else:
+            raise IndexError("Bands may only be indexed by int or list of ints")
 
 
     @property
@@ -103,7 +101,7 @@ class RasterData(collections.Sequence):
     @property
     def max(self):
         if len(self) == 1:
-            return self.reader.get_band_min(self.band_indexes[0])
+            return self.reader.get_band_max(self.band_indexes[0])
         else:
             return [self.reader.get_band_max(i) for i in self.band_indexes]
 
@@ -154,7 +152,7 @@ class RasterDataCollection(collections.Sequence):
         self._items = items
 
         band_count = RasterData(self._items[self._cur]).count
-        self.band_indexes = range(1, band_count) if indexes is None else indexes
+        self.band_indexes = range(1, band_count + 1) if indexes is None else indexes
 
         assert not min(self.band_indexes) < 1, \
             IndexError("Bands are indexed from 1")
@@ -172,22 +170,22 @@ class RasterDataCollection(collections.Sequence):
     def __getitem__(self, args):
         try:
             key, bands = args[0], args[1]
-        except (KeyError, TypeError):
+        except (KeyError, TypeError, IndexError):
             key, bands = args, None
+
+        if isinstance(bands, int):
+            bands = [bands]
 
         if isinstance(key, slice):
             idx = key.indices(len(self._items))
-            return RasterDataCollection([i for i in self._items if i in idx],
-                                        indexes=self.band_indexes,
-                                        verify=False)
-
-        elif isinstance(key, (list, tuple)):
-            return RasterDataCollection([p for i,p in enumerate(self._items) if i in key],
+            return RasterDataCollection([self._items[i] for i in range(*idx)],
                                         indexes=self.band_indexes if bands is None else bands,
                                         verify=False)
+        elif isinstance(key, int):
+            return RasterData(self._items[key],
+                              indexes=self.band_indexes if bands is None else bands)
         else:
-            return RasterData(self._items[key])[bands] if bands is not None \
-                else RasterData(self._items[key])
+            raise IndexError("{} must be of type slice, or int")
 
 
 ###### DELETE EVERYTHING AFTER ME ##########
