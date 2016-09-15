@@ -116,6 +116,7 @@ class TimeSeriesLayer(DataLayer):
 # Seems like putting it in its own class is best for now.
 
 # TODO: support slices other list functionality etc
+# TODO: convert to collections.mutablesequence
 class GeonotebookStack(object):
     def __init__(self, layers=None):
         if layers is not None:
@@ -128,6 +129,9 @@ class GeonotebookStack(object):
 
     def __repr__(self):
         return "GeonotebookStack({})".format(self._layers.__repr__())
+
+    def __len__(self):
+        return len(self._layers)
 
     def find(self, predicate):
         """Find first GeonotebookLayer that matches predicate. If predicate

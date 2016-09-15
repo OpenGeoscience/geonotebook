@@ -360,10 +360,15 @@ class Geonotebook(object):
         # These should be managed by some kind of handler to allow for
         # additional types to be added more easily
         if layer_type == 'wms':
-            cb = self._remote.add_wms_layer(layer.name, layer.vis_url, layer.params)\
+            params = layer.params
+            params['zIndex'] = len(self.layers)
+
+            cb = self._remote.add_wms_layer(layer.name, layer.vis_url, params)\
                 .then(_add_layer, self.rpc_error)
         elif layer_type == 'osm':
-            cb = self._remote.add_osm_layer(layer.name, layer.vis_url)\
+            params = {'zIndex': len(self.layers)}
+
+            cb = self._remote.add_osm_layer(layer.name, layer.vis_url, params)\
                 .then(_add_layer, self.rpc_error)
         else:
             # Exception?

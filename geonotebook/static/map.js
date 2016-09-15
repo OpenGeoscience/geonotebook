@@ -99,11 +99,16 @@ define(
         };
 
 
-        Map.prototype.add_osm_layer = function(layer_name, url){
+        Map.prototype.add_osm_layer = function(layer_name, url, params){
             var osm = this.geojsmap.createLayer('osm');
 
             osm.name(layer_name);
             osm.url = url;
+
+            // make sure zindex is explicitly set
+            if( params['zIndex'] ){
+                osm.zIndex(params['zIndex']);
+            }
 
             return layer_name
         };
@@ -116,6 +121,12 @@ define(
                 keepLower: false,
                 attribution: null
             });
+
+            // make sure zindex is explicitly set
+            if( params['zIndex'] ){
+                wms.zIndex(params['zIndex']);
+            }
+
 
             wms.name(layer_name);
 
