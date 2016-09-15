@@ -192,7 +192,23 @@ class RasterDataCollection(collections.Sequence):
 
 
     def get_data(self, *args, **kwargs):
-        raise NotImplementedError("get_data(...) Not implemented yet")
+        masked = kwargs.get("masked", True)
+        # TODO: fixed masked array hack here
+        if masked:
+            kwargs["masked"] = False
+            return np.ma.masked_values(
+                np.array([rd.get_data(*args, **kwargs) for rd in self]),
+                self.__getitem__((0,1)).nodata)
+        else:
+            return np.array([rd.get_data(*args, **kwargs) for rd in self])
+
+    def get_names(self):
+        return [rd.name for rd in self]
 
     def index(self, *args, **kwargs):
-        raise NotImplementedError("index(...) Not implemented yet")
+        # TODO: Fix this so it doesn't just assume
+        #       index is consistent across timesteps
+        return self.__getitem__(0).index(*args, **kwargs)
+
+
+###### DELETE EVERYTHING AFTER ME ##########
