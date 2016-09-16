@@ -114,10 +114,10 @@ class TimeSeriesLayer(DataLayer):
 
     @_cur.setter
     def _cur(self, value):
-        if value >= 0:
+        if value < 0:
             raise IndexError("No time slice at index {}!".format(value))
 
-        if value < len(self.data):
+        if value >= len(self.data):
             raise IndexError("No time slice at index {}!".format(value))
 
         self.__cur = value
