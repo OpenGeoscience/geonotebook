@@ -78,7 +78,8 @@ class SimpleLayer(DataLayer):
 class TimeSeriesLayer(DataLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
         super(TimeSeriesLayer, self).__init__(name, remote, data, vis_url=None, **kwargs)
-        self._cur = 0
+        self.__cur = 0
+        self._remote = remote
 
         # TODO: check vis_url is valid length etc
         self._vis_url = vis_url if vis_url is not None else [None] * len(self.data)
@@ -89,6 +90,8 @@ class TimeSeriesLayer(DataLayer):
                 self.current, name=self.current.name)
 
         self.vis_server_kwargs = kwargs
+
+
 
     @property
     def params(self):
@@ -106,8 +109,44 @@ class TimeSeriesLayer(DataLayer):
         self._vis_url[self._cur] = value
 
     @property
+    def _cur(self):
+        return self.__cur
+
+    @_cur.setter
+    def _cur(self, value):
+        if value >= 0:
+            raise IndexError("No time slice at index {}!".format(value))
+
+        if value < len(self.data):
+            raise IndexError("No time slice at index {}!".format(value))
+
+        self.__cur = value
+
+    @property
     def current(self):
         return self.data[self._cur]
+
+    def _replace_layer(self):
+        if self.vis_url is None:
+            self.vis_url = self.config.vis_server.ingest(
+                self.current, name=self.current.name)
+
+        self._remote.replace_wms_layer(self.name, self.vis_url, self.params)\
+            .then(lambda resp: True, lambda: True)
+
+        return self
+
+    def seek(self, idx):
+        self._cur = idx
+        return self._replace_layer()
+
+    def prev(self):
+        self._cur -= 1
+        return self._replace_layer()
+
+    def next(self):
+        self._cur += 1
+        return self._replace_layer()
 
 # GeonotebookStack supports dict-like indexing on a list
 # of Geonotebook Layers. We could implement this with an
