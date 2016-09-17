@@ -85,13 +85,16 @@ def get_multiband_raster_sld(
     assert isinstance(bands, (list, tuple))
 
     # Bands must be length of 3
-    assert(len(bands) == 3)
+    assert (len(bands) == 3)
 
     # Gamma must be a number or list
     assert isinstance(gamma, (int, float, list))
 
     # Opacity must be a number
     assert isinstance(opacity, (int, float))
+
+    # Opacity must be between 0 and 1
+    assert (opacity >= 0 and opacity <= 1.0)
 
     # All bands must be integers greater than 1
     assert all(isinstance(e, int) and e > 0 for e in bands), \
