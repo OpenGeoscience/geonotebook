@@ -296,3 +296,222 @@ class TestMultiBandParams(unittest.TestCase):
         opacity_out = render.call_args[1]['opacity']
 
         self.assertEquals(opacity_out, opacity)
+
+
+class TestSingleBandParams(unittest.TestCase):
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_assigned_name_is_passed_correctly(self, templates):
+        """ If name is given template_params['name'] should
+        be the same as the given name """
+
+        render = templates.get_template.return_value.render
+        name = 'Super Fancy Name'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+
+        self.assertEquals(render.call_args[1]['name'], name)
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_deafault_title(self, templates):
+        """ If title is None template_params['title']
+        should still be a string """
+
+        render = templates.get_template.return_value.render
+        name = 'Some_Name'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+
+        self.assertTrue(type(render.call_args[1]['title']) == str)
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_title_is_passed_correctly(self, templates):
+        """ If title is passed in template_params['title']
+        should equal that string """
+
+        render = templates.get_template.return_value.render
+        name = 'Some_Name'
+        title = 'Tiff_Title'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band,
+                                                     title=title)
+
+    def test_band_is_greater_than_zero(self):
+        """ If band is less than 1
+        should throw an exception """
+
+        name = 'Some_Name'
+        band = 0
+
+        self.assertRaises(AssertionError, sld.get_single_band_raster_sld,
+                          name, band=band)
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_given_band_value_is_set_correctly(self, templates):
+        """ Given band must match with channel's band property """
+
+        render = templates.get_template.return_value.render
+        name = 'Some_Name'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+        out_band = render.call_args[1]['channels'][0]['band']
+
+        self.assertEquals(band, out_band)
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_name_exists_in_template_params(self, templates):
+        """ Template params should have a name attribute """
+
+        render = templates.get_template.return_value.render
+        name = 'Some_Name'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+
+        self.assertTrue('name' in render.call_args[1])
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_title_exists_in_template_params(self, templates):
+        """ Template params should have a title attribute """
+
+        render = templates.get_template.return_value.render
+        name = 'Some_Name'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+
+        self.assertTrue('title' in render.call_args[1])
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_opacity_exists_in_template_params(self, templates):
+        """ Template params should have a opacity attribute """
+
+        render = templates.get_template.return_value.render
+        name = 'Some_Name'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+
+        self.assertTrue('opacity' in render.call_args[1])
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_opacity_exists_in_template_params(self, templates):
+        """ Template params should have a channels attribute """
+
+        render = templates.get_template.return_value.render
+        name = 'Some_Name'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+
+        self.assertTrue('channels' in render.call_args[1])
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_default_channel_name_is_passed_correctly(self, templates):
+        """ if no custom channelName template_params['channels'][0]['name']
+        should be equal to GrayChannel """
+
+        render = templates.get_template.return_value.render
+        name = 'Super Fancy Name'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+
+        self.assertEquals(render.call_args[1]['channels'][0]['name'], 'GrayChannel')
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_assigned_channel_name_is_passed_correctly(self, templates):
+        """ If custom channelName template_params['channels'][0]['name']
+        should be equal to custom channelName """
+
+        render = templates.get_template.return_value.render
+        name = 'Super Fancy Name'
+        band = 1
+        channel_name = "Super Channel Name"
+        singleband_xml = sld.get_single_band_raster_sld(name, band,
+                                                        channelName=channel_name)
+
+        self.assertEquals(render.call_args[1]['channels'][0]['name'], channel_name)
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_colormap_type_does_not_exist_in_template_params_by_default(self, templates):
+        """ If no colormap_type is passed in no colormap_type
+        attr should be in template_params
+        """
+
+        render = templates.get_template.return_value.render
+        name = 'Some_Name'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+
+        self.assertFalse('colormap_type' in render.call_args[1])
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_colormap_type_assigned_correctly(self, templates):
+        """ If custom colormap_type is passed in
+        template_params['colormap_type'] should be
+        equal to custom colormap_type
+        """
+
+        render = templates.get_template.return_value.render
+        name = 'Some_Name'
+        band = 1
+        colormap = [{"color": "#000000", "quantity": "0"},
+                    {"color": "#0000FF", "quantity": "1"}]
+        colormap_type = "Different ramp"
+        singleband_xml = sld.get_single_band_raster_sld(name, band,
+                                                        colormap=colormap,
+                                                        colormap_type=colormap_type)
+
+        self.assertEquals(colormap_type, render.call_args[1]['colormap_type'])
+
+    @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
+    def test_colormap_does_not_exist_in_template_params_by_default(self, templates):
+        """ if colormap is None there should be no 'colormap'
+        attribute in template_params """
+
+        render = templates.get_template.return_value.render
+        name = 'Some_Name'
+        band = 1
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+
+        self.assertFalse('colormap' in render.call_args[1])
+
+    def test_colormap_is_a_list_or_tuple(self):
+        """ If colormap is not a list/tuple should throw an exception """
+
+        name = 'Some_Name'
+        band = 1
+        colormap = "Not a List or Tuple"
+
+        self.assertRaises(AssertionError, sld.get_single_band_raster_sld,
+                          name, band, colormap=colormap)
+
+    def test_colormap_is_a_collection_of_dictionaries(self):
+        """ If colormap values are not all dicts should throw an exception """
+
+        name = 'Some_Name'
+        band = 1
+        colormap = ["foo", "bar"]
+
+        self.assertRaises(AssertionError, sld.get_single_band_raster_sld,
+                          name, band, colormap=colormap)
+
+    def test_each_colormap_element_has_color(self):
+        """ If colormap values do not all contain 'color'
+        attribute should thrown an exception """
+
+        name = 'Some_Name'
+        band = 1
+        colormap = [{'foo': 'bar'},
+                    {'bar': 'foo'}]
+
+        self.assertRaises(AssertionError, sld.get_single_band_raster_sld,
+                          name, band, colormap=colormap)
+
+    def test_each_colormap_element_has_quantity(self):
+        """ If colormap values do not all contain 'quantity'
+        attribute should thrown an exception """
+
+        name = 'Some_Name'
+        band = 1
+        colormap = [{'foo': 'bar'},
+                    {'bar': 'foo'}]
+
+        self.assertRaises(AssertionError, sld.get_single_band_raster_sld,
+                          name, band, colormap=colormap)

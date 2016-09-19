@@ -147,6 +147,9 @@ def get_single_band_raster_sld(
     if title is None:
         title = "Style for band {} of layer {}".format(band, name)
 
+    # Assert band number is greater than zero
+    assert(band > 0)
+
     # Get the raster template
     template = SLDTemplates.get_template("raster_sld.xml")
 
@@ -160,6 +163,19 @@ def get_single_band_raster_sld(
     }
 
     if colormap is not None:
+
+        # Assert colormap is a list or tuple
+        assert(isinstance(colormap, (list, tuple)))
+
+        # Assert colormap is a collection of dictionaries
+        assert(all(isinstance(c, (dict)) for c in colormap))
+
+        # Assert all colormap items has a color key
+        assert([c for c in colormap if 'color' in c])
+
+        # Assert all colormap items has a quantity key
+        assert([c for c in colormap if 'quantity' in c])
+
         template_params['colormap'] = colormap
         template_params['colormap_type'] = colormap_type
 
