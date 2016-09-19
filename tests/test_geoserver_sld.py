@@ -515,3 +515,127 @@ class TestSingleBandParams(unittest.TestCase):
 
         self.assertRaises(AssertionError, sld.get_single_band_raster_sld,
                           name, band, colormap=colormap)
+
+
+class TestXMLOutput(unittest.TestCase):
+
+    @staticmethod
+    def _find_xml_element(root, tag):
+        """ Finds a tag and returns it's text """
+
+        namespace = "{http://www.opengis.net/sld}"
+
+        for elem in root.iter():
+            if "{}{}".format(namespace, tag) == elem.tag:
+                return elem.text
+
+    def test_given_band_values_are_set_correctly(self):
+        """ Band Values should be set correctly """
+
+        name = 'Some_Name'
+        expected_bands = [4, 3, 9]
+        multiband_xml = sld.get_multiband_raster_sld(name,
+                                                     bands=expected_bands)
+        namespace = "{http://www.opengis.net/sld}"
+        xml_bands = []
+        root = ET.fromstring(multiband_xml.strip())
+        for elem in root.iter("{}{}".format(namespace, 'SourceChannelName')):
+            xml_bands.append(int(float(elem.text)))
+
+        self.assertEquals(expected_bands, xml_bands)
+
+    def test_given_band_value_is_set_correctly(self):
+        """ Band Value should be set correctly """
+
+        name = 'Some_Name'
+        expected_band = 2
+        singleband_xml = sld.get_single_band_raster_sld(name,
+                                                     band=expected_band)
+        namespace = "{http://www.opengis.net/sld}"
+        root = ET.fromstring(singleband_xml.strip())
+        for elem in root.iter("{}{}".format(namespace, 'SourceChannelName')):
+            self.assertEquals(int(float(elem.text)), expected_band)
+
+    def test_by_default_dont_have_colormap(self):
+        """ Call with no colormap should produce no ColorMap XML """
+
+        name = 'Some_Name'
+        band = 2
+        singleband_xml = sld.get_single_band_raster_sld(name, band)
+        root = ET.fromstring(singleband_xml.strip())
+        for elem in root.iter():
+            if 'ColorMap' in elem.tag:
+                colormap = elem
+            else:
+                colormap = False
+
+        self.assertFalse(colormap)
+
+    def test_passed_colormap_exists_in_xml(self):
+        """ Call with colormap should produce ColorMap section """
+
+        name = 'Some_Name'
+        band = 2
+        colormap = [
+             {"color": "#000000", "quantity": "100"},
+             {"color": "#0000FF", "quantity": "110"},
+             {"color": "#00FF00", "quantity": "135"},
+             {"color": "#FF0000", "quantity": "160"},
+             {"color": "#FF00FF", "quantity": "185"}]
+
+        singleband_xml = sld.get_single_band_raster_sld(name, band,
+                                                        colormap=colormap)
+        root = ET.fromstring(singleband_xml.strip())
+        for elem in root.iter():
+            if 'ColorMap' in elem.tag:
+                colormap = True
+            else:
+                colormap = False
+
+        self.assertTrue(colormap)
+
+    def test_number_of_color_entries_matches_xml(self):
+        """ Call with 4 colormap dicts should produce 4 ColorMap entries """
+
+        name = 'Some_Name'
+        band = 2
+        colormap = [
+             {"color": "#000000", "quantity": "100"},
+             {"color": "#0000FF", "quantity": "110"},
+             {"color": "#00FF00", "quantity": "135"},
+             {"color": "#FF00FF", "quantity": "185"}]
+
+        singleband_xml = sld.get_single_band_raster_sld(name, band,
+                                                        colormap=colormap)
+        root = ET.fromstring(singleband_xml.strip())
+        entries = []
+        for elem in root.iter():
+            if 'ColorMapEntry' in elem.tag:
+                entries.append(elem)
+
+        self.assertEquals(len(colormap), len(entries))
+
+    def test_xml_items_have_quantity_and_color_attributes(self):
+        """ Call with colormap dicts that have 'color' and 'quantity'
+        should produce ColorMapEntry XML with 'color' and 'quantity' attributes
+        """
+
+        name = 'Some_Name'
+        band = 2
+        colormap = [
+             {"color": "#000000", "quantity": "100"},
+             {"color": "#0000FF", "quantity": "110"},
+             {"color": "#00FF00", "quantity": "135"},
+             {"color": "#FF00FF", "quantity": "185"}]
+
+        singleband_xml = sld.get_single_band_raster_sld(name, band,
+                                                        colormap=colormap)
+        root = ET.fromstring(singleband_xml.strip())
+
+        for elem in root.iter():
+            if 'ColorMapEntry' in elem.tag:
+                if 'color' in elem.attrib and 'quantity' in elem.attrib:
+                    attrib = True
+                else:
+                    attrib = False
+                self.assertTrue(attrib)
