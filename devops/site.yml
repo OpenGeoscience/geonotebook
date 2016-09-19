@@ -80,20 +80,19 @@
         - pip
         - ipykernel
 
-  # Note - this is required to "trick" jupyterhub
-  # into being able to import the module so it can
-  # locate the things it needs for the nbextension
-  # install. Should be able to get rid of this by
-  # using better low-level options,  just need to
-  # investigate how to do that in the 'jupyter
-  # nbextension install ...' call. (or with kernel.js?).
-  - pip:
-      executable: pip3
-      name: "."
-      extra_args: "-e"
-      state: latest
-      chdir: /opt/geonotebook
-
+    # Note - this is required to "trick" jupyterhub
+    # into being able to import the module so it can
+    # locate the things it needs for the nbextension
+    # install. Should be able to get rid of this by
+    # using better low-level options,  just need to
+    # investigate how to do that in the 'jupyter
+    # nbextension install ...' call. (or with kernel.js?).
+    - pip:
+        executable: pip3
+        name: "."
+        extra_args: "-e"
+        state: latest
+        chdir: /opt/geonotebook
 
     - pip:
         executable: pip2
