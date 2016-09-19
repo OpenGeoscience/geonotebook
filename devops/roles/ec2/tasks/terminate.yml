@@ -1,0 +1,37 @@
+---
+- name: Fail early if required variables are not defined
+  fail:
+    msg: "Variable {{ item }} is not defined"
+  when: item not in hostvars[inventory_hostname]
+  with_items:
+    - ec2_region
+    - ec2_instance_name
+
+
+
+- name: Gather facts about remote instances
+  ec2_remote_facts:
+    filters:
+      instance-state-name: 'running'
+      "tag:Name": "{{ ec2_instance_name }}"
+    region: "{{ ec2_region }}"
+  register: remote
+
+
+- name: Terminate instances
+  ec2:
+    instance_ids: "{{ item }}"
+    region: "{{ ec2_region }}"
+    state: absent
+    wait: yes
+    wait_timeout: "{{ terminate_wait_timeout }}"
+  with_items: "{{ remote['instances'] | default([]) | map(attribute='id') | list }}"
+
+- name: Remove security group
+  ec2_group:
+    name: "sg_{{ ec2_instance_name }}"
+    description: >-
+          security group for {{ ec2_instance_name }}
+
+    region: "{{ ec2_region }}"
+    state: absent

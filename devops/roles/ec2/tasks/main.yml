@@ -1,0 +1,6 @@
+---
+- include: terminate.yml
+  when: state == 'absent'
+
+- include: launch.yml
+  when: state == 'running'

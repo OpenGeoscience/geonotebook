@@ -1,0 +1,18 @@
+---
+# Name of instance,  used to ensure only one instance is launched
+ec2_instance_name: "test_instance"
+
+# AWS key name that provides SSH access to the instance
+ec2_keyname: kotfic-NEX
+
+# Instance type
+ec2_instance_type: m4.xlarge
+
+# Region
+ec2_region: us-west-2
+
+# List of CIDR's that should have access to the machine
+ec2_whitelisted_cidrs:
+  - 66.194.253.20/32
+  - 97.65.130.169/32
+  - 104.228.38.141/32
