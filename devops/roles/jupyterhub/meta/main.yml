@@ -1,0 +1,18 @@
+---
+galaxy_info:
+  author: Tom White
+  company: Dynertia Networks
+  license: MIT
+  min_ansible_version: 1.4
+
+  platforms:
+  - name: Ubuntu
+    versions:
+    - all
+  - name: Debian
+    versions:
+    - all
+  categories:
+  - system
+
+dependencies: []

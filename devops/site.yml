@@ -5,8 +5,9 @@
   vars:
     aws_access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
     aws_secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
-#  roles:
-#    - role: ec2
+
+  roles:
+    - role: ec2
 
   post_tasks:
     - name: Register the instance to dynamic inventory
@@ -23,7 +24,6 @@
         groups: "jupyter,geoserver"
         ansible_ssh_private_key_file: "{{ ec2_keypair_path }}"
         ansible_ssh_user: "{{ ansible_default_user }}"
-#        ansible_python_interpreter: python3
       with_items: '{{ec2.instances}}'
 
 
@@ -31,8 +31,80 @@
 - hosts: geoserver
   gather_facts: false
   tasks:
-  - name: Install python2
-    raw: >-
-      sudo apt-get update && sudo apt-get install -y python
+    - name: Install python2
+      raw: >-
+        sudo apt-get update && sudo apt-get install -y python
 
 - include: geoserver/deploy.yml
+
+- hosts: jupyter
+  become: yes
+  become_user: root
+
+#   vars_prompt:
+#     - name: "jupyterpw"
+#       prompt: "Enter a password for the Jupyter user"
+#       private: yes
+#       confirm: yes
+#       encrypt: "sha512_crypt"
+
+  roles:
+    - role: jupyterhub
+      jupyterpw: "{{ jupyter_user_password }}"
+
+  post_tasks:
+    - git:
+        repo: https://github.com/OpenGeoscience/geonotebook.git
+        dest: /opt/geonotebook
+        version: raster-data-collection
+        accept_hostkey: yes
+
+    - apt:
+        name: "{{ item }}"
+      with_items:
+        - python-pip
+        - libgdal-dev
+        - gdal-bin
+        - python-numpy
+        - python-matplotlib
+        - python-gdal
+        - python-rasterio
+        - python-requests
+        - python-skimage
+
+    - pip:
+        executable: pip2
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - pip
+        - ipykernel
+
+  # Note - this is required to "trick" jupyterhub
+  # into being able to import the module so it can
+  # locate the things it needs for the nbextension
+  # install. Should be able to get rid of this by
+  # using better low-level options,  just need to
+  # investigate how to do that in the 'jupyter
+  # nbextension install ...' call. (or with kernel.js?).
+  - pip:
+      executable: pip3
+      name: "."
+      extra_args: "-e"
+      state: latest
+      chdir: /opt/geonotebook
+
+
+    - pip:
+        executable: pip2
+        name: "."
+        extra_args: "-e"
+        state: latest
+        chdir: /opt/geonotebook
+
+
+    - shell: >-
+        jupyter nbextension install --py geonotebook
+
+    - shell: >-
+        jupyter nbextension enable --py geonotebook

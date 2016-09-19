@@ -1,0 +1,3 @@
+jupyter
+jupyterhub
+git+https://github.com/jupyter/sudospawner

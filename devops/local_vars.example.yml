@@ -23,3 +23,7 @@ ec2_keypair_path: /home/kotfic/kitware/projects/NEX/keys/kotfic-NEX.pem
 
 # Default user for logging into this AMI
 ansible_default_user: ubuntu
+
+# passwd: letmein
+# via: mkpasswd --method=sha-512
+jupyter_user_password: '$6$evLI4Y/hk15$ZIsrdqMW43a4tQfwr6uWAyu4RNp.o5ueppdKqMUGSO1UCSiJ8C5uMkIPgruF2o2BmfRasV0CyzEZepChkX9s20'
