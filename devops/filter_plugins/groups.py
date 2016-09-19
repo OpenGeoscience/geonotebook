@@ -4,5 +4,5 @@ def cidr_list_to_rules(values):
 class FilterModule(object):
     def filters(self):
         return {
-            'cidr_whitelist': cidr_whitelist
+            'cidr_list_to_rules': cidr_list_to_rules
         }

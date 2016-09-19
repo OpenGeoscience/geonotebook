@@ -43,6 +43,11 @@
           security group for {{ ec2_instance_name }}
         region: "{{ ec2_region }}"
         rules: "{{ ec2_rules }}"
+        rules_egress:
+          - proto: all
+            from_port: all
+            to_port: all
+            cidr_ip: 0.0.0.0/0
 
     - name: Register custom security group
       set_fact:
@@ -73,7 +78,7 @@
     group: "{{ ec2_security_group }}"
   register: instance
 
-- name: Wait for SSH to come up on all instances
+- name: Wait for SSH to come up on instance
   wait_for:
     host: "{{ item.public_ip }}"
     port: 22

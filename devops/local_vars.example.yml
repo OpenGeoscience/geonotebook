@@ -16,3 +16,10 @@ ec2_whitelisted_cidrs:
   - 66.194.253.20/32
   - 97.65.130.169/32
   - 104.228.38.141/32
+
+
+# Path to the pem file that corresponds to ec2_keyname
+ec2_keypair_path: /home/kotfic/kitware/projects/NEX/keys/kotfic-NEX.pem
+
+# Default user for logging into this AMI
+ansible_default_user: ubuntu
