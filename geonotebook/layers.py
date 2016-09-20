@@ -134,7 +134,7 @@ class TimeSeriesLayer(DataLayer):
         self._remote.replace_wms_layer(self.name, self.vis_url, self.params)\
             .then(lambda resp: True, lambda: True)
 
-        return self
+        return self.current
 
     def seek(self, idx):
         self._cur = idx
