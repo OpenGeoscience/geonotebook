@@ -1,22 +1,34 @@
 import ConfigParser
 import pkg_resources as pr
 import vis
+import os, sys
 
 def get_config(path=None):
     conf = ConfigParser.ConfigParser()
+    paths = [
+        "${GEONOTEBOOK_INI}",
+        os.path.join(os.getcwd(), ".geonotebook.ini"),
+        "~/.geonotebook.ini",
+        os.path.join(sys.prefix, "etc/geonotebook.ini"),
+        "/etc/geonotebook.ini"
+    ]
+    found = False
+
     if path is not None:
         conf.read(path)
     else:
+        for p in paths:
+            try:
+                with open(os.path.expanduser(
+                        os.path.expandvars(p)), 'r') as fh:
+                    conf.readfp(fh)
+                    found = True
+                    break
+            except IOError:
+                pass
 
-        # Should check
-        # ./.geonotebook.ini
-        # ~/.geonotebook.ini
-        # {sys.prefix}/etc/geonotebook.ini
-        # /etc/geonotebook.ini
-        # GEONOTEBOOK_INI environment variable
-        # pkg_resources.resource_stream('geonotebook', 'config/geonotebook.ini')
-
-        conf.readfp(pr.resource_stream('geonotebook', 'config/geonotebook.ini'))
+        if found is False:
+            raise RuntimeError("Could not locate configuration file!")
 
     return conf
 
