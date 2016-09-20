@@ -190,6 +190,43 @@ class RasterDataCollection(collections.Sequence):
         else:
             raise IndexError("{} must be of type slice, or int")
 
+    @property
+    def min(self):
+        if len(self) == 1:
+            return self[0].min
+        else:
+            return [rd.min for rd in self]
+
+    @property
+    def max(self):
+        if len(self) == 1:
+            return self[0].max
+        else:
+            return [rd.max for rd in self]
+
+    @property
+    def max(self):
+        if len(self) == 1:
+            return self[0].mean
+        else:
+            return [rd.mean for rd in self]
+
+    @property
+    def stddev(self):
+        if len(self) == 1:
+            return self[0].stddev
+        else:
+            return [rd.stddev for rd in self]
+
+    @property
+    def nodata(self):
+        if len(self) == 1:
+            return self[0].nodata
+        else:
+            return [rd.nodata for rd in self]
+
+
+
 
     def get_data(self, *args, **kwargs):
         masked = kwargs.get("masked", True)
