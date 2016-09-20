@@ -29,8 +29,7 @@ define(
 
                 return _.extend({
                     method: method,
-                    params: params,
-                    id: "TESTID"}, opts);
+                    params: params}, opts);
             },
 
 

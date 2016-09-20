@@ -1,4 +1,5 @@
 import json
+import uuid
 
 class JSONRPCError(Exception):
     code = 0
@@ -60,7 +61,7 @@ def json_rpc_request(method, params=None, jsonrpc="2.0"):
         "method": method,
         "params": params,
         "jsonrpc": jsonrpc,
-        "id": "TESTID"}
+        "id": str(uuid.uuid4())}
 
 def json_rpc_notify(method, params=None, jsonrpc="2.0"):
     return {
