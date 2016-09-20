@@ -17,7 +17,8 @@ define(
             $('#geonotebook-map').empty();
             this.geojsmap = geo.map({node: '#geonotebook-map',
                                      width: $("#geonotebook-map").width(),
-                                     height: $("#geonotebook-map").height()
+                                     height: $("#geonotebook-map").height(),
+                                     allowRotation: false
                                     });
 
             this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
