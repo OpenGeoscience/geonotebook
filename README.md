@@ -9,6 +9,8 @@ Make a virtualenv and install ```jupyter[notebook]``` and development install ge
 mkvirtualenv -a . geonotebook
 pip install -r requirements.txt
 pip install .
+# Optionally you may do a development install, e.g.
+# pip install -e .
 ```
 
 Install the serverextension and nbextenion
@@ -31,5 +33,4 @@ python setup.py test
 ```
 
 
-### A Note on Development Installs
-Development installs (e.g. ```pip install -e .```) are possible,  but will not deploy the ```geonotebook.ini``` configuration correctly.  Copy ```config/geonotebook.ini``` to ```sys.prefix + "/etc/geonotebook.ini"``` or to ```.geonotebook.ini``` in the directory you run ```jupyter notebook``` from.
+
