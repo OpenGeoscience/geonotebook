@@ -15,7 +15,9 @@ setup(
     author_email='chris.kotfila@kitware.com',
     license='Apache License 2.0',
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
-    data_files=[('config', ['geonotebook.ini'])],
+    data_files=[
+        ('etc', ['config/geonotebook.ini'])
+    ],
     test_suite="tests",
     entry_points={
         'geonotebook.wrappers.raster': [
