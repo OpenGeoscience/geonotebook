@@ -145,8 +145,11 @@ class TimeSeriesLayer(DataLayer):
         return self._replace_layer()
 
     def next(self):
-        self._cur += 1
-        return self._replace_layer()
+        try:
+            self._cur += 1
+            return self._replace_layer()
+        except IndexError:
+            raise StopIteration()
 
 # GeonotebookStack supports dict-like indexing on a list
 # of Geonotebook Layers. We could implement this with an
