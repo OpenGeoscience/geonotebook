@@ -23,11 +23,9 @@ def get_config(path=None):
                         os.path.expandvars(p)), 'r') as fh:
                     conf.readfp(fh)
                     found = True
+                    break
             except IOError:
                 pass
-
-            if found:
-                break
 
         if found is False:
             raise RuntimeError("Could not locate configuration file!")
