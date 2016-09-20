@@ -12,9 +12,13 @@ from jsonrpc import (json_rpc_request,
                      json_rpc_result,
                      is_response,
                      is_request)
-from layers import GeonotebookStack, GeonotebookLayer, BBox
+from layers import (BBox,
+                    GeonotebookStack,
+                    NoDataLayer,
+                    SimpleLayer,
+                    TimeSeriesLayer)
 
-from wrappers import RasterData
+from wrappers import RasterData, RasterDataCollection
 
 
 
@@ -326,15 +330,29 @@ class Geonotebook(object):
                   **kwargs):
 
 
-        # TODO verify layer exists in geoserver?
-        if name is None and data is not None:
-            name = os.path.splitext(os.path.basename(data.path))[0]
 
         # Create the GeonotebookLayer -  if vis_url is none,  this will take
         # data_path and upload it to the configured vis_server,  this will make
         # the visualization url available through the 'vis_url' attribute
         # on the layer object.
-        layer = GeonotebookLayer(name, data=data, vis_url=vis_url, **kwargs)
+
+        # HACK:  figure out a way to do this without so many conditionals
+        if isinstance(data, RasterData):
+            # TODO verify layer exists in geoserver?
+            name = data.name if name is None else name
+
+            layer = SimpleLayer(name, self._remote, data=data, vis_url=vis_url, **kwargs)
+        elif isinstance(data, RasterDataCollection):
+            assert name is not None, \
+                RuntimeError("RasterDataCollection layers require a 'name'")
+
+            layer = TimeSeriesLayer(name, self._remote, data=data, vis_url=vis_url, **kwargs)
+
+        else:
+            assert name is not None, \
+                RuntimeError("Non data layers require a 'name'")
+
+            layer = NoDataLayer(name, self._remote, vis_url=vis_url, **kwargs)
 
         def _add_layer(layer_name):
             self.layers.append(layer)
@@ -342,10 +360,15 @@ class Geonotebook(object):
         # These should be managed by some kind of handler to allow for
         # additional types to be added more easily
         if layer_type == 'wms':
-            cb = self._remote.add_wms_layer(name, layer.vis_url, layer.params)\
+            params = layer.params
+            params['zIndex'] = len(self.layers)
+
+            cb = self._remote.add_wms_layer(layer.name, layer.vis_url, params)\
                 .then(_add_layer, self.rpc_error)
         elif layer_type == 'osm':
-            cb = self._remote.add_osm_layer(name, layer.vis_url)\
+            params = {'zIndex': len(self.layers)}
+
+            cb = self._remote.add_osm_layer(layer.name, layer.vis_url, params)\
                 .then(_add_layer, self.rpc_error)
         else:
             # Exception?

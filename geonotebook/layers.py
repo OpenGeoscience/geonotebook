@@ -9,11 +9,29 @@ BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 #        None. This allows us to use a consistent interface for things
 #        like the OSM base layer,  or more generally for tile server URLs
 #        that don't have any (accessible) data associated with them.
+
+
+
 class GeonotebookLayer(object):
-    def __init__(self, name, vis_url=None, data=None, **kwargs):
+    def __init__(self, name, remote, **kwargs):
         self.config = Config()
+        self.remote = remote
         self.name = name
+
+    def __repr__(self):
+        return "<{}('{}')>".format(
+            self.__class__.__name__, self.name)
+
+
+class NoDataLayer(GeonotebookLayer):
+    def __init__(self, name, remote, vis_url, **kwargs):
+        super(NoDataLayer, self).__init__(name, remote, **kwargs)
         self.vis_url = vis_url
+
+
+class DataLayer(GeonotebookLayer):
+    def __init__(self, name, remote, data, vis_url=None, **kwargs):
+        super(DataLayer, self).__init__(name, remote, **kwargs)
         self.data = data
 
         # index into data in the form of ((ulx, uly), (lrx, lry))
@@ -22,13 +40,6 @@ class GeonotebookLayer(object):
         assert vis_url is not None or data is not None, \
             "Must pass in vis_url or data to {}".format(
                 self.__class__.__name__)
-
-        if self.data is not None and vis_url is None:
-            self.vis_url = self.config.vis_server.ingest(
-                self.data, name=self.name)
-
-        self.params = self.config.vis_server.get_params(
-            self.name, self.data, **kwargs)
 
     @property
     def region(self):
@@ -50,9 +61,95 @@ class GeonotebookLayer(object):
             self._window = self.data.index(value.ulx, value.uly), \
                 self.data.index(value.lrx, value.lry)
 
-    def __repr__(self):
-        return "<{}('{}')>".format(
-            self.__class__.__name__, self.name)
+
+class SimpleLayer(DataLayer):
+    def __init__(self, name, remote, data, vis_url=None, **kwargs):
+        super(SimpleLayer, self).__init__(name, remote, data, vis_url=vis_url, **kwargs)
+        self.vis_url = vis_url
+
+        if self.vis_url is None:
+            self.vis_url = self.config.vis_server.ingest(
+                self.data, name=self.name)
+
+        self.params = self.config.vis_server.get_params(
+            self.name, self.data, **kwargs)
+
+
+class TimeSeriesLayer(DataLayer):
+    def __init__(self, name, remote, data, vis_url=None, **kwargs):
+        super(TimeSeriesLayer, self).__init__(name, remote, data, vis_url=None, **kwargs)
+        self.__cur = 0
+        self._remote = remote
+
+        # TODO: check vis_url is valid length etc
+        self._vis_url = vis_url if vis_url is not None else [None] * len(self.data)
+        self._params = [None] * len(self.data)
+
+        if self.vis_url is None:
+            self.vis_url = self.config.vis_server.ingest(
+                self.current, name=self.current.name)
+
+        self.vis_server_kwargs = kwargs
+
+
+
+    @property
+    def params(self):
+        if self._params[self._cur] is None:
+            self._params[self._cur] = self.config.vis_server.get_params(
+                self.current.name, self.current, **self.vis_server_kwargs)
+        return self._params[self._cur]
+
+    @property
+    def vis_url(self):
+        return self._vis_url[self._cur]
+
+    @vis_url.setter
+    def vis_url(self, value):
+        self._vis_url[self._cur] = value
+
+    @property
+    def _cur(self):
+        return self.__cur
+
+    @_cur.setter
+    def _cur(self, value):
+        if value < 0:
+            raise IndexError("No time slice at index {}!".format(value))
+
+        if value >= len(self.data):
+            raise IndexError("No time slice at index {}!".format(value))
+
+        self.__cur = value
+
+    @property
+    def current(self):
+        return self.data[self._cur]
+
+    def _replace_layer(self):
+        if self.vis_url is None:
+            self.vis_url = self.config.vis_server.ingest(
+                self.current, name=self.current.name)
+
+        self._remote.replace_wms_layer(self.name, self.vis_url, self.params)\
+            .then(lambda resp: True, lambda: True)
+
+        return self.current
+
+    def seek(self, idx):
+        self._cur = idx
+        return self._replace_layer()
+
+    def prev(self):
+        self._cur -= 1
+        return self._replace_layer()
+
+    def next(self):
+        try:
+            self._cur += 1
+            return self._replace_layer()
+        except IndexError:
+            raise StopIteration()
 
 # GeonotebookStack supports dict-like indexing on a list
 # of Geonotebook Layers. We could implement this with an
@@ -61,6 +158,7 @@ class GeonotebookLayer(object):
 # Seems like putting it in its own class is best for now.
 
 # TODO: support slices other list functionality etc
+# TODO: convert to collections.mutablesequence
 class GeonotebookStack(object):
     def __init__(self, layers=None):
         if layers is not None:
@@ -73,6 +171,9 @@ class GeonotebookStack(object):
 
     def __repr__(self):
         return "GeonotebookStack({})".format(self._layers.__repr__())
+
+    def __len__(self):
+        return len(self._layers)
 
     def find(self, predicate):
         """Find first GeonotebookLayer that matches predicate. If predicate
