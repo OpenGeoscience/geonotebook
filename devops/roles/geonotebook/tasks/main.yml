@@ -42,10 +42,6 @@
     state: latest
     chdir: "{{ geonotebook_dir }}"
 
-
-- name: Display all variables/facts known for a host
-  debug: msg="{{ hostvars }}"
-
 - name: Template out the geonotebook.ini configuration file
   template:
     src: geonotebook.ini.j2
