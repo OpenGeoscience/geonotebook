@@ -1,4 +1,5 @@
-- hosts: localhost
+- name: Launch the ec2 instance
+  hosts: localhost
   connection: local
   gather_facts: false
   become: false
@@ -28,28 +29,25 @@
 
 
 # Handle installing python 2.7.11 on 16.04
-# - hosts: geoserver
-#   gather_facts: false
-#   tasks:
-#     - name: Install python2
-#       raw: >-
-#         sudo apt-get update && sudo apt-get install -y python
+- name: Hack to resolve 16.04 python2/3 issue
+  hosts: geoserver
+  gather_facts: false
+  tasks:
+    - name: Install python2
+      raw: >-
+        sudo apt-get update && sudo apt-get install -y python
 
-# - include: geoserver/deploy.yml
 
-- hosts: jupyter
+# Deploy geoserver
+- include: geoserver/deploy.yml
+
+
+- name: Provisiong Jupyter Hub, install geonotebook
+  hosts: jupyter
   become: yes
   become_user: root
-
   roles:
-#     - role: jupyterhub
-#       jupyterpw: "{{ jupyter_user_password }}"
+    - role: jupyterhub
+      jupyterpw: "{{ jupyter_user_password }}"
     - role: geonotebook
       geonotebook_version: ansible-ec2-deploy
-
-#
-#     - shell: >-
-#         jupyter nbextension install --py geonotebook
-#
-#     - shell: >-
-#         jupyter nbextension enable --py geonotebook

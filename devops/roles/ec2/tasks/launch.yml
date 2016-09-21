@@ -78,13 +78,22 @@
     group: "{{ ec2_security_group }}"
   register: instance
 
+
+- name: Get instance facts
+  ec2_remote_facts:
+    filters:
+      instance-id: "{{ instance.tagged_instances[0].id }}"
+    region: "{{ ec2_region }}"
+  register: ec2
+
+
 - name: Wait for SSH to come up on instance
   wait_for:
-    host: "{{ item.public_ip }}"
+    host: "{{ item.public_dns_name }}"
     port: 22
     delay: 20
     timeout: "{{ ec2_launch_instance_timeout }}"
     state: started
   # Note: tagged_instances will include launched instances
   #       and instances that were already running.
-  with_items: "{{ instance.tagged_instances | default([]) }}"
+  with_items: "{{ ec2.instances | default([]) }}"
