@@ -1,3 +1,13 @@
+## GeoNotebook
+GeoNotebook is an application that provides client/server
+enviroment with inteactive visualization and analysis capabilities
+using [Jupyter](http://jupyter.org), [GeoJS]
+(http://www.github.com/OpenGeoscience/geojs) and other open source tools.
+Jointly developed by  [Kitware](http://www.kitware.com) and
+[NASA Ames](https://www.nasa.gov/centers/ames/home/index.html),
+GeoNotebook is designed for big data and cloud enabled data analysis
+and visualization.
+
 ## Installation
 Clone the repo:
 ```bash
