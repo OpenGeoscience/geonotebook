@@ -28,54 +28,24 @@
 
 
 # Handle installing python 2.7.11 on 16.04
-- hosts: geoserver
-  gather_facts: false
-  tasks:
-    - name: Install python2
-      raw: >-
-        sudo apt-get update && sudo apt-get install -y python
+# - hosts: geoserver
+#   gather_facts: false
+#   tasks:
+#     - name: Install python2
+#       raw: >-
+#         sudo apt-get update && sudo apt-get install -y python
 
-- include: geoserver/deploy.yml
+# - include: geoserver/deploy.yml
 
 - hosts: jupyter
   become: yes
   become_user: root
 
   roles:
-    - role: jupyterhub
-      jupyterpw: "{{ jupyter_user_password }}"
-
-  post_tasks:
-    - git:
-        repo: https://github.com/OpenGeoscience/geonotebook.git
-        dest: /opt/geonotebook
-        version: ansible-ec2-deploy
-        accept_hostkey: yes
-
-    - apt:
-        name: "{{ item }}"
-      with_items:
-        - python-pip
-        - libgdal-dev
-        - gdal-bin
-        - python-numpy
-        - python-matplotlib
-        - python-gdal
-        - python-rasterio
-        - python-requests
-        - python-skimage
-
-    - pip:
-        executable: pip2
-        name: "{{ item }}"
-        state: latest
-        extra_args: "-vvv"
-        chdir: /opt/geonotebook
-      with_items:
-        - pip
-        - ipywidgets
-        - "."
-
+#     - role: jupyterhub
+#       jupyterpw: "{{ jupyter_user_password }}"
+    - role: geonotebook
+      geonotebook_version: ansible-ec2-deploy
 
 #
 #     - shell: >-
