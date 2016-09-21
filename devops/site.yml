@@ -41,13 +41,6 @@
   become: yes
   become_user: root
 
-#   vars_prompt:
-#     - name: "jupyterpw"
-#       prompt: "Enter a password for the Jupyter user"
-#       private: yes
-#       confirm: yes
-#       encrypt: "sha512_crypt"
-
   roles:
     - role: jupyterhub
       jupyterpw: "{{ jupyter_user_password }}"
@@ -56,7 +49,7 @@
     - git:
         repo: https://github.com/OpenGeoscience/geonotebook.git
         dest: /opt/geonotebook
-        version: raster-data-collection
+        version: ansible-ec2-deploy
         accept_hostkey: yes
 
     - apt:
@@ -76,34 +69,17 @@
         executable: pip2
         name: "{{ item }}"
         state: latest
+        extra_args: "-vvv"
+        chdir: /opt/geonotebook
       with_items:
         - pip
-        - ipykernel
-
-    # Note - this is required to "trick" jupyterhub
-    # into being able to import the module so it can
-    # locate the things it needs for the nbextension
-    # install. Should be able to get rid of this by
-    # using better low-level options,  just need to
-    # investigate how to do that in the 'jupyter
-    # nbextension install ...' call. (or with kernel.js?).
-    - pip:
-        executable: pip3
-        name: "."
-        extra_args: "-e"
-        state: latest
-        chdir: /opt/geonotebook
-
-    - pip:
-        executable: pip2
-        name: "."
-        extra_args: "-e"
-        state: latest
-        chdir: /opt/geonotebook
+        - ipywidgets
+        - "."
 
 
-    - shell: >-
-        jupyter nbextension install --py geonotebook
-
-    - shell: >-
-        jupyter nbextension enable --py geonotebook
+#
+#     - shell: >-
+#         jupyter nbextension install --py geonotebook
+#
+#     - shell: >-
+#         jupyter nbextension enable --py geonotebook

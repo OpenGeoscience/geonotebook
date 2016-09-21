@@ -84,11 +84,21 @@ def install_geonotebook_ini(cmd):
                 shutil.copyfile(src, dest)
 
 
+def install_nbextension(cmd):
+    from notebook.nbextensions import (install_nbextension_python,
+                                       enable_nbextension)
+
+    install_nbextension_python("geonotebook", overwrite=True, sys_prefix=True)
+    enable_nbextension("notebook", "geonotebook/index", sys_prefix=True)
+
+
+@post_install(install_nbextension)
 @post_install(install_kernel)
 class CustomInstall(install):
     pass
 
 
+@post_install(install_nbextension)
 @post_install(install_geonotebook_ini)
 @post_install(install_kernel)
 class CustomDevelop(develop):
@@ -106,7 +116,8 @@ setup(
     license='Apache License 2.0',
     install_requires=[
         "ipykernel",
-        "jupyter_client"
+        "jupyter_client",
+        "notebook"
     ],
     cmdclass={
         'install': CustomInstall,

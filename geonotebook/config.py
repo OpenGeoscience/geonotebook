@@ -10,8 +10,10 @@ def get_config(path=None):
         os.path.join(os.getcwd(), ".geonotebook.ini"),
         "~/.geonotebook.ini",
         os.path.join(sys.prefix, "etc/geonotebook.ini"),
-        "/etc/geonotebook.ini"
-    ]
+        "/usr/local/etc/geonotebook.ini",
+        "/usr/etc/geonotebook.ini",
+        "/etc/geonotebook.ini"]
+
     found = False
 
     if path is not None:
