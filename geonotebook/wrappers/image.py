@@ -99,12 +99,6 @@ class GeoTiffImage(object):
 
     @validate_index
     def get_band_name(self, index, default=None):
-        assert index > 0, \
-            IndexError("Bands are indexed from 1")
-
-        assert index <= self.count, \
-            IndexError("Band index out of range")
-
         if default is None:
             default = "Band {}".format(index)
 

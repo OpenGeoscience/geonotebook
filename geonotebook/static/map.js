@@ -17,7 +17,8 @@ define(
             $('#geonotebook-map').empty();
             this.geojsmap = geo.map({node: '#geonotebook-map',
                                      width: $("#geonotebook-map").width(),
-                                     height: $("#geonotebook-map").height()
+                                     height: $("#geonotebook-map").height(),
+                                     allowRotation: false
                                     });
 
             this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
@@ -46,8 +47,13 @@ define(
         };
 
 
-        Map.prototype.msg_types = ["get_protocol", "set_center", "_debug",
-                                   "add_wms_layer", "add_osm_layer", "remove_layer"];
+        Map.prototype.msg_types = ["get_protocol",
+                                   "set_center",
+                                   "_debug",
+                                   "add_wms_layer",
+                                   "replace_wms_layer",
+                                   "add_osm_layer",
+                                   "remove_layer"];
 
         Map.prototype._debug = function(msg){
             console.log(msg);
@@ -71,7 +77,6 @@ define(
                                     return arg.split("=")[0].trim();
                                 })
                        };
-
 
 
             }.bind(this));
@@ -100,14 +105,82 @@ define(
         };
 
 
-        Map.prototype.add_osm_layer = function(layer_name, url){
+        Map.prototype.add_osm_layer = function(layer_name, url, params){
             var osm = this.geojsmap.createLayer('osm');
 
             osm.name(layer_name);
             osm.url = url;
 
+            // make sure zindex is explicitly set
+            if( params['zIndex'] ){
+                osm.zIndex(params['zIndex']);
+            }
+
             return layer_name
         };
+
+        Map.prototype.replace_wms_layer = function( layer_name, base_url, params){
+
+            var old_layer = _.find(this.geojsmap.layers(), function(e) { return e.name() == layer_name; })
+
+            if (old_layer === undefined){
+
+                console.log("Could not find " + layer_name + " layer");
+                return false;
+
+            } else {
+                var projection = 'EPSG:3857';
+
+                var wms = this.geojsmap.createLayer('osm', {
+                    keepLower: false,
+                    attribution: null
+                });
+                wms.name(layer_name);
+                wms.zIndex(old_layer.zIndex())
+                wms.url(function (x, y, zoom) {
+
+                    var bb = wms.gcsTileBounds({
+                        x: x,
+                        y: y,
+                        level: zoom
+                    }, projection);
+
+                    var bbox_mercator = bb.left + ',' + bb.bottom + ',' +
+                            bb.right + ',' + bb.top;
+
+
+                    var local_params = {
+                        'SERVICE': 'WMS',
+                        'VERSION': '1.3.0',
+                        'REQUEST': 'GetMap',
+                        //                     'LAYERS': layer_name, // US Elevation
+                        'STYLES': '',
+                        'BBOX': bbox_mercator,
+                        'WIDTH': 512,
+                        'HEIGHT': 512,
+                        'FORMAT': 'image/png',
+                        'TRANSPARENT': true,
+                        'SRS': projection,
+                        'TILED': true
+                        // TODO: What if anythin should be in SLD_BODY?
+                     //'SLD_BODY': sld
+                    };
+
+                    if( params['SLD_BODY']) {
+                        local_params['SLD_BODY'] = params['SLD_BODY'];
+                    }
+
+                    return base_url + '&' + $.param(local_params);
+
+                });
+
+                this.geojsmap.deleteLayer(old_layer);
+
+                return true;
+            }
+
+        };
+
 
         Map.prototype.add_wms_layer = function(layer_name, base_url, params){
 
@@ -118,8 +191,13 @@ define(
                 attribution: null
             });
 
+            // make sure zindex is explicitly set
+            if( params['zIndex'] ){
+                wms.zIndex(params['zIndex']);
+            }
+
+
             wms.name(layer_name);
-            wms.opacity(0.9);
 
             wms.url(function (x, y, zoom) {
 
@@ -137,7 +215,7 @@ define(
                      'SERVICE': 'WMS',
                      'VERSION': '1.3.0',
                      'REQUEST': 'GetMap',
-                     'LAYERS': layer_name, // US Elevation
+//                     'LAYERS': layer_name, // US Elevation
                      'STYLES': '',
                      'BBOX': bbox_mercator,
                      'WIDTH': 512,
@@ -154,7 +232,7 @@ define(
                     local_params['SLD_BODY'] = params['SLD_BODY'];
                 }
 
-                return base_url + '?' + $.param(local_params);
+                return base_url + '&' + $.param(local_params);
 
             });
 

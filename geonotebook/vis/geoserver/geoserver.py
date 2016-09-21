@@ -1,4 +1,4 @@
-from geonotebook.wrappers import Band, RasterData
+from geonotebook.wrappers import RasterData
 from sld import get_single_band_raster_sld, get_multiband_raster_sld
 import requests
 import os
@@ -85,8 +85,8 @@ class Geoserver(object):
         if data is not None:
             name = "{}:{}".format(self.workspace, name)
             options = {}
-            if isinstance(data, Band):
-                options['band'] = data.index
+            if len(data) == 1:
+                options['band'] = data.band_indexes[0]
 
                 # TODO: Generate default color map
 
@@ -135,7 +135,7 @@ class Geoserver(object):
 #             # Raise exception
 #             pass
 
-        return self.base_url + "/ows"
+        return self.base_url + "/ows?LAYERS={}".format(name)
 
     # The purpose of the 'ingest' endpoint is to get a file (e.g. as
     # represented by a RasterData object) and move it into whatever
@@ -147,8 +147,7 @@ class Geoserver(object):
     # Needed to geospatially reference the data on the remote system
     def ingest(self, data, name=None):
 
-        if name is None:
-            name = os.path.splitext(os.path.basename(data.path))[0]
+        name = data.name if name is None else name
 
         # Create the workspace
 

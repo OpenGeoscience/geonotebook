@@ -1,3 +1,4 @@
+## Installation
 Clone the repo:
 ```bash
 git clone git@github.com:OpenGeoscience/geonotebook.git
@@ -7,7 +8,9 @@ Make a virtualenv and install ```jupyter[notebook]``` and development install ge
 ```bash
 mkvirtualenv -a . geonotebook
 pip install -r requirements.txt
-pip install -e .
+pip install .
+# Optionally you may do a development install, e.g.
+# pip install -e .
 ```
 
 Install the serverextension and nbextenion
@@ -28,3 +31,6 @@ Run the tests
 ```bash
 python setup.py test
 ```
+
+
+
