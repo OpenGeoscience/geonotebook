@@ -57,7 +57,7 @@
     - role: jupyterhub
       jupyterpw: "{{ jupyter_user_password }}"
     - role: geonotebook
-      geonotebook_version: ansible-ec2-deploy
+      geonotebook_version: master
       use_system_python_gdal: true
 
   post_tasks:
