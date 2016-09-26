@@ -1,5 +1,5 @@
 ansible==2.1.1.0
-GDAL==1.11.3
+GDAL==1.11.2
 jupyter==1.0.0
 numpy==1.11.1
 rasterio==0.36.0
