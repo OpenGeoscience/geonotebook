@@ -7,6 +7,13 @@
     aws_access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
     aws_secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
 
+  pre_tasks:
+    - name: Make sure required variables are not empty
+      assert:
+        that:
+          - "aws_access_key and aws_secret_key"
+        msg: "Must set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables!"
+
   roles:
     - role: ec2
 
