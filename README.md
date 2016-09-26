@@ -9,8 +9,8 @@ Jointly developed by  [Kitware](http://www.kitware.com) and
 
 ## Screenshots
 ![screen shot](screenshots/geonotebook.png)
-![ndvi](screenshots/ndvi.png)
-![contour](screenshots/contour.png)
+
+Checkout some additional [screenshots](screenshots/)
 
 ## Installation
 ### Clone the repo:
