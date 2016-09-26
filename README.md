@@ -38,6 +38,7 @@ jupyter notebook
 
 Run the tests
 ```bash
+pip install -r requirements-dev.txt
 python setup.py test
 ```
 
