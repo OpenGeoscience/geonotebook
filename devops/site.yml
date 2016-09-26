@@ -42,7 +42,7 @@
 - include: geoserver/deploy.yml
 
 
-- name: Provisiong Jupyter Hub, install geonotebook
+- name: Provisioning Jupyter Hub, install geonotebook
   hosts: jupyter
   become: yes
   become_user: root

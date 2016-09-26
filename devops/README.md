@@ -16,14 +16,34 @@ The geonotebook can also be deployed to AWS as a [jupyter hub](https://github.co
 # Make sure boto is installed
 pip install -r requirements.txt
 
+# Make sure boto can authenticate with AWS server
+export AWS_ACCESS_KEY_ID=XXXXXXXXXXXXXXXX
+export AWS_SECRET_ACCESS_KEY=XXXXXXXXXXXXXXXXXXXXXXXXXXX
+
 # Launch and provision the instance
 ansible-playbook -i localhost, -e @local_vars.yml site.yml
 ```
 
 This will launch an instance and provision it with geoserver, jupyterhub and geonotebook. The hub page should be available at https://your-ec2-instance-public-dns-name.com:8000/ (Please note this is set up with a self-signed SSL certificate and so your browser may complain). 
 
+*NOTE* if you have issues with ```"ImportError: No module named boto"``` this may be due to ansible using an incorrect python (e.g. if you installed boto in a virtualenv). In these cases your best bet is to create a temporary inventory file in ```/tmp/inventory``` with the following:
 
-The instance may be terminated by running:
+
+```
+# /tmp/inventory
+localhost ansible_python_interpreter=/path/to/.virtualenv/bin/python
+```
+
+You can then re-run the final command like so:
+
+```
+# Launch and provision the instance
+ansible-playbook -i /tmp/inventory -e @local_vars.yml site.yml
+```
+
+This will ensure that ansible, when run on local host, is using the correct python.
+
+Finally, the instance may be terminated by running:
 
 ```
 ansible-playbook -i localhost, -e @local_vars.yml -e state=absent site.yml
