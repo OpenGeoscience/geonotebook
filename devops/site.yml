@@ -1,0 +1,87 @@
+- name: Launch the ec2 instance
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars:
+    aws_access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+    aws_secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+
+  pre_tasks:
+    - name: Make sure required variables are not empty
+      assert:
+        that:
+          - "aws_access_key and aws_secret_key"
+        msg: "Must set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables!"
+
+  roles:
+    - role: ec2
+
+  post_tasks:
+    - name: Register the instance to dynamic inventory
+      ec2_remote_facts:
+        filters:
+          instance-state-name: 'running'
+          "tag:Name": "{{ ec2_instance_name }}"
+        region: "{{ ec2_region }}"
+      register: ec2
+
+    - name: Add new instance to jupyterhub & geoserver groups
+      add_host:
+        hostname: "{{ item.public_dns_name }}"
+        groups: "jupyter,geoserver"
+        ansible_ssh_private_key_file: "{{ ec2_keypair_path }}"
+        ansible_ssh_user: "{{ ansible_default_user }}"
+      with_items: '{{ec2.instances}}'
+
+
+# Handle installing python 2.7.11 on 16.04
+- name: Hack to resolve 16.04 python2/3 issue
+  hosts: geoserver
+  gather_facts: false
+  tasks:
+    - name: Install python2
+      raw: >-
+        sudo apt-get update && sudo apt-get install -y python
+
+
+# Deploy geoserver
+- include: geoserver/deploy.yml
+
+
+- name: Provisioning Jupyter Hub, install geonotebook
+  hosts: jupyter
+  become: yes
+  become_user: root
+  roles:
+    - role: jupyterhub
+      jupyterpw: "{{ jupyter_user_password }}"
+    - role: geonotebook
+      geonotebook_version: master
+      use_system_python_gdal: true
+
+  post_tasks:
+    - name: Create example directory
+      file:
+        path: "/home/{{ item.username }}/examples"
+        state: directory
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+      with_items: "{{ notebook_users }}"
+      when: notebook_users is defined
+
+    - name: Copy example notebooks
+      shell: >-
+        cp /opt/geonotebook/notebooks/*.ipynb /home/{{ item.username }}/examples/
+      with_items: "{{ notebook_users }}"
+      when: notebook_users is defined
+
+    - name: Reset permissions on example directory
+      file:
+        path: "/home/{{ item.username }}/examples"
+        state: directory
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        recurse: true
+      with_items: "{{ notebook_users }}"
+      when: notebook_users is defined

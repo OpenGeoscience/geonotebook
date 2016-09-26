@@ -1,0 +1,99 @@
+---
+
+- name: Fail early if required variables are not defined
+  fail:
+    msg: "Variable {{ item }} is not defined"
+  when: item not in hostvars[inventory_hostname]
+  with_items:
+    - ec2_whitelisted_cidrs
+    - ec2_keyname
+    - ec2_instance_type
+    - ec2_region
+    - ec2_instance_name
+
+- name: Define default firewall rules if not provided
+  set_fact:
+    ec2_rules: "{{ ec2_whitelisted_cidrs | cidr_list_to_rules }}"
+  when: ec2_rules is not defined
+
+- block:
+    - name: Find latest AMI
+      ec2_ami_find:
+        state: available
+        sort: creationDate
+        sort_order: descending
+        name: "{{ ami_spec.name }}"
+        owner: "{{ ami_spec.owner | default(omit) }}"
+        ami_tags: "{{ ami_spec.tags | default(omit) }}"
+        region: "{{ ec2_region }}"
+      register: discovered_amis
+
+    - name: Register to ec2_instance_ami variable
+      set_fact:
+        ec2_instance_ami: "{{ discovered_amis.results[0]['ami_id'] }}"
+      when: ec2_instance_ami is not defined
+
+
+# Create a custom security group if one is not passed in
+- block:
+    - name: Create a custom security group
+      ec2_group:
+        name: "sg_{{ ec2_instance_name }}"
+        description: >-
+          security group for {{ ec2_instance_name }}
+        region: "{{ ec2_region }}"
+        rules: "{{ ec2_rules }}"
+        rules_egress:
+          - proto: all
+            from_port: all
+            to_port: all
+            cidr_ip: 0.0.0.0/0
+
+    - name: Register custom security group
+      set_fact:
+        ec2_security_group: "sg_{{ ec2_instance_name }}"
+  when: ec2_security_group is not defined
+
+###
+# Launch instances and wait for SSH to come up
+#
+
+- name: Launch Instance
+  ec2:
+    # Required vars
+    instance_type: "{{ ec2_instance_type }}"
+    image: "{{ ec2_instance_ami }}"
+    region: "{{ ec2_region }}"
+    key_name: "{{ ec2_keyname }}"
+
+    # Tags
+    instance_tags:
+      Name: "{{ ec2_instance_name }}"
+    count_tag:
+      Name: "{{ ec2_instance_name }}"
+    # There can be only one...
+    exact_count: 1
+
+    # Misc
+    group: "{{ ec2_security_group }}"
+  register: instance
+
+
+- name: Get instance facts
+  ec2_remote_facts:
+    filters:
+      instance-id: "{{ instance.tagged_instances[0].id }}"
+    region: "{{ ec2_region }}"
+  register: ec2
+
+
+- name: Wait for SSH to come up on instance
+  wait_for:
+    host: "{{ item.public_dns_name }}"
+    port: 22
+    delay: 20
+    timeout: "{{ ec2_launch_instance_timeout }}"
+    state: started
+  # Note: tagged_instances will include launched instances
+  #       and instances that were already running.
+  with_items: "{{ ec2.instances | default([]) }}"

@@ -1,0 +1,36 @@
+---
+# Name of instance,  used to ensure only one instance is launched
+ec2_instance_name: "test_instance"
+
+# AWS key name that provides SSH access to the instance
+ec2_keyname: kotfic-NEX
+
+# Instance type
+ec2_instance_type: m4.xlarge
+
+# Region
+ec2_region: us-west-2
+
+# List of CIDR's that should have access to the machine
+ec2_whitelisted_cidrs:
+  - 66.194.253.20/32
+  - 97.65.130.169/32
+  - 104.228.38.141/32
+
+
+# Path to the pem file that corresponds to ec2_keyname
+ec2_keypair_path: /home/kotfic/kitware/projects/NEX/keys/kotfic-NEX.pem
+
+# Default user for logging into this AMI
+ansible_default_user: ubuntu
+
+# passwd: letmein
+# via: mkpasswd --method=sha-512
+jupyter_user_password: '$6$evLI4Y/hk15$ZIsrdqMW43a4tQfwr6uWAyu4RNp.o5ueppdKqMUGSO1UCSiJ8C5uMkIPgruF2o2BmfRasV0CyzEZepChkX9s20'
+
+# via: mkpasswd --method=sha-512
+notebook_users:
+  - username: 'petr'
+    password: '$6$LjPUFJkEU$dxFAiMi.fZ4PiWUtIB7O1xW1V4Ixy7z7HkwmXbBA/kvGA.U5icb.cG34w4klNzA9CW4xbfWEkMU0d/g2hXlur/'
+  - username: 'andrew'
+    password: '$6$NkR9b6QE$Aqh9zeG0Dln/n0I5dzR21p9ZDJdTsVEvt5Zddar0ipGpZU3wleP54XeVPtZGYG7kYiUDV43iZNyEQtNVftVHA.'

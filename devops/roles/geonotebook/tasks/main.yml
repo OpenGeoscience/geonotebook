@@ -1,0 +1,56 @@
+---
+- name: Clone the geonotebook repository
+  git:
+    repo: https://github.com/OpenGeoscience/geonotebook.git
+    dest: "{{ geonotebook_dir }}"
+    version: "{{ geonotebook_version }}"
+    accept_hostkey: yes
+
+- name: Install system dependencies
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - python-pip
+    - libgdal-dev
+    - gdal-bin
+    - python-numpy
+    - python-matplotlib
+    - python-gdal
+    - python-rasterio
+    - python-requests
+    - python-skimage
+
+- name: Update pip and install ipywidgets
+  pip:
+    executable: pip2
+    name: "{{ item }}"
+    state: latest
+    chdir: "{{ geonotebook_dir }}"
+  with_items:
+    - pip
+    - ipywidgets
+
+- name: Use system installed python-gdal
+  lineinfile:
+    line: "GDAL==1.11.2"
+    state: absent
+    dest: "{{geonotebook_dir}}/requirements.txt"
+  when: use_system_python_gdal is defined
+
+
+- name: Install geonotebook python requirements
+  pip:
+    executable: pip2
+    requirements: "{{geonotebook_dir}}/requirements.txt"
+
+- name: Install the geonotebook package
+  pip:
+    executable: pip2
+    name: "."
+    state: latest
+    chdir: "{{ geonotebook_dir }}"
+
+- name: Template out the geonotebook.ini configuration file
+  template:
+    src: geonotebook.ini.j2
+    dest: /usr/local/etc/geonotebook.ini
