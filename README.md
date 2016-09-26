@@ -1,3 +1,15 @@
+## GeoNotebook
+GeoNotebook is an application that provides client/server
+enviroment with inteactive visualization and analysis capabilities
+using [Jupyter](http://jupyter.org), [GeoJS]
+(http://www.github.com/OpenGeoscience/geojs) and other open source tools.
+Jointly developed by  [Kitware](http://www.kitware.com) and
+[NASA Ames](https://www.nasa.gov/centers/ames/home/index.html).
+
+
+## Screen Shots
+![screen shot](screenshots/geonotebook.png)
+
 ## Installation
 ### Clone the repo:
 ```bash
@@ -18,7 +30,7 @@ pip install .
 
 *Note* The geonotebook package has been designed to install the notebook extension etc automatically. You should not need to run ```jupyter nbextension install ...``` etc.
 
-### Ensure a running geoserver for tile serving
+### Ensure a running instance of geoserver (for tile serving)
 ```
 cd devops/geoserver/
 vagrant up
@@ -34,6 +46,7 @@ jupyter notebook
 ### Run the tests
 ```bash
 # From the source root
+pip install -r requirements-dev.txt
 python setup.py test
 ```
 
