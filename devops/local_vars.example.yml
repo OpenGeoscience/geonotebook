@@ -27,3 +27,10 @@ ansible_default_user: ubuntu
 # passwd: letmein
 # via: mkpasswd --method=sha-512
 jupyter_user_password: '$6$evLI4Y/hk15$ZIsrdqMW43a4tQfwr6uWAyu4RNp.o5ueppdKqMUGSO1UCSiJ8C5uMkIPgruF2o2BmfRasV0CyzEZepChkX9s20'
+
+# via: mkpasswd --method=sha-512
+notebook_users:
+  - username: 'petr'
+    password: '$6$LjPUFJkEU$dxFAiMi.fZ4PiWUtIB7O1xW1V4Ixy7z7HkwmXbBA/kvGA.U5icb.cG34w4klNzA9CW4xbfWEkMU0d/g2hXlur/'
+  - username: 'andrew'
+    password: '$6$NkR9b6QE$Aqh9zeG0Dln/n0I5dzR21p9ZDJdTsVEvt5Zddar0ipGpZU3wleP54XeVPtZGYG7kYiUDV43iZNyEQtNVftVHA.'

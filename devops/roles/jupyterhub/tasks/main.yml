@@ -36,6 +36,15 @@
     groups: jupyter,shadow
     password: "{{jupyterpw}}"
 
+- name: add additional notebook users
+  user:
+    name: "{{ item.username }}"
+    state: present
+    groups: jupyter
+    password: "{{ item.password }}"
+  when: notebook_users is defined
+  with_items: "{{ notebook_users }}"
+
 - name: create jupyterhub folder in etc
   file:
     path: /etc/jupyterhub
