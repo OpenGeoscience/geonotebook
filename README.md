@@ -7,8 +7,10 @@ Jointly developed by  [Kitware](http://www.kitware.com) and
 [NASA Ames](https://www.nasa.gov/centers/ames/home/index.html).
 
 
-## Screen Shots
+## Screenshots
 ![screen shot](screenshots/geonotebook.png)
+![ndvi](screenshots/ndvi.png)
+![contour](screenshots/contour.png)
 
 ## Installation
 ### Clone the repo:
