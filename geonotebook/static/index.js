@@ -182,11 +182,9 @@ define(
 
         Geonotebook.prototype.load_ipython_extension = function(){
             if (Jupyter.kernelselector.current_selection == "geonotebook2") {
+                this.init_html_and_css();
                 this.map = new Map(this);
                 this.register_events(Jupyter, events);
-
-                this.init_html_and_css();
-
 
                 // Expose globablly for debugging purposes
                 Jupyter.map = this.map;
