@@ -97,6 +97,7 @@
         dest: "/var/lib/tomcat8/webapps/"
         owner: tomcat8
         group: tomcat8
+        creates: /var/lib/tomcat8/webapps/geoserver.war
 
     # Geoserver configuration and tuning?
 

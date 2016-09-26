@@ -58,6 +58,7 @@
       jupyterpw: "{{ jupyter_user_password }}"
     - role: geonotebook
       geonotebook_version: ansible-ec2-deploy
+      use_system_python_gdal: true
 
   post_tasks:
     - name: Create example directory
