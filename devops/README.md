@@ -20,6 +20,9 @@ pip install -r requirements.txt
 ansible-playbook -i localhost, -e @local_vars.yml site.yml
 ```
 
+This will launch an instance and provision it with geoserver, jupyterhub and geonotebook. The hub page should be available at https://your-ec2-instance-public-dns-name.com:8000/ (Please note this is set up with a self-signed SSL certificate and so your browser may complain). 
+
+
 The instance may be terminated by running:
 
 ```

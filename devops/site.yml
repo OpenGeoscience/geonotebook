@@ -51,3 +51,29 @@
       jupyterpw: "{{ jupyter_user_password }}"
     - role: geonotebook
       geonotebook_version: ansible-ec2-deploy
+
+  post_tasks:
+    - name: Create example directory
+      file:
+        path: "/home/{{ item.username }}/examples"
+        state: directory
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+      with_items: "{{ notebook_users }}"
+      when: notebook_users is defined
+
+    - name: Copy example notebooks
+      shell: >-
+        cp /opt/geonotebook/notebooks/*.ipynb /home/{{ item.username }}/examples/
+      with_items: "{{ notebook_users }}"
+      when: notebook_users is defined
+
+    - name: Reset permissions on example directory
+      file:
+        path: "/home/{{ item.username }}/examples"
+        state: directory
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        recurse: true
+      with_items: "{{ notebook_users }}"
+      when: notebook_users is defined
