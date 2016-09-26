@@ -20,7 +20,7 @@ class TestGeonotebookStack(unittest.TestCase):
 
     @staticmethod
     def generate_stack():
-        """ Generates 3 geonotebook instances """
+        """ Generates 3 geonotebook layer instances """
 
         foo = layers.GeonotebookLayer('foo', vis_url='vis')
         bar = layers.GeonotebookLayer('bar', vis_url='vis')
