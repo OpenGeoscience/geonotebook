@@ -21,6 +21,9 @@ ec2_whitelisted_cidrs:
 # Path to the pem file that corresponds to ec2_keyname
 ec2_keypair_path: /home/kotfic/kitware/projects/NEX/keys/kotfic-NEX.pem
 
+# Give the instance IAM permissions (e.g. for s3 access)
+# ec2_instance_profile_name: some-profile
+
 # Default user for logging into this AMI
 ansible_default_user: ubuntu
 
