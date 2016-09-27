@@ -76,6 +76,7 @@
 
     # Misc
     group: "{{ ec2_security_group }}"
+    instance_profile_name: "{{ ec2_instance_profile_name|default(omit) }}"
   register: instance
 
 
