@@ -13,7 +13,7 @@ This will provision a default installation of geoserver on an Ubuntu 16.04 virtu
 The geonotebook can also be deployed to AWS as a [jupyter hub](https://github.com/jupyterhub/jupyterhub) instance using ansible and the provided ```site.yml``` playbook. To do this copy the ```local_vars.example.yml``` to ```local_vars.yml``` and edit the variables to suit your needs (descriptions of required variables can be found in the comments of the file).  Once edited,  the instance may be launched with the following commands:
 
 ```
-# Make sure boto is installed
+# Make sure ansible and boto are installed
 pip install -r requirements.txt
 
 # Make sure boto can authenticate with AWS server

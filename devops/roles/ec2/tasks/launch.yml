@@ -74,6 +74,12 @@
     # There can be only one...
     exact_count: 1
 
+    volumes:
+      # /dev/sda1 will map to /dev/xvda1 (the root volume)
+      # See: http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/device_naming.html
+      - device_name: /dev/sda1
+        volume_size: 100
+
     # Misc
     group: "{{ ec2_security_group }}"
     instance_profile_name: "{{ ec2_instance_profile_name|default(omit) }}"

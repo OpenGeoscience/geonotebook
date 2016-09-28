@@ -61,6 +61,11 @@
       use_system_python_gdal: true
 
   post_tasks:
+    - name: Install AWS CLI
+      pip:
+        name: awscli
+        state: latest
+
     - name: Create example directory
       file:
         path: "/home/{{ item.username }}/examples"
