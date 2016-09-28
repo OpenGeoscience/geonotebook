@@ -87,15 +87,13 @@ class Geoserver(object):
             options = {}
             if len(data) == 1:
                 options['band'] = data.band_indexes[0]
-
-                # TODO: Generate default color map
+                options['_range'] = (data.min, data.max)
 
                 options.update(kwargs)
                 sld_body = get_single_band_raster_sld(name, **options)
             else:
                 options['bands'] = data.band_indexes
                 options['range'] = zip(data.min, data.max)
-
                 options.update(kwargs)
 
                 sld_body = get_multiband_raster_sld(name, **options)
