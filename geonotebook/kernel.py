@@ -4,6 +4,7 @@ import os
 from logging.handlers import SysLogHandler
 
 from inspect import getmembers, ismethod, getargspec
+from promise import Promise
 from types import MethodType
 
 import jsonrpc
@@ -20,64 +21,14 @@ from layers import (BBox,
 
 from wrappers import RasterData, RasterDataCollection
 
-
-
-
-
-class ReplyCallback(object):
-    """Stores a message and result/error callbacks for a JSONRPC message.
-
-    This class stores a JSONRPC message and callback which is evaluated
-    once the Remote object recieves a 'resolve' call with the message's id.
-    This is initialized with a JSONRPC message and a function that takes a
-    message and sends it across some transport mechanism (e.g. Websocket).
-    """
-
-    def __init__(self, msg, send_message):
-        """Initialize the object.
-
-        Creation of the object does not actually send the message. This only
-        happens once the the 'then' function is called and reply/error
-        callbacks have been set on the object.
-
-        :param msg: a JSONRPC compliant message
-        :param send_message: a function that acts as a transport mechanism
-        :returns: Nothing
-        :rtype: None
-
-        """
-        self.state = "CREATED"
-        self.msg = msg
-        self.send_message = send_message
-
-    def then(self, reply_handler, error_handler):
-        """Set reply/error callbacks and send the message.
-
-        :param reply_handler: function that takes the 'result' field
-                              of a JSONRPC response object.
-        :param error_handler: function that takes the 'error' field
-                              of a JSONRPC response object. Should be a
-                              well formed JSONRPC error object.
-        :returns: self
-        :rtype: ReplyCallback
-
-        """
-        self.reply_handler = reply_handler
-        self.error_handler = error_handler
-
-        self.send_message(self.msg)
-        self.state = "PENDING"
-
-        return self
-
 class Remote(object):
     """Provides an object that proxies procedures on a remote object.
 
     This takes a list of protocol definitions and dynamically generates methods on
-    the object that reflect that protocol.  These methods wrap ReplyCallbacks
-    objects which manage the reply and error callbacks of a remote proceedure call.
-    Remote defines a '_callbacks' variable which is a dict of message id's to
-    ReplyCallback objects.
+    the object that reflect that protocol.  These methods wrap Promises which
+    manage the reply and error callbacks of a remote proceedure call.
+    Remote defines a '_promises' variable which is a dict of message id's to
+    Promises.
     """
 
 
@@ -107,9 +58,7 @@ class Remote(object):
         Geonotebook._remote.set_center(-74.25, 40.0, 4)
 
         which will validate the arguments, create a JSONRPC request object, generate a
-        ReplyCallback object and store the callback in the _callbacks dict. The message
-        is not actually sent until the 'then' function is called on the ReplyCallback
-        object ensuring no messages are sent without well defined reply/error callbacks.
+        Promise and store it in the _promises dict.
         e.g:
 
         def handle_error(error):
@@ -124,7 +73,7 @@ class Remote(object):
 
 
         :param protocol: a protocol dict
-        :returns: a closure that validates RPC arguments and returns a ReplyCallback
+        :returns: a closure that validates RPC arguments and returns a Promise
         :rtype: MethodType
 
         """
@@ -145,38 +94,36 @@ class Remote(object):
             msg = json_rpc_request(protocol['procedure'], params)
 
             # Set up the callback
-            self._callbacks[msg['id']] = ReplyCallback(msg, self._send_msg)
+            self._promises[msg['id']] = Promise()
+            self._send_msg(msg)
 
             # return the callback
-            return self._callbacks[msg['id']]
+            return self._promises[msg['id']]
 
         return MethodType(_protocol_closure, self, self.__class__)
-
 
     def resolve(self, msg):
         """Resolve an open JSONRPC request
 
-        Takes a JSONRPC result message and passes it to either the reply_handler
-        or the error_handler of the ReplyCallback object.
+        Takes a JSONRPC result message and passes it to either the on_fulfilled handler
+        or the on_rejected handler of the Promise.
 
         :param msg: JSONRPC result message
         :returns: Nothing
         :rtype: None
 
         """
-        if msg['id'] in self._callbacks:
+        if msg['id'] in self._promises:
             try:
                 if msg['error'] is not None:
-                    self._callbacks[msg['id']].error_handler(msg['error'])
+                    self._promises[msg['id']].reject(msg['error'])
                 else:
-                    self._callbacks[msg['id']].reply_handler(msg['result'])
+                    self._promises[msg['id']].fulfill(msg['result'])
 
             except Exception as e:
                 raise e
-            finally:
-                del self._callbacks[msg['id']]
         else:
-            self.log.warn("Could not find callback with id %s" % msg['id'])
+            self.log.warn("Could not find promise with id %s" % msg['id'])
 
 
     def __init__(self, transport, protocol):
@@ -189,7 +136,7 @@ class Remote(object):
 
         """
 
-        self._callbacks = {}
+        self._promises = {}
         self._send_msg = transport
         self.protocol = protocol
 
@@ -305,11 +252,6 @@ class Geonotebook(object):
 
         self._kernel = kernel
 
-        self._callbacks = {}
-
-
-
-
     def rpc_error(self, error):
         self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
 
@@ -317,14 +259,10 @@ class Geonotebook(object):
     ### Remote RPC wrappers ###
 
     def set_center(self, x, y, z):
-
         def _set_center(result):
-            self.x, self.y, self.z  = result
+            self.x, self.y, self.z = result
 
-        cb = self._remote.set_center(x, y, z).then(_set_center, self.rpc_error)
-        return cb
-
-
+        return self._remote.set_center(x, y, z).then(_set_center, self.rpc_error)
 
     def add_layer(self, data, name=None, vis_url=None, layer_type='wms',
                   **kwargs):
