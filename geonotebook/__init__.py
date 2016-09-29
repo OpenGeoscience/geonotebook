@@ -1,6 +1,6 @@
 import os
 import sys
-from jinja2 import ChoiceLoader, FileSystemLoader, PrefixLoader
+from jinja2 import ChoiceLoader, PackageLoader, PrefixLoader
 
 def _jupyter_server_extension_paths():
     return [{
@@ -38,7 +38,7 @@ def get_notebook_jinja2_loader(nbapp):
     """
     return ChoiceLoader([
         PrefixLoader({'core': nbapp.web_app.settings['jinja2_env'].loader}, delimiter='@'),
-        FileSystemLoader(os.path.join(os.path.dirname(sys.modules[__name__].__file__), 'templates')),
+        PackageLoader('geonotebook'),
         nbapp.web_app.settings['jinja2_env'].loader])
 
 def load_jupyter_server_extension(nbapp):
