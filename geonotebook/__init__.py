@@ -16,13 +16,10 @@ def _jupyter_nbextension_paths():
         # _also_ in the `nbextension/` namespace
         require="geonotebook/index")]
 
+def get_notebook_jinja2_loader(nbapp):
+    """Return the appropriate jinja2 template loader for the notebook app.
 
-
-def load_jupyter_server_extension(nbapp):
-    nbapp.log.info("geonotebook module enabled!")
-
-    """
-    This is out right confusing, but is necessary to meet the following criteria:
+    This is confusing but necessary to meet the following criteria:
     - Templates in geonotebook/templates will override those in core notebook templates
     - Core notebook templates can still be referred to/extended by referring to them as core@template.html
 
@@ -34,11 +31,19 @@ def load_jupyter_server_extension(nbapp):
 
     This implementation is weird, but should be compatible/composable with other notebook extensions
     and fairly future proof.
+
+    :param nbapp: NotebookApp instance
+    :returns: A jinja2 loader designed to work with our notebook templates
+    :rtype: jinja2.ChoiceLoader
     """
-    nbapp.web_app.settings['jinja2_env'].loader = ChoiceLoader([
+    return ChoiceLoader([
         PrefixLoader({'core': nbapp.web_app.settings['jinja2_env'].loader}, delimiter='@'),
         FileSystemLoader(os.path.join(os.path.dirname(sys.modules[__name__].__file__), 'templates')),
         nbapp.web_app.settings['jinja2_env'].loader])
+
+def load_jupyter_server_extension(nbapp):
+    nbapp.log.info("geonotebook module enabled!")
+    nbapp.web_app.settings['jinja2_env'].loader = get_notebook_jinja2_loader(nbapp)
 
 ### Note:  How to add custom web handlers
 #     webapp = nbapp.web_app
