@@ -119,8 +119,8 @@ define(
             };
 
             layer.geoOn(geo.event.annotation.add, handleAnnotationChange);
-            layer.geoOn(geo.event.annotation.remove, handleAnnotationChange);
-            layer.geoOn(geo.event.annotation.state, handleAnnotationChange);
+//            layer.geoOn(geo.event.annotation.remove, handleAnnotationChange);
+//            layer.geoOn(geo.event.annotation.state, handleAnnotationChange);
 
             layer.geoOn('geonotebook:rectangle_annotation_mode', function(evt) {
                 layer.mode('rectangle');

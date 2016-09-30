@@ -198,21 +198,21 @@ define(
         Geonotebook.prototype.load_annotation_buttons = function() {
             point_event = this.bind_key_to_geonotebook_event(
                 'g,p', 'point_annotation_mode', {
-                    icon: 'fa-circle',
+                    icon: 'fa-circle-o',
                     help    : 'Start a point annotation',
                     help_index : 'zz',
 
                 });
             rect_event  = this.bind_key_to_geonotebook_event(
                 'g,r', 'rectangle_annotation_mode', {
-                    icon: 'fa-square',
+                    icon: 'fa-square-o',
                     help    : 'Start a rectangle annotation',
                     help_index : 'zz',
                 });
 
             poly_event  = this.bind_key_to_geonotebook_event(
                 'g,g', 'polygon_annotation_mode', {
-                    icon: 'fa-pentagon',
+                    icon: 'fa-cloud-o',
                     help    : 'Start a polygon annotation',
                     help_index : 'zz',
                 });
