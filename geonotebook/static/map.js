@@ -21,7 +21,7 @@ define(
                                      allowRotation: false
                                     });
 
-            this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
+            // this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
 
         };
 
@@ -53,6 +53,7 @@ define(
                                    "add_wms_layer",
                                    "replace_wms_layer",
                                    "add_osm_layer",
+                                   "add_annotation_layer",
                                    "remove_layer"];
 
         Map.prototype._debug = function(msg){
@@ -104,6 +105,38 @@ define(
             return layer_name;
         };
 
+
+        Map.prototype.add_annotation_layer = function(layer_name, params){
+            var layer = this.geojsmap.createLayer('annotation', {
+                annotations: ['rectangle', 'point', 'polygon']
+            });
+            layer.name(layer_name);
+
+
+            function handleAnnotationChange(evt) {
+                console.log(evt);
+                evt.annotation.draw();
+            };
+
+            layer.geoOn(geo.event.annotation.add, handleAnnotationChange);
+            layer.geoOn(geo.event.annotation.remove, handleAnnotationChange);
+            layer.geoOn(geo.event.annotation.state, handleAnnotationChange);
+
+            layer.geoOn('geonotebook:rectangle_annotation_mode', function(evt) {
+                layer.mode('rectangle');
+            });
+
+            layer.geoOn('geonotebook:point_annotation_mode', function(evt) {
+                layer.mode('point');
+            });
+
+            layer.geoOn('geonotebook:polygon_annotation_mode', function(evt) {
+                layer.mode('polygon');
+            });
+
+
+            return layer_name;
+        }
 
         Map.prototype.add_osm_layer = function(layer_name, url, params){
             var osm = this.geojsmap.createLayer('osm');

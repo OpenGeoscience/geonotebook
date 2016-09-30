@@ -16,6 +16,7 @@ from jsonrpc import (json_rpc_request,
 from layers import (BBox,
                     GeonotebookStack,
                     NoDataLayer,
+                    AnnotationLayer,
                     SimpleLayer,
                     TimeSeriesLayer)
 
@@ -289,8 +290,10 @@ class Geonotebook(object):
         else:
             assert name is not None, \
                 RuntimeError("Non data layers require a 'name'")
-
-            layer = NoDataLayer(name, self._remote, vis_url=vis_url, **kwargs)
+            if layer_type == 'annotation':
+                layer = AnnotationLayer(name, self._remote)
+            else:
+                layer = NoDataLayer(name, self._remote, vis_url=vis_url, **kwargs)
 
         def _add_layer(layer_name):
             self.layers.append(layer)
@@ -307,6 +310,11 @@ class Geonotebook(object):
             params = {'zIndex': len(self.layers)}
 
             cb = self._remote.add_osm_layer(layer.name, layer.vis_url, params)\
+                .then(_add_layer, self.rpc_error)
+        elif layer_type == 'annotation':
+            params = layer.params
+
+            cb = self._remote.add_annotation_layer(layer.name, params)\
                 .then(_add_layer, self.rpc_error)
         else:
             # Exception?
@@ -406,6 +414,9 @@ class GeonotebookKernel(IPythonKernel):
         # When set protocol etc is complete.
         self.geonotebook.add_layer(None, name="osm_base", layer_type="osm",
                                    vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
+
+        self.geonotebook.add_layer(None, name="annotation", layer_type="annotation", vis_url=None)
+
 
     def do_shutdown(self, restart):
         self.geonotebook = None;

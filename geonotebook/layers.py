@@ -23,6 +23,11 @@ class GeonotebookLayer(object):
             self.__class__.__name__, self.name)
 
 
+class AnnotationLayer(GeonotebookLayer):
+    def __init__(self, name, remote, **kwargs):
+        super(AnnotationLayer, self).__init__(name, remote, **kwargs)
+        self.params = kwargs
+
 class NoDataLayer(GeonotebookLayer):
     def __init__(self, name, remote, vis_url, **kwargs):
         super(NoDataLayer, self).__init__(name, remote, **kwargs)

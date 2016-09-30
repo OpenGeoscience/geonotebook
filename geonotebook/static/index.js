@@ -180,14 +180,54 @@ define(
 
         };
 
+        Geonotebook.prototype.bind_key_to_geonotebook_event = function(key_binding, action_name, action_opts) {
+            var prefix = 'geonotebook';
+
+            action_opts = action_opts || {}
+            action_opts.handler = function () {
+                this.map.geojsmap.geoTrigger(prefix + ":" + action_name)
+            }.bind(this);
+
+            var full_action_name = Jupyter.actions.register(action_opts, action_name, prefix);
+            Jupyter.keyboard_manager.command_shortcuts.add_shortcut(key_binding, full_action_name);
+
+            return full_action_name;
+
+        };
+
+        Geonotebook.prototype.load_annotation_buttons = function() {
+            point_event = this.bind_key_to_geonotebook_event(
+                'g,p', 'point_annotation_mode', {
+                    icon: 'fa-circle',
+                    help    : 'Start a point annotation',
+                    help_index : 'zz',
+
+                });
+            rect_event  = this.bind_key_to_geonotebook_event(
+                'g,r', 'rectangle_annotation_mode', {
+                    icon: 'fa-square',
+                    help    : 'Start a rectangle annotation',
+                    help_index : 'zz',
+                });
+
+            poly_event  = this.bind_key_to_geonotebook_event(
+                'g,g', 'polygon_annotation_mode', {
+                    icon: 'fa-pentagon',
+                    help    : 'Start a polygon annotation',
+                    help_index : 'zz',
+                });
+
+            Jupyter.toolbar.add_buttons_group([point_event, rect_event, poly_event]);
+
+        };
+
         Geonotebook.prototype.load_ipython_extension = function(){
             if (Jupyter.kernelselector.current_selection == "geonotebook2") {
                 this.map = new Map(this);
                 this.register_events(Jupyter, events);
-
                 this.init_html_and_css();
 
-
+                this.load_annotation_buttons();
                 // Expose globablly for debugging purposes
                 Jupyter.map = this.map;
             }
