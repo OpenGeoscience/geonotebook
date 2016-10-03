@@ -274,3 +274,13 @@ class GeonotebookStack(object):
                 self._layers.__setitem__(index, value)
         else:
             raise Exception("Can only append GeonotebookLayer to Stack")
+
+
+    # TODO: this should really be stored with a reference
+    #       in a private member variable
+    @property
+    def annotation(self):
+        for l in self:
+            if l.name == 'annotation':
+                return l
+        return None

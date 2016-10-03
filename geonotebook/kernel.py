@@ -350,17 +350,9 @@ class Geonotebook(object):
         return self.__class__.class_protocol()
 
 
-    # TODO: this should really be stored with a reference
-    #       in a private member variable
-    @property
-    def annotation_layer(self):
-        for l in self.layers:
-            if l.name == 'annotation':
-                return l
-        return None
 
     def add_annotation(self, *args, **kwargs):
-        self.annotation_layer.add_annotation(*args, **kwargs)
+        self.layers.annotation.add_annotation(*args, **kwargs)
         return True
 
 

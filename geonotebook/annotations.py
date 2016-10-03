@@ -1,20 +1,28 @@
-class Annotation(object):
+from shapely.geometry import Point as sPoint
+from shapely.geometry import Polygon as sPolygon
+
+class Point(sPoint):
     def __init__(self, coordinates, **kwargs):
-        self.coordinates = coordinates
+
         for k, v in kwargs.items():
             setattr(self, k, v)
 
+        super(Point, self).__init__(coordinates[0]['x'], coordinates[0]['y'])
 
-class Point(Annotation):
+
+class Rectangle(sPolygon):
     def __init__(self, coordinates, **kwargs):
-        super(Point, self).__init__(coordinates, **kwargs)
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+        super(Rectangle, self).__init__(
+            [(c['x'], c['y']) for c in coordinates])
 
 
-class Rectangle(Annotation):
+class Polygon(sPolygon):
     def __init__(self, coordinates, **kwargs):
-        super(Rectangle, self).__init__(coordinates, **kwargs)
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
-
-class Polygon(Annotation):
-    def __init__(self, coordinates, **kwargs):
-        super(Polygon, self).__init__(coordinates, **kwargs)
+        super(Polygon, self).__init__(
+            [(c['x'], c['y']) for c in coordinates])
