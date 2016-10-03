@@ -65,6 +65,10 @@ class GeoTiffImage(object):
     def _get_band_tag(self, index, prop, convert=float):
         return convert(self.dataset.tags(index)[prop])
 
+
+    def get_band_ix(self, indexes, x, y):
+        return list(self.dataset.sample([(x, y)], indexes=indexes))[0]
+
     # Band level API
     @validate_index
     def get_band_min(self, index, **kwargs):

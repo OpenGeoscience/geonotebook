@@ -53,10 +53,15 @@ class RasterData(collections.Sequence):
         assert not max(self.band_indexes) > self.reader.count, \
             IndexError("Band index out of range")
 
-
     def index(self, *args, **kwargs):
         return self.reader.index(*args, **kwargs)
 
+    def subset(self, annotation, **kwargs):
+        # from pudb.remote import set_trace; set_trace(term_size=(319, 82))
+        return annotation.subset(self, **kwargs)
+
+    def ix(self, x, y):
+        return self.reader.get_band_ix(self.band_indexes, x, y)
 
     def get_data(self, window=None, masked=True, axis=2, **kwargs):
         if len(self) == 1:
