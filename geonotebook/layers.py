@@ -1,6 +1,7 @@
 from config import Config
 from collections import namedtuple
 import rasterio
+import annotations
 import numpy as np
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
@@ -24,9 +25,37 @@ class GeonotebookLayer(object):
 
 
 class AnnotationLayer(GeonotebookLayer):
+    _annotation_types = {
+        "point" : annotations.Point,
+        "rectangle" : annotations.Rectangle,
+        "polygon": annotations.Polygon
+    }
+
     def __init__(self, name, remote, **kwargs):
         super(AnnotationLayer, self).__init__(name, remote, **kwargs)
         self.params = kwargs
+
+        self._annotations = []
+
+    def add_annotation(self, ann_type, coords, meta):
+        self._annotations.append(
+            self._annotation_types[ann_type](coords, **meta))
+
+    @property
+    def points(self):
+        return [a for a in self._annotations
+                if type(a) == self._annotation_types['point']]
+
+    @property
+    def rectangles(self):
+        return [a for a in self._annotations
+                if type(a) == self._annotation_types['rectangle']]
+
+    @property
+    def polygons(self):
+        return [a for a in self._annotations
+                if type(a) == self._annotation_types['polygon']]
+
 
 class NoDataLayer(GeonotebookLayer):
     def __init__(self, name, remote, vis_url, **kwargs):

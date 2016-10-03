@@ -106,6 +106,42 @@ define(
         };
 
 
+        Map.prototype.add_annotation = function(annotation){
+            var annotation_meta = {
+                id: annotation.id(),
+                name: annotation.name(),
+                rgb: annotation.options("style").fillColor
+            };
+            this.notebook._remote.add_annotation(
+                annotation.type(),
+                annotation.coordinates("EPSG:4326"),
+                annotation_meta
+            ).then(
+                function(result){
+                    annotation.draw();
+                }.bind(this),
+                this.rpc_error.bind(this));
+
+        };
+
+        // Note: point/polygon's fire 'state' when they are added to
+        //       the map,  while rectangle's fire 'add'
+        // See:  https://github.com/OpenGeoscience/geojs/issues/623
+        Map.prototype.add_annotation_handler = function(evt) {
+            var annotation = evt.annotation;
+            if (annotation.type() === "rectangle") {
+                this.add_annotation(annotation);
+            }
+
+        };
+        Map.prototype.state_annotation_handler = function(evt) {
+            var annotation = evt.annotation;
+            if(annotation.type() === "point" || annotation.type() === "polygon") {
+                this.add_annotation(annotation);
+            }
+
+        };
+
         Map.prototype.add_annotation_layer = function(layer_name, params){
             var layer = this.geojsmap.createLayer('annotation', {
                 annotations: ['rectangle', 'point', 'polygon']
@@ -113,14 +149,10 @@ define(
             layer.name(layer_name);
 
 
-            function handleAnnotationChange(evt) {
-                console.log(evt);
-                evt.annotation.draw();
-            };
 
-            layer.geoOn(geo.event.annotation.add, handleAnnotationChange);
+            layer.geoOn(geo.event.annotation.add, this.add_annotation_handler.bind(this));
 //            layer.geoOn(geo.event.annotation.remove, handleAnnotationChange);
-//            layer.geoOn(geo.event.annotation.state, handleAnnotationChange);
+            layer.geoOn(geo.event.annotation.state, this.state_annotation_handler.bind(this));
 
             layer.geoOn('geonotebook:rectangle_annotation_mode', function(evt) {
                 layer.mode('rectangle');

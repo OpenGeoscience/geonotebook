@@ -155,7 +155,7 @@ class Remote(object):
 
 
 class Geonotebook(object):
-    msg_types = ['get_protocol', 'set_center', 'set_region']
+    msg_types = ['get_protocol', 'set_center', 'set_region', 'add_annotation']
 
     _protocol = None
     _remote = None
@@ -350,6 +350,19 @@ class Geonotebook(object):
         return self.__class__.class_protocol()
 
 
+    # TODO: this should really be stored with a reference
+    #       in a private member variable
+    @property
+    def annotation_layer(self):
+        for l in self.layers:
+            if l.name == 'annotation':
+                return l
+        return None
+
+    def add_annotation(self, *args, **kwargs):
+        self.annotation_layer.add_annotation(*args, **kwargs)
+        return True
+
 
 
 
@@ -381,7 +394,7 @@ class GeonotebookKernel(IPythonKernel):
             self.geonotebook._recv_msg(msg)
 
         except jsonrpc.JSONRPCError as e:
-            self.geonotebook._send_msg(json_rpc_result(None, e.toJson(), 'FOOBAR'))
+            self.geonotebook._send_msg(json_rpc_result(None, e.toJson(), msg['id']))
             self.log.error(u"JSONRPCError (%s): %s" % (e.code, e.message))
 
         except Exception as e:
