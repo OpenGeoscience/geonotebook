@@ -170,6 +170,19 @@ define(
             return layer_name;
         }
 
+        Map.prototype._set_layer_zindex = function(layer, index){
+            if( index !== undefined ){
+                var annotation_layer = this.get_layer("annotation");
+                layer.zIndex(index);
+                if( annotation_layer !== undefined ){
+                    // Annotation layer should always be on top
+                    var max = _.max(_.map(this.geojsmap.layers(), (e) => e.zIndex()));
+                    annotation_layer.zIndex(max + 1);
+                }
+
+            }
+        };
+
         Map.prototype.add_osm_layer = function(layer_name, url, params){
             var osm = this.geojsmap.createLayer('osm');
 
@@ -177,9 +190,7 @@ define(
             osm.url = url;
 
             // make sure zindex is explicitly set
-            if( params['zIndex'] ){
-                osm.zIndex(params['zIndex']);
-            }
+            this._set_layer_zindex(osm, params['zIndex']);
 
             return layer_name
         };
@@ -201,7 +212,8 @@ define(
                     attribution: null
                 });
                 wms.name(layer_name);
-                wms.zIndex(old_layer.zIndex())
+                this._set_layer_zindex(wms, old_layer.zIndex());
+
                 wms.url(function (x, y, zoom) {
 
                     var bb = wms.gcsTileBounds({
@@ -257,10 +269,7 @@ define(
             });
 
             // make sure zindex is explicitly set
-            if( params['zIndex'] ){
-                wms.zIndex(params['zIndex']);
-            }
-
+            this._set_layer_zindex(wms, params['zIndex']);
 
             wms.name(layer_name);
 
