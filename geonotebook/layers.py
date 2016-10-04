@@ -31,15 +31,16 @@ class AnnotationLayer(GeonotebookLayer):
         "polygon": annotations.Polygon
     }
 
-    def __init__(self, name, remote, **kwargs):
+    def __init__(self, name, remote, stack, **kwargs):
         super(AnnotationLayer, self).__init__(name, remote, **kwargs)
+        self.stack = stack
         self.params = kwargs
 
         self._annotations = []
 
     def add_annotation(self, ann_type, coords, meta):
         self._annotations.append(
-            self._annotation_types[ann_type](coords, **meta))
+            self._annotation_types[ann_type](self, coords, **meta))
 
     @property
     def points(self):

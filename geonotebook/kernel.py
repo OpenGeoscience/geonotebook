@@ -291,7 +291,7 @@ class Geonotebook(object):
             assert name is not None, \
                 RuntimeError("Non data layers require a 'name'")
             if layer_type == 'annotation':
-                layer = AnnotationLayer(name, self._remote)
+                layer = AnnotationLayer(name, self._remote, self.layers)
             else:
                 layer = NoDataLayer(name, self._remote, vis_url=vis_url, **kwargs)
 
