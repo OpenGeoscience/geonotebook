@@ -48,7 +48,7 @@ class AnnotationLayer(GeonotebookLayer):
         def rpc_error(error):
             self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
 
-        self._remote.clear_annotations().then(_clear_annotations, rpc_error)
+        return self._remote.clear_annotations().then(_clear_annotations, rpc_error)
 
     @property
     def points(self):
