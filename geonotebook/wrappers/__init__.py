@@ -61,7 +61,10 @@ class RasterData(collections.Sequence):
         return annotation.subset(self, **kwargs)
 
     def ix(self, x, y):
-        return self.reader.get_band_ix(self.band_indexes, x, y)
+        if len(self) == 1:
+            return self.reader.get_band_ix(self.band_indexes, x, y)[0]
+        else:
+            return self.reader.get_band_ix(self.band_indexes, x, y)
 
     def get_data(self, window=None, masked=True, axis=2, **kwargs):
         if len(self) == 1:
@@ -235,7 +238,9 @@ class RasterDataCollection(collections.Sequence):
         if len(self) == 1:
             return self[0].ix(*args, **kwargs)
         else:
-            return [rd.ix(*args, **kwargs) for rd in self]
+            return np.ma.masked_values(
+                [rd.ix(*args, **kwargs) for rd in self],
+                self.__getitem__((0,1)).nodata)
 
     def get_data(self, *args, **kwargs):
         masked = kwargs.get("masked", True)
@@ -255,6 +260,3 @@ class RasterDataCollection(collections.Sequence):
         # TODO: Fix this so it doesn't just assume
         #       index is consistent across timesteps
         return self.__getitem__(0).index(*args, **kwargs)
-
-
-###### DELETE EVERYTHING AFTER ME ##########
