@@ -127,6 +127,8 @@ define(
 
         Map.prototype.add_annotation = function(annotation){
             annotation.options("style").fillColor = this.next_color();
+            annotation.options("style").fillOpacity = 0.8;
+            annotation.options("style").strokeWidth = 2;
 
             var annotation_meta = {
                 id: annotation.id(),
