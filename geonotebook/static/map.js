@@ -11,7 +11,26 @@ define(
             this.geo = geo;
             this.geojsmap = null;
             this.region = null;
+            this.annotation_color_palette = ['#db5f57', // {r:219, g: 95, b: 87}
+                                             '#dbae57', // {r:219, g:174, b: 87}
+                                             '#b9db57', // {r:185, g:219, b: 87}
+                                             '#69db57', // {r:105, g:219, b: 87}
+                                             '#57db94', // {r: 87, g:219, b:148}
+                                             '#57d3db', // {r: 87, g:211, b:219}
+                                             '#5784db', // {r: 87, g:132, b:219}
+                                             '#7957db', // {r:121, g: 87, b:219}
+                                             '#c957db', // {r:201, g: 87, b:219}
+                                             '#db579e'] // {r:219, g: 87, b:158}
+            this._color_counter = -1;
         };
+
+        Map.prototype.next_color = function(){
+            this._color_counter = this._color_counter + 1;
+
+            var idx = this._color_counter % this.annotation_color_palette.length
+
+            return this.annotation_color_palette[idx]
+        }
 
         Map.prototype.init_map = function(){
             $('#geonotebook-map').empty();
@@ -107,11 +126,14 @@ define(
 
 
         Map.prototype.add_annotation = function(annotation){
+            annotation.options("style").fillColor = this.next_color();
+
             var annotation_meta = {
                 id: annotation.id(),
                 name: annotation.name(),
                 rgb: annotation.options("style").fillColor
             };
+
             this.notebook._remote.add_annotation(
                 annotation.type(),
                 annotation.coordinates("EPSG:4326"),
