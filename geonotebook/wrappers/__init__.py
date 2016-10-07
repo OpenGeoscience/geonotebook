@@ -80,7 +80,7 @@ class RasterData(collections.Sequence):
                 kwargs["masked"] = False
                 return np.ma.masked_values(
                     np.stack([self.reader.get_band_data(i, window=window, **kwargs)
-                              for i in self.band_indexes], axis=axis), self.nodata[0])
+                              for i in self.band_indexes], axis=axis), self.nodata)
             else:
                 return np.stack([self.reader.get_band_data(i, window=window,
                                                            masked=masked,
@@ -129,10 +129,9 @@ class RasterData(collections.Sequence):
 
     @property
     def nodata(self):
-        if len(self) == 1:
-            return self.reader.get_band_nodata(self.band_indexes[0])
-        else:
-            return [self.reader.get_band_nodata(i) for i in self.band_indexes]
+        # HACK,  we assume first band index's nodata is same
+        # for all bands
+        return self.reader.get_band_nodata(self.band_indexes[0])
 
     @property
     def count(self):
@@ -228,11 +227,9 @@ class RasterDataCollection(collections.Sequence):
 
     @property
     def nodata(self):
-        if len(self) == 1:
-            return self[0].nodata
-        else:
-            return [rd.nodata for rd in self]
-
+        # HACK: assume nodata is consistent across
+        #       all RasterData/bands.
+        return [rd.nodata for rd in self][0]
 
     def ix(self, *args, **kwargs):
         if len(self) == 1:
