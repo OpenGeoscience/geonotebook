@@ -73,6 +73,7 @@ define(
                                    "replace_wms_layer",
                                    "add_osm_layer",
                                    "add_annotation_layer",
+                                   "clear_annotations",
                                    "remove_layer"];
 
         Map.prototype._debug = function(msg){
@@ -123,6 +124,12 @@ define(
             this.geojsmap.deleteLayer(this.get_layer(layer_name));
             return layer_name;
         };
+
+
+        Map.prototype.clear_annotations = function() {
+            var annotation_layer = this.get_layer("annotation");
+            return annotation_layer.removeAllAnnotations();
+        }
 
 
         Map.prototype.add_annotation = function(annotation){

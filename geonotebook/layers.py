@@ -35,12 +35,20 @@ class AnnotationLayer(GeonotebookLayer):
         super(AnnotationLayer, self).__init__(name, remote, **kwargs)
         self.stack = stack
         self.params = kwargs
-
+        self._remote = remote
         self._annotations = []
 
     def add_annotation(self, ann_type, coords, meta):
         self._annotations.append(
             self._annotation_types[ann_type](self, coords, **meta))
+
+    def clear_annotations(self):
+        def _clear_annotations(num):
+            self._annotations = []
+        def rpc_error(error):
+            self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
+
+        self._remote.clear_annotations().then(_clear_annotations, rpc_error)
 
     @property
     def points(self):
@@ -166,6 +174,7 @@ class TimeSeriesLayer(DataLayer):
             self.vis_url = self.config.vis_server.ingest(
                 self.current, name=self.current.name)
 
+        # TODO: Need better handlers here for post-replace callbacks
         self._remote.replace_wms_layer(self.name, self.vis_url, self.params)\
             .then(lambda resp: True, lambda: True)
 
