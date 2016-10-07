@@ -231,7 +231,11 @@ class RasterDataCollection(collections.Sequence):
             return [rd.nodata for rd in self]
 
 
-
+    def ix(self, *args, **kwargs):
+        if len(self) == 1:
+            return self[0].ix(*args, **kwargs)
+        else:
+            return [rd.ix(*args, **kwargs) for rd in self]
 
     def get_data(self, *args, **kwargs):
         masked = kwargs.get("masked", True)
