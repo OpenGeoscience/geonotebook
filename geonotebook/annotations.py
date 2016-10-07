@@ -1,6 +1,7 @@
 from shapely.geometry import Point as sPoint
 from shapely.geometry import Polygon as sPolygon
 from rasterio.features import rasterize
+from wrappers import RasterData, RasterDataCollection
 import numpy as np
 
 
@@ -51,7 +52,7 @@ class Rectangle(Annotation, sPolygon):
         window = (raster_data.index(self.bounds[0], self.bounds[3]),
                   raster_data.index(self.bounds[2], self.bounds[1]))
 
-        # TODO: Trim window to valid range for this rasterdata set
+        # TODO: Trim window to valid range for raster data if out of bounds
 
         return raster_data.get_data(window=window, **kwargs)
 
@@ -62,7 +63,6 @@ class Polygon(Annotation, sPolygon):
         sPolygon.__init__(self, [(c['x'], c['y']) for c in coordinates])
 
     def subset(self, raster_data, **kwargs):
-
         ul = raster_data.index(self.bounds[0], self.bounds[3])
         lr = raster_data.index(self.bounds[2], self.bounds[1])
 
@@ -80,14 +80,20 @@ class Polygon(Annotation, sPolygon):
                'coordinates': [coordinates]}, 0)],
             out_shape=out_shape, fill=1, all_touched=True, dtype=np.uint8)
 
-        if len(data.shape) > 2:
-            mask = (mask[:,:,np.newaxis] * ([1] * data.shape[2])).astype(bool)
-        else:
-            mask = np.ma.array(data, mask=mask.astype(bool))
+        # If we have more than one band,  expand the mask so it includes
+        # A "channel" dimension (e.g.  shape is now (lat, lon, channel))
+        num_bands = len(raster_data.band_indexes)
+        if num_bands > 1:
+            mask = mask[..., np.newaxis] * np.ones(num_bands)
 
-        data[mask] = raster_data.nodata
+        # Finally broadcast mask to data because data may be from a
+        # Raster data collection and include a time component
+        # (e.g.  shape could be (time, lat, lon),  or even
+        #  (time, lat, lon, channels))
+        _, mask = np.broadcast_arrays(data, mask)
+        data[mask.astype(bool)] = raster_data.nodata
 
-        return data
+        return np.ma.masked_equal(data, raster_data.nodata)
 # Did not work.. some issue with rasterize & GDAL
 #        import rasterio
 #        from affine import Affine
