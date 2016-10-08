@@ -1,5 +1,8 @@
 from geonotebook.wrappers import RasterData
 from sld import get_single_band_raster_sld, get_multiband_raster_sld
+import matplotlib as mpl
+from matplotlib import pylab as plt
+import numpy as np
 import requests
 import os
 
@@ -75,6 +78,36 @@ class Geoserver(object):
         else:
             return {}
 
+    @staticmethod
+    def generate_colormap(viz_params, minimum, maximum):
+        """ Viz_params can be a list of dicts
+        or a matplotlib colormap. Either case
+        the returned object will be a list of dicts.
+        """
+
+        # If viz_params is None use a default colormap (e.g. matplotlib.pylab.cm.jet)
+        # and transform it into the list of colormap entry dicts
+        if viz_params == None:
+            cmap = plt.get_cmap('jet', 10)
+            colormap = [{"color": mpl.colors.rgb2hex(cmap(i)), "quantity": v }
+                        for i,v in zip(range(cmap.N),np.linspace(minimum, maximum, cmap.N))]
+
+            return colormap
+        # if viz_params is a matplotlib colormap,
+        # transform that into the list of colormap entry dicts
+        elif isinstance(viz_params, (str, unicode)):
+            cmap = plt.get_cmap(viz_params, 10)
+            colormap = [{"color": mpl.colors.rgb2hex(cmap(i)), "quantity": v }
+                        for i,v in zip(range(cmap.N),np.linspace(minimum, maximum, cmap.N))]
+
+            return colormap
+
+        # if viz_params is a list of dicts, pass it through to
+        # get_single_band_raster_sld
+        if all(isinstance(viz_param, dict) for viz_param in viz_params):
+            return viz_params
+
+
     # get_params should take a generic list of paramaters e.g. 'bands',
     # 'range', 'gamma' and convert these into a list of vis_server specific
     # paramaters which will be passed along to the tile render handler in
@@ -87,13 +120,22 @@ class Geoserver(object):
             options = {}
             if len(data) == 1:
                 options['band'] = data.band_indexes[0]
-                options['_range'] = (data.min, data.max)
+
+                if 'colormap' not  in kwargs:
+                    viz_params = None
+                else:
+                    viz_params = kwargs['colormap']
+
+                cmap = self.generate_colormap(viz_params, data.min, data.max)
 
                 options.update(kwargs)
+                options['colormap'] = cmap
+
                 sld_body = get_single_band_raster_sld(name, **options)
             else:
                 options['bands'] = data.band_indexes
                 options['range'] = zip(data.min, data.max)
+
                 options.update(kwargs)
 
                 sld_body = get_multiband_raster_sld(name, **options)
