@@ -291,7 +291,7 @@ class Geonotebook(object):
             assert name is not None, \
                 RuntimeError("Non data layers require a 'name'")
             if layer_type == 'annotation':
-                layer = AnnotationLayer(name, self._remote, self.layers)
+                layer = AnnotationLayer(name, self._remote, self.layers, **kwargs)
             else:
                 layer = NoDataLayer(name, self._remote, vis_url=vis_url, **kwargs)
 
@@ -417,10 +417,15 @@ class GeonotebookKernel(IPythonKernel):
 
         # THis should be handled in a callback that is fired off
         # When set protocol etc is complete.
-        self.geonotebook.add_layer(None, name="osm_base", layer_type="osm",
-                                   vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
+        self.geonotebook.add_layer(
+            None, name="osm_base", layer_type="osm",
+            vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            system_layer=True)
 
-        self.geonotebook.add_layer(None, name="annotation", layer_type="annotation", vis_url=None)
+        self.geonotebook.add_layer(
+            None, name="annotation",
+            layer_type="annotation", vis_url=None,
+            system_layer=True, expose_as="annotation")
 
 
     def do_shutdown(self, restart):

@@ -35,6 +35,7 @@ class Annotation(object):
             if hasattr(layer, "data") and layer.data is not None:
                 yield layer, self.subset(layer.data, **self._metadata)
 
+
 class Point(Annotation, sPoint):
     def __init__(self, layer, coordinates, **kwargs):
         super(Point, self).__init__(layer, coordinates, **kwargs)
@@ -42,6 +43,7 @@ class Point(Annotation, sPoint):
 
     def subset(self, raster_data, **kwargs):
         return raster_data.ix(self.x, self.y)
+
 
 class Rectangle(Annotation, sPolygon):
     def __init__(self, layer, coordinates, **kwargs):
