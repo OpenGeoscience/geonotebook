@@ -274,10 +274,6 @@ class TestRasterData(unittest.TestCase):
                         [ True,  True,  True,  True]]])).all())
 
 
-    def test_getitem_slice_returns_raster_data(self):
-        rd = RasterData("coords.mock")
-        self.assertTrue(isinstance(rd[1:3], RasterData))
-        self.assertEquals(len(rd[1:3]), 2)
 
     def test_getitem_list_returns_raster_data(self):
         rd = RasterData("coords.mock")

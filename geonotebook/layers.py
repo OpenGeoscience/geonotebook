@@ -24,7 +24,7 @@ class GeonotebookLayer(object):
         self.name = name
 
         self._system_layer = kwargs.get("system_layer", False)
-        self._expose_as = kwargs.get("expose_as", False)
+        self._expose_as = kwargs.get("expose_as", None)
 
     def __repr__(self):
         return "<{}('{}')>".format(
@@ -250,7 +250,7 @@ class GeonotebookStack(object):
 
         try:
             # Note that we never find a system layer
-            return next(l for l in self._layers if predicate(l))
+            return next(l for l in self._layers.values() if predicate(l))
         except StopIteration:
             return None
 
