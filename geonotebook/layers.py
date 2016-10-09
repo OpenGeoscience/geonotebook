@@ -1,23 +1,30 @@
 from config import Config
 from collections import namedtuple
-import rasterio
 import annotations
-import numpy as np
+from collections import OrderedDict
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
-# Note:  GeonotebookLayers must support instances where data is
-#        None. This allows us to use a consistent interface for things
-#        like the OSM base layer,  or more generally for tile server URLs
-#        that don't have any (accessible) data associated with them.
-
-
 
 class GeonotebookLayer(object):
+    # Control whether or not a layer can be modified
+    # within a geonotebook stack or not. e.g. base OSM
+    # map layer should not be deleted by the user
+    _system_layer = False
+
+    # _expose_as lets us control whether or not a layer is
+    # directly exposed as an attribute on a geostack. It
+    # is designed for layers added by the system that provide
+    # some kind of functionality (e.g. the annotatoin layer).
+    _expose_as = None
+
     def __init__(self, name, remote, **kwargs):
         self.config = Config()
         self.remote = remote
         self.name = name
+
+        self._system_layer = kwargs.get("system_layer", False)
+        self._expose_as = kwargs.get("expose_as", False)
 
     def __repr__(self):
         return "<{}('{}')>".format(
@@ -26,8 +33,8 @@ class GeonotebookLayer(object):
 
 class AnnotationLayer(GeonotebookLayer):
     _annotation_types = {
-        "point" : annotations.Point,
-        "rectangle" : annotations.Rectangle,
+        "point": annotations.Point,
+        "rectangle": annotations.Rectangle,
         "polygon": annotations.Polygon
     }
 
@@ -45,6 +52,7 @@ class AnnotationLayer(GeonotebookLayer):
     def clear_annotations(self):
         def _clear_annotations(num):
             self._annotations = []
+
         def rpc_error(error):
             self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
 
@@ -195,102 +203,86 @@ class TimeSeriesLayer(DataLayer):
         except IndexError:
             raise StopIteration()
 
-# GeonotebookStack supports dict-like indexing on a list
-# of Geonotebook Layers. We could implement this with an
-# OrderedDict,  but i think we are eventually going to want
-# to support re-ordering,  potentially serializing etc so it
-# Seems like putting it in its own class is best for now.
 
-# TODO: support slices other list functionality etc
-# TODO: convert to collections.mutablesequence
 class GeonotebookStack(object):
     def __init__(self, layers=None):
+        self._layers = OrderedDict()
+        self._system_layers = OrderedDict()
+
         if layers is not None:
             for l in layers:
-                assert isinstance(l, GeonotebookLayer), \
-                    "{} is not a GeonotebookLayer".format(l)
-            self._layers = layers
+                self.append(l)
+
+    def append(self, value):
+        if isinstance(value, GeonotebookLayer):
+            if value._system_layer:
+                if value.name not in self._system_layers:
+                    self._system_layers[value.name] = value
+                else:
+                    raise Exception("There is already a layer named %s" % value.name)
+            else:
+                if value.name not in self._layers:
+                    self._layers[value.name] = value
+                else:
+                    raise Exception("There is already a layer named %s" % value.name)
+
+            if value._expose_as is not None:
+                self._expose_layer(value)
+
         else:
-            self._layers = []
+            raise Exception("Can only append GeonotebookLayers to Stack")
 
-    def __repr__(self):
-        return "GeonotebookStack({})".format(self._layers.__repr__())
-
-    def __len__(self):
-        return len(self._layers)
+    def remove(self, value):
+        if isinstance(value, basestring):
+            del self._layers[value]
+        elif isinstance(value, GeonotebookLayer):
+            del self._layers[value.name]
 
     def find(self, predicate):
         """Find first GeonotebookLayer that matches predicate. If predicate
         is not callable it will check predicate against each layer name."""
 
         if not hasattr(predicate, '__call__'):
-            name = predicate
-            predicate = lambda l: l.name == name
+            try:
+                return self._layers[predicate]
+            except KeyError:
+                return None
 
         try:
+            # Note that we never find a system layer
             return next(l for l in self._layers if predicate(l))
         except StopIteration:
             return None
 
-    def indexOf(self, predicate):
-        if not hasattr(predicate, '__call__'):
-            name = predicate
-            predicate = lambda l: l.name == name
-        try:
-            return next(i for i,l in enumerate(self._layers) if predicate(l))
-        except StopIteration:
-            return None
-
-
-    def remove(self, value):
-        if isinstance(value, basestring):
-            idx = self.indexOf(value)
-            if idx is not None:
-                return self.remove(idx)
-            else:
-                raise KeyError('{}'.format(value))
-        else:
-            del self._layers[value]
-
-    def append(self, value):
-        if isinstance(value, GeonotebookLayer):
-            if self.find(value.name) is None:
-                self._layers.append(value)
-            else:
-                raise Exception("There is already a layer named {}".format(value.name))
-
-        else:
-            raise Exception("Can only append GeonotebookLayer to Stack")
-
     def __getitem__(self, value):
-        if isinstance(value, basestring):
-            idx = self.indexOf(value)
-            if idx is not None:
-                return self.__getitem__(idx)
-            else:
-                raise KeyError('{}'.format(value))
+        if isinstance(value, int):
+            return [layer for name, layer in self._layers.items()][value]
         else:
             return self._layers.__getitem__(value)
 
     def __setitem__(self, index, value):
         if isinstance(value, GeonotebookLayer):
-            if isinstance(index, basestring):
-                idx = self.indexOf(index)
-                if idx is not None:
-                    self.__setitem__(idx, value)
-                else:
-                    raise KeyError('{}'.format(value.name))
+            if isinstance(index, int):
+                self.__setitem__(
+                    [name for name, layer in self._layers.items()][index],
+                    value)
             else:
                 self._layers.__setitem__(index, value)
         else:
-            raise Exception("Can only append GeonotebookLayer to Stack")
+            raise Exception("Can only add GeonotebookLayers to Stack")
 
+    def __repr__(self):
+        return "GeonotebookStack({})".format(
+            [layer for _, layer in self._layers].__repr__())
 
-    # TODO: this should really be stored with a reference
-    #       in a private member variable
-    @property
-    def annotation(self):
-        for l in self:
-            if l.name == 'annotation':
-                return l
-        return None
+    def __len__(self):
+        return len(self._layers)
+
+    def _expose_layer(self, layer):
+        if layer._expose_as is not None:
+            if not hasattr(self, layer._expose_as):
+                setattr(self, layer._expose_as, layer)
+            else:
+                raise RuntimeError(
+                    'Failed exposing "%s", attribute already exists' %
+                    layer._expose_as)
