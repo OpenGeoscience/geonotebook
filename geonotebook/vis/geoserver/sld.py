@@ -145,7 +145,7 @@ def get_multiband_raster_sld(
 def get_single_band_raster_sld(
         name, band, title=None, opacity=1.0,
         channelName="GrayChannel", colormap=None,
-        colormap_type="ramp", _range=None):
+        colormap_type="ramp"):
 
     # Set title default if it wasn't passed in
     if title is None:
@@ -180,16 +180,8 @@ def get_single_band_raster_sld(
         # Assert all colormap items has a quantity key
         assert([c for c in colormap if 'quantity' in c])
 
-    else:
-        # Default colormapping
-        cmap = mpl.colors.LinearSegmentedColormap.from_list(
-            name='ramp', colors=['blue', 'green', 'red', 'beige', 'cyan', 'magenta'], N=11)
-
-        colormap = [{"color": mpl.colors.rgb2hex(cmap(i)), "quantity": v }
-                    for i,v in zip(range(cmap.N),np.linspace(_range[0], _range[1], cmap.N))]
-
-    template_params['colormap'] = colormap
-    template_params['colormap_type'] = colormap_type
+        template_params['colormap'] = colormap
+        template_params['colormap_type'] = colormap_type
 
     return template.render(**template_params)
 
