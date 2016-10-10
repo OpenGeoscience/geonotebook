@@ -1,9 +1,7 @@
 from geonotebook.wrappers import RasterData
 from sld import get_single_band_raster_sld, get_multiband_raster_sld
-import matplotlib as mpl
-from matplotlib import pylab as plt
-import numpy as np
 import requests
+import struct
 import os
 
 class Client(object):
@@ -79,33 +77,49 @@ class Geoserver(object):
             return {}
 
     @staticmethod
-    def generate_colormap(viz_params, minimum, maximum):
-        """ Viz_params can be a list of dicts
+    def generate_colormap(colormap, minimum, maximum):
+        """ colormap can be a list of dicts
         or a matplotlib colormap. Either case
         the returned object will be a list of dicts.
         """
 
-        # If viz_params is None use a default colormap (e.g. matplotlib.pylab.cm.jet)
-        # and transform it into the list of colormap entry dicts
-        if viz_params == None:
-            cmap = plt.get_cmap('jet', 10)
-            colormap = [{"color": mpl.colors.rgb2hex(cmap(i)), "quantity": v }
-                        for i,v in zip(range(cmap.N),np.linspace(minimum, maximum, cmap.N))]
+        def range_count(start, stop, count):
+            """ Generates a list with given start
+            stop and count with linear spacing
+            e.g. range_count(1, 3, 5) = [1., 1.5, 2., 2.5, 3.]
+            """
+
+            step = (stop - start) / float(count-1)
+            return [start + i * step for i in xrange(count)]
+
+        def rgba2hex(rgba):
+            """ Converts rgba values to hex """
+
+            # Slice the tuple so that
+            # we don't get alpha and
+            # convert values to 8 bit ints
+            rgb = tuple([int(255 * i) for i in rgba[:3]])
+            hex = "#{}".format(struct.pack('BBB',*rgb).encode('hex'))
+
+            return hex
+
+        # If colormap is an iterable return it
+        # Sld code has checks for this anyway
+        # So an arbitrary iterable won't work
+        # anyways
+        if hasattr(colormap, '__iter__'):
+            return colormap
+        else:
+            col_list = ['#00007f', '#0000ff', '#0063ff', '#00d4ff', '#4dffa9',
+                        '#a9ff4d', '#ffe500', '#ff7c00', '#ff1300', '#7f0000']
+            quan_list = range_count(minimum, maximum, len(col_list))
+            if hasattr(colormap, '__call__') and hasattr(colormap, 'N'):
+                quan_list = range_count(minimum, maximum, colormap.N)
+                col_list = [rgba2hex(colormap(i)) for i in range(colormap.N)]
+
+            colormap = [{'color': c, 'quantity': q} for c, q in zip(col_list, quan_list)]
 
             return colormap
-        # if viz_params is a matplotlib colormap,
-        # transform that into the list of colormap entry dicts
-        elif isinstance(viz_params, (str, unicode)):
-            cmap = plt.get_cmap(viz_params, 10)
-            colormap = [{"color": mpl.colors.rgb2hex(cmap(i)), "quantity": v }
-                        for i,v in zip(range(cmap.N),np.linspace(minimum, maximum, cmap.N))]
-
-            return colormap
-
-        # if viz_params is a list of dicts, pass it through to
-        # get_single_band_raster_sld
-        if all(isinstance(viz_param, dict) for viz_param in viz_params):
-            return viz_params
 
 
     # get_params should take a generic list of paramaters e.g. 'bands',
@@ -121,12 +135,9 @@ class Geoserver(object):
             if len(data) == 1:
                 options['band'] = data.band_indexes[0]
 
-                if 'colormap' not  in kwargs:
-                    viz_params = None
-                else:
-                    viz_params = kwargs['colormap']
-
-                cmap = self.generate_colormap(viz_params, data.min, data.max)
+                cmap = self.generate_colormap(kwargs.get('colormap'),
+                                              data.min,
+                                              data.max)
 
                 options.update(kwargs)
                 options['colormap'] = cmap
