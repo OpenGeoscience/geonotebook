@@ -273,7 +273,7 @@ class GeonotebookStack(object):
 
     def __repr__(self):
         return "GeonotebookStack({})".format(
-            [layer for _, layer in self._layers].__repr__())
+            ([layer for layer in self._layers.values()]).__repr__())
 
     def __len__(self):
         return len(self._layers)
