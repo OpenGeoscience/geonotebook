@@ -149,6 +149,7 @@ define(
                 annotation_meta
             ).then(
                 function(result){
+                    annotation.layer().modified();
                     annotation.draw();
                 }.bind(this),
                 this.rpc_error.bind(this));
