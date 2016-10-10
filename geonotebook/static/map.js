@@ -48,23 +48,6 @@ define(
             console.log("JSONRPCError(" + error.code + "): " + error.message);
         };
 
-        Map.prototype.set_region = function(ulx, uly, lrx, lry){
-
-            this.notebook._remote.set_region(ulx, uly, lrx, lry).then(
-                function(result){
-                    this.region = result;
-                }.bind(this),
-                this.rpc_error.bind(this));
-        };
-
-        Map.prototype.geo_select = function(event, args){
-
-            var ul = this.geojsmap.displayToGcs(event.display.upperLeft, "EPSG:4326");
-            var lr = this.geojsmap.displayToGcs(event.display.lowerRight, "EPSG:4326");
-
-            this.set_region(ul.x, ul.y, lr.x, lr.y);
-        };
-
 
         Map.prototype.msg_types = ["get_protocol",
                                    "set_center",

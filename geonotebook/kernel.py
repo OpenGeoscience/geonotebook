@@ -155,7 +155,7 @@ class Remote(object):
 
 
 class Geonotebook(object):
-    msg_types = ['get_protocol', 'set_center', 'set_region', 'add_annotation']
+    msg_types = ['get_protocol', 'set_center', 'add_annotation']
 
     _protocol = None
     _remote = None
@@ -334,18 +334,6 @@ class Geonotebook(object):
 
 
     ### RPC endpoints ###
-
-    def set_region(self, ulx, uly, lrx, lry):
-        if ulx == lrx and uly == lry:
-            raise jsonrpc.InvalidParams("Bounding box values cannot be the same!")
-
-        self.region = BBox(ulx, uly, lrx, lry)
-
-        for l in self.layers:
-            l.region = BBox(ulx, uly, lrx, lry)
-
-        return ulx, uly, lrx, lry
-
     def get_protocol(self):
         return self.__class__.class_protocol()
 
