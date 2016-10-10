@@ -212,7 +212,7 @@ define(
 
             poly_event  = this.bind_key_to_geonotebook_event(
                 'g,g', 'polygon_annotation_mode', {
-                    icon: 'fa-cloud-o',
+                    icon: 'fa-lemon-o',
                     help    : 'Start a polygon annotation',
                     help_index : 'zz',
                 });
