@@ -95,11 +95,11 @@
     line: "c.LocalAuthenticator.create_system_users = True"
   tags: jupyter
 
-- name: install jupyterhub init script
+- name: install jupyterhub service
   copy:
-    src: jupyter.init
-    dest: /etc/init.d/jupyterhub
-    mode: 755
+    src: jupyterhub.service
+    dest: /lib/systemd/system/jupyterhub.service
+    mode: 644
     owner: root
     group: root
   tags: jupyter

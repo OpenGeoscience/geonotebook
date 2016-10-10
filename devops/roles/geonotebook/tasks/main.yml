@@ -15,6 +15,7 @@
     - gdal-bin
     - python-numpy
     - python-matplotlib
+    - python-seaborn
     - python-gdal
     - python-rasterio
     - python-requests
