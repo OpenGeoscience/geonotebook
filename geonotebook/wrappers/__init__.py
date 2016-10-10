@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pkg_resources as pr
 import collections
+from shapely.geometry import Polygon
 
 class RasterData(collections.Sequence):
 
@@ -134,6 +135,16 @@ class RasterData(collections.Sequence):
         return self.reader.get_band_nodata(self.band_indexes[0])
 
     @property
+    def shape(self):
+        ulx, uly, lrx, lry = self.reader.bounds
+        return Polygon([
+            (ulx, uly),
+            (lrx, uly),
+            (lrx, lry),
+            (ulx, lry),
+            (ulx, uly)])
+
+    @property
     def count(self):
         return self.reader.count
 
@@ -196,6 +207,12 @@ class RasterDataCollection(collections.Sequence):
                               indexes=self.band_indexes if bands is None else bands)
         else:
             raise IndexError("{} must be of type slice, or int")
+
+
+    @property
+    def shape(self):
+        # NOTE: Assumes all datasets in collection have the same shape
+        return self[0].shape
 
     @property
     def min(self):

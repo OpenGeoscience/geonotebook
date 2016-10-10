@@ -65,18 +65,48 @@ class Polygon(Annotation, sPolygon):
         sPolygon.__init__(self, [(c['x'], c['y']) for c in coordinates])
 
     def subset(self, raster_data, **kwargs):
-        ul = raster_data.index(self.bounds[0], self.bounds[3])
-        lr = raster_data.index(self.bounds[2], self.bounds[1])
+        # It is possible our user has drawn a polygon where part of the
+        # shape is outside the dataset,  intersect with the rasterdata
+        # shape to make sure we don't try to select/mask data that is
+        # outside the bounds of our dataset.
+        clipped = self.intersection(raster_data.shape)
+
+        # Polygon is completely outside the dataset, return whatever
+        # would have been returned by get_data()
+        if not bool(clipped):
+            ul = raster_data.index(self.bounds[0], self.bounds[3])
+            lr = raster_data.index(self.bounds[2], self.bounds[1])
+
+            return raster_data.get_data(window=(ul, lr), **kwargs)
+
+
+        ul = raster_data.index(clipped.bounds[0], clipped.bounds[3])
+        lr = raster_data.index(clipped.bounds[2], clipped.bounds[1])
 
         data = raster_data.get_data(window=(ul, lr), **kwargs)
 
+        # out_shape must be determined from data's shape,  get_data
+        # may have returned a bounding box of data that is smaller than
+        # the implicit shape of the window we passed.  e.g. if the window
+        # is partially outside the extent of the raster data. Note that
+        # we index with negative numbers here because we may or may not
+        # have a time dimension.
+        num_bands = len(raster_data.band_indexes)
+
+        if num_bands > 1:
+            out_shape = data.shape[-3], data.shape[-2]
+        else:
+            out_shape = data.shape[-2], data.shape[-1]
+
+
+
         coordinates = []
-        for lat, lon in self.exterior.coords:
+        for lat, lon in clipped.exterior.coords:
             x, y = raster_data.index(lat, lon)
             coordinates.append((y - ul[1], x - ul[0]))
 
-        out_shape = (abs(ul[0] - lr[0]), abs(ul[1] - lr[1]))
 
+        # Mask the final polygon
         mask = rasterize(
             [({'type': 'Polygon',
                'coordinates': [coordinates]}, 0)],
@@ -84,7 +114,6 @@ class Polygon(Annotation, sPolygon):
 
         # If we have more than one band,  expand the mask so it includes
         # A "channel" dimension (e.g.  shape is now (lat, lon, channel))
-        num_bands = len(raster_data.band_indexes)
         if num_bands > 1:
             mask = mask[..., np.newaxis] * np.ones(num_bands)
 
@@ -96,28 +125,3 @@ class Polygon(Annotation, sPolygon):
         data[mask.astype(bool)] = raster_data.nodata
 
         return np.ma.masked_equal(data, raster_data.nodata)
-# Did not work.. some issue with rasterize & GDAL
-#        import rasterio
-#        from affine import Affine
-#        from rasterio.features import rasterize
-#        import numpy
-#
-#
-#        ul = self.index(annotation.bounds[0], annotation.bounds[3])
-#        lr = self.index(annotation.bounds[2], annotation.bounds[1])
-#
-#        window = ((lr[0], ul[0]+1), (ul[1], lr[1]+1))
-#        data = self.get_data(window=window)
-#
-#        # create an affine transform for the subset data
-#        t = self.reader.dataset.affine
-#        shifted_affine = Affine(t.a, t.b, t.c+ul[1]*t.a, t.d, t.e, t.f+lr[0]*t.e)
-#
-#        # rasterize the geometry
-#        mask = rasterize(
-#            [(annotation, 0)],
-#            out_shape=data.shape,
-#            transform=shifted_affine,
-#            fill=1,
-#            all_touched=True,
-#            dtype=numpy.uint8)
