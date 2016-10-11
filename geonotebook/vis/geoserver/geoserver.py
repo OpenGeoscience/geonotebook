@@ -1,6 +1,7 @@
 from geonotebook.wrappers import RasterData
 from sld import get_single_band_raster_sld, get_multiband_raster_sld
 import requests
+import struct
 import os
 
 class Client(object):
@@ -75,6 +76,50 @@ class Geoserver(object):
         else:
             return {}
 
+    @staticmethod
+    def generate_colormap(colormap, minimum, maximum):
+        """ colormap can be a list of dicts
+        or a matplotlib colormap. Either case
+        the returned object will be a list of dicts.
+        """
+
+        def range_count(start, stop, count):
+            """ Generates a list with given start
+            stop and count with linear spacing
+            e.g. range_count(1, 3, 5) = [1., 1.5, 2., 2.5, 3.]
+            """
+
+            step = (stop - start) / float(count-1)
+            return [start + i * step for i in xrange(count)]
+
+        def rgba2hex(rgba):
+            """ Converts rgba values to hex """
+
+            # Slice the tuple so that
+            # we don't get alpha and
+            # convert values to 8 bit ints
+            rgb = tuple([int(255 * i) for i in rgba[:3]])
+            return "#{}".format(struct.pack('BBB',*rgb).encode('hex'))
+
+        # If colormap is an iterable return it
+        # Sld code has checks for this anyway
+        # So an arbitrary iterable won't work
+        # anyways
+        if hasattr(colormap, '__iter__'):
+            return colormap
+        else:
+            col_list = ['#00007f', '#0000ff', '#0063ff', '#00d4ff', '#4dffa9',
+                        '#a9ff4d', '#ffe500', '#ff7c00', '#ff1300', '#7f0000']
+            quan_list = range_count(minimum, maximum, len(col_list))
+            if hasattr(colormap, '__call__') and hasattr(colormap, 'N'):
+                quan_list = range_count(minimum, maximum, colormap.N)
+                col_list = [rgba2hex(colormap(i)) for i in range(colormap.N)]
+
+            colormap = [{'color': c, 'quantity': q} for c, q in zip(col_list, quan_list)]
+
+            return colormap
+
+
     # get_params should take a generic list of paramaters e.g. 'bands',
     # 'range', 'gamma' and convert these into a list of vis_server specific
     # paramaters which will be passed along to the tile render handler in
@@ -88,9 +133,13 @@ class Geoserver(object):
             if len(data) == 1:
                 options['band'] = data.band_indexes[0]
 
-                # TODO: Generate default color map
+                cmap = self.generate_colormap(kwargs.get('colormap'),
+                                              data.min,
+                                              data.max)
 
                 options.update(kwargs)
+                options['colormap'] = cmap
+
                 sld_body = get_single_band_raster_sld(name, **options)
             else:
                 options['bands'] = data.band_indexes
