@@ -99,9 +99,7 @@ class Geoserver(object):
             # we don't get alpha and
             # convert values to 8 bit ints
             rgb = tuple([int(255 * i) for i in rgba[:3]])
-            hex = "#{}".format(struct.pack('BBB',*rgb).encode('hex'))
-
-            return hex
+            return "#{}".format(struct.pack('BBB',*rgb).encode('hex'))
 
         # If colormap is an iterable return it
         # Sld code has checks for this anyway
