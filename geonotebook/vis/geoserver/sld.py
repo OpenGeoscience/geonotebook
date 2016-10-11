@@ -1,4 +1,8 @@
 from jinja2 import Environment, DictLoader
+import matplotlib as mpl
+from matplotlib import pylab as plt
+import numpy as np
+
 
 MACRO_TEMPLATE = \
 """{%- macro channel(channel_name, channel, options=None) %}
@@ -159,7 +163,7 @@ def get_single_band_raster_sld(
         "opacity": opacity,
         "channels": [
             {"name": channelName,
-             "band": band}],
+             "band": band}]
     }
 
     if colormap is not None:
@@ -180,7 +184,6 @@ def get_single_band_raster_sld(
         template_params['colormap_type'] = colormap_type
 
     return template.render(**template_params)
-
 
 
 #if __name__ == "__main__":
