@@ -6,16 +6,17 @@ import numpy as np
 
 
 class Annotation(object):
-    def __init__(self, layer, coordinates, **kwargs):
-        super(Annotation, self).__init__()
+    def __init__(self, *args, **kwargs):
+        self.layer = kwargs.pop('layer', None)
 
-        self.layer = layer
-        self._coordinates = coordinates
         self._metadata = kwargs
         for k, v in kwargs.items():
             setattr(Annotation, k, property(self._get_metadata(k),
                                             self._set_metadata(k),
                                             None))
+
+        super(Annotation, self).__init__(*args)
+
 
     def _get_metadata(self, k):
         def __get_metadata(self):
@@ -37,18 +38,16 @@ class Annotation(object):
 
 
 class Point(Annotation, sPoint):
-    def __init__(self, layer, coordinates, **kwargs):
-        super(Point, self).__init__(layer, coordinates, **kwargs)
-        sPoint.__init__(self, coordinates[0]['x'], coordinates[0]['y'])
+    def __init__(self, x, y, **kwargs):
+        super(Point, self).__init__(x, y, **kwargs)
 
     def subset(self, raster_data, **kwargs):
         return raster_data.ix(self.x, self.y)
 
 
 class Rectangle(Annotation, sPolygon):
-    def __init__(self, layer, coordinates, **kwargs):
-        super(Rectangle, self).__init__(layer, coordinates, **kwargs)
-        sPolygon.__init__(self, [(c['x'], c['y']) for c in coordinates])
+    def __init__(self, coordinates, holes, **kwargs):
+        super(Rectangle, self).__init__(coordinates, holes, **kwargs)
 
     def subset(self, raster_data, **kwargs):
         window = (raster_data.index(self.bounds[0], self.bounds[3]),
@@ -60,9 +59,8 @@ class Rectangle(Annotation, sPolygon):
 
 
 class Polygon(Annotation, sPolygon):
-    def __init__(self, layer, coordinates, **kwargs):
-        super(Polygon, self).__init__(layer, coordinates, **kwargs)
-        sPolygon.__init__(self, [(c['x'], c['y']) for c in coordinates])
+    def __init__(self, coordinates, holes, **kwargs):
+        super(Polygon, self).__init__(coordinates, holes, **kwargs)
 
     def subset(self, raster_data, **kwargs):
         # It is possible our user has drawn a polygon where part of the

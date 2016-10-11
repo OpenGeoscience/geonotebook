@@ -46,8 +46,22 @@ class AnnotationLayer(GeonotebookLayer):
         self._annotations = []
 
     def add_annotation(self, ann_type, coords, meta):
-        self._annotations.append(
-            self._annotation_types[ann_type](self, coords, **meta))
+        if ann_type == 'point':
+            x, y = coords[0]['x'], coords[0]['y']
+
+            meta['layer'] = self
+
+            self._annotations.append(
+                self._annotation_types[ann_type](x, y, **meta))
+        else:
+            coordinates = [(c['x'], c['y']) for c in coords]
+
+            meta['layer'] = self
+
+            holes = meta.pop('holes', None)
+
+            self._annotations.append(
+                self._annotation_types[ann_type](coordinates, holes, **meta))
 
     def clear_annotations(self):
         def _clear_annotations(num):
