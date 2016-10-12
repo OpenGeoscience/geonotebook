@@ -276,6 +276,11 @@ define(
 
         Map.prototype.add_wms_layer = function(layer_name, base_url, params){
 
+            // If a layer with this name already exists,  replace it
+            if(this.get_layer(layer_name) !== undefined){
+                this.geojsmap.deleteLayer(this.get_layer(layer_name));
+            }
+
             var projection = 'EPSG:3857';
 
             var wms = this.geojsmap.createLayer('osm', {
