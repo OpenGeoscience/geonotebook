@@ -323,6 +323,8 @@ class Geonotebook(object):
         return cb
 
     def remove_layer(self, layer_name):
+        if hasattr(layer_name, 'name'):
+            layer_name = layer_name.name
 
         def _remove_layer(layer_name):
             self.layers.remove(layer_name)
