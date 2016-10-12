@@ -91,14 +91,13 @@ class RasterData(collections.Sequence):
     def __len__(self):
         return len(self.band_indexes)
 
-    def __getitem__(self, key):
-        if isinstance(key, (list, tuple)):
-            return RasterData(self.path, indexes=key)
-        elif isinstance(key, int):
-            return RasterData(self.path, indexes=[key])
+    def __getitem__(self, keys):
+        if isinstance(keys, int):
+            return RasterData(self.path, indexes=[keys])
+        elif all([isinstance(k, int) for k in keys]):
+            return RasterData(self.path, indexes=keys)
         else:
-            raise IndexError("Bands may only be indexed by int or list of ints")
-
+            raise IndexError("Bands may only be indexed by an int or a list of ints")
 
     @property
     def min(self):
