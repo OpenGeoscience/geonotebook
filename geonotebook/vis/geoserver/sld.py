@@ -2,6 +2,7 @@ from jinja2 import Environment, DictLoader
 import matplotlib as mpl
 from matplotlib import pylab as plt
 import numpy as np
+import six
 
 
 MACRO_TEMPLATE = \
@@ -22,7 +23,7 @@ MACRO_TEMPLATE = \
 {% endmacro -%}
 
 {%- macro colormap(attrs) -%}
-<ColorMapEntry {% if attrs is mapping %}{% for k,v in attrs.iteritems() %} {{k}}="{{v}}"{% endfor %}{% endif %}/>
+<ColorMapEntry {% if attrs is mapping %}{% for k,v in six.iteritems(attrs) %} {{k}}="{{v}}"{% endfor %}{% endif %}/>
 {%- endmacro -%}"""
 
 RASTER_DOCUMENT_TEMPLATE = \
@@ -187,11 +188,11 @@ def get_single_band_raster_sld(
 
 
 #if __name__ == "__main__":
-#     print get_single_band_raster_sld(
+#     print(get_single_band_raster_sld(
 #         'nVDI', band=9, colormap=[
 #             {"color": "#000000", "quantity": "95", "alpha": 0.1},
 #             {"color": "#0000FF", "quantity": "110"},
 #             {"color": "#00FF00", "quantity": "135"},
 #             {"color": "#FF0000", "quantity": "160"},
-#             {"color": "#FF00FF", "quantity": "185"}])
+#             {"color": "#FF00FF", "quantity": "185"}]))
 #    print get_multiband_raster_sld('rgb', range=[(1, 2), (2, 3), (3,4)], gamma=(0.1, 0.2, 0.3), opacity=0.5)

@@ -66,7 +66,7 @@ class Remote(object):
             print "JSONError (%s): %s" % (error['code'], error['message'])
 
         def handle_reply(result):
-            print result
+            print(result)
 
         Geonotebook._remote.set_center(-74.25, 40.0, 4).then(
             handle_reply, handle_error)

@@ -3,8 +3,12 @@ import pkg_resources as pr
 import vis
 import os, sys
 
+
+from six.moves import configparser
+
+
 def get_config(path=None):
-    conf = ConfigParser.ConfigParser()
+    conf = configparser.ConfigParser()
     paths = [
         "${GEONOTEBOOK_INI}",
         os.path.join(os.getcwd(), ".geonotebook.ini"),

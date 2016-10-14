@@ -15,7 +15,7 @@ def post_install(func):
 
         def run(self):
             _run(self)
-            print "running post install function {}".format(func.__name__)
+            print("running post install function {}".format(func.__name__))
             func(self)
 
         command_subclass.run = run
@@ -79,7 +79,7 @@ def install_geonotebook_ini(cmd):
                        if sys_path.startswith("/") else \
                           os.path.join(sys.prefix, sys_path, os.path.basename(src))
 
-                print "copying {} to {}".format(src, dest)
+                print("copying {} to {}".format(src, dest))
 
                 shutil.copyfile(src, dest)
 

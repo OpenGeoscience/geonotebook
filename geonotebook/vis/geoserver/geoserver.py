@@ -4,6 +4,9 @@ import requests
 import struct
 import os
 
+from six.moves import range
+
+
 class Client(object):
     def __init__(self, url, username='admin', password='geoserver'):
         self.base_url = url
@@ -90,7 +93,7 @@ class Geoserver(object):
             """
 
             step = (stop - start) / float(count-1)
-            return [start + i * step for i in xrange(count)]
+            return [start + i * step for i in range(count)]
 
         def rgba2hex(rgba):
             """ Converts rgba values to hex """
