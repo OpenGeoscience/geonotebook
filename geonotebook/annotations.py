@@ -30,9 +30,12 @@ class Annotation(object):
             self._metadata[k] = v
         return __set_metadata
 
+    def _get_layer_collection(self):
+        return self.layer.layer_collection if self.layer is not None else []
+
     @property
     def data(self):
-        for layer in self.layer.stack:
+        for layer in self._get_layer_collection():
             if hasattr(layer, "data") and layer.data is not None:
                 yield layer, self.subset(layer.data, **self._metadata)
 
