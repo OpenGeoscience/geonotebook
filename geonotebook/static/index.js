@@ -168,25 +168,15 @@ define(
             }.bind(this));
         };
 
-
         Geonotebook.prototype.init_html_and_css = function(){
-            $('head').append(
-                $('<link/>')
-                    .attr('href', require.toUrl('./css/styles.css'))
-                    .attr('rel', 'stylesheet')
-                    .attr('type', 'text/css')
-            );
-            $('#ipython-main-app').after('<div id="geonotebook_panel"><div id="geonotebook-map" /></div>');
-
+            $('#ipython-main-app').after('<div id="geonotebook-panel"><div id="geonotebook-map" /></div>');
         };
 
         Geonotebook.prototype.load_ipython_extension = function(){
             if (Jupyter.kernelselector.current_selection == "geonotebook2") {
+                this.init_html_and_css();
                 this.map = new Map(this);
                 this.register_events(Jupyter, events);
-
-                this.init_html_and_css();
-
 
                 // Expose globablly for debugging purposes
                 Jupyter.map = this.map;
