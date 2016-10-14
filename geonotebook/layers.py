@@ -8,12 +8,12 @@ BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
 class GeonotebookLayer(object):
     # Control whether or not a layer can be modified
-    # within a geonotebook stack or not. e.g. base OSM
+    # within a geonotebook layer collection or not. e.g. base OSM
     # map layer should not be deleted by the user
     _system_layer = False
 
     # _expose_as lets us control whether or not a layer is
-    # directly exposed as an attribute on a geostack. It
+    # directly exposed as an attribute on a layer collection. It
     # is designed for layers added by the system that provide
     # some kind of functionality (e.g. the annotatoin layer).
     _expose_as = None
@@ -38,9 +38,9 @@ class AnnotationLayer(GeonotebookLayer):
         "polygon": annotations.Polygon
     }
 
-    def __init__(self, name, remote, stack, **kwargs):
+    def __init__(self, name, remote, layer_collection, **kwargs):
         super(AnnotationLayer, self).__init__(name, remote, **kwargs)
-        self.stack = stack
+        self.layer_collection = layer_collection
         self.params = kwargs
         self._remote = remote
         self._annotations = []
@@ -64,6 +64,10 @@ class AnnotationLayer(GeonotebookLayer):
                 self._annotation_types[ann_type](coordinates, holes, **meta))
 
     def clear_annotations(self):
+        # clear_annotations on _remote returns the
+        # number of annotations that were cleared.
+        # this isn't currently used inside the callback
+        # but that is the signature of the function.
         def _clear_annotations(num):
             self._annotations = []
 
@@ -218,7 +222,7 @@ class TimeSeriesLayer(DataLayer):
             raise StopIteration()
 
 
-class GeonotebookStack(object):
+class GeonotebookLayerCollection(object):
     def __init__(self, layers=None):
         self._layers = OrderedDict()
         self._system_layers = OrderedDict()
@@ -244,7 +248,7 @@ class GeonotebookStack(object):
                 self._expose_layer(value)
 
         else:
-            raise Exception("Can only append GeonotebookLayers to Stack")
+            raise Exception("Can only append GeonotebookLayers to Collection")
 
     def remove(self, value):
         if isinstance(value, basestring):
@@ -283,10 +287,10 @@ class GeonotebookStack(object):
             else:
                 self._layers.__setitem__(index, value)
         else:
-            raise Exception("Can only add GeonotebookLayers to Stack")
+            raise Exception("Can only add GeonotebookLayers to Collection")
 
     def __repr__(self):
-        return "GeonotebookStack({})".format(
+        return "GeonotebookLayerCollection({})".format(
             ([layer for layer in self._layers.values()]).__repr__())
 
     def __len__(self):

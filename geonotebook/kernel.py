@@ -14,7 +14,7 @@ from jsonrpc import (json_rpc_request,
                      is_response,
                      is_request)
 from layers import (BBox,
-                    GeonotebookStack,
+                    GeonotebookLayerCollection,
                     NoDataLayer,
                     AnnotationLayer,
                     SimpleLayer,
@@ -249,7 +249,7 @@ class Geonotebook(object):
         self.x = None
         self.y = None
         self.z = None
-        self.layers = GeonotebookStack([])
+        self.layers = GeonotebookLayerCollection([])
 
         self._kernel = kernel
 
@@ -323,6 +323,9 @@ class Geonotebook(object):
         return cb
 
     def remove_layer(self, layer_name):
+        # If layer_name is an object with a 'name' attribute we assume
+        # thats the layer you want removed.  This allows us to pass in
+        # GeonotebookLayer objects,  as well as regular string layer names
         if hasattr(layer_name, 'name'):
             layer_name = layer_name.name
 
