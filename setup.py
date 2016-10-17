@@ -134,7 +134,10 @@ setup(
     data_files=[
         ('etc', ['config/geonotebook.ini'])
     ],
-    package_data={'geonotebook': ['static/*', 'static/css/*', 'static/lib/*']},
+    package_data={'geonotebook': ['static/*.js',
+                                  'static/lib/*.js',
+                                  'static/css/*.css',
+                                  'templates/*.html']},
     test_suite="tests",
     entry_points={
         'geonotebook.wrappers.raster': [
