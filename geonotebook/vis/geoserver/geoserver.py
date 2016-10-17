@@ -1,5 +1,5 @@
 from geonotebook.wrappers import RasterData
-from sld import get_single_band_raster_sld, get_multiband_raster_sld
+from .sld import get_single_band_raster_sld, get_multiband_raster_sld
 import requests
 import struct
 import os

@@ -1,4 +1,4 @@
-from config import Config
+from .config import Config
 from collections import namedtuple
 import annotations
 from collections import OrderedDict

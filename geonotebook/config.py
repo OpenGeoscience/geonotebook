@@ -1,6 +1,5 @@
-import ConfigParser
 import pkg_resources as pr
-import vis
+from . import vis
 import os, sys
 
 

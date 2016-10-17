@@ -7,20 +7,20 @@ from inspect import getmembers, ismethod, getargspec
 from promise import Promise
 from types import MethodType
 
-import jsonrpc
-from jsonrpc import (json_rpc_request,
-                     json_rpc_notify,
-                     json_rpc_result,
-                     is_response,
-                     is_request)
-from layers import (BBox,
-                    GeonotebookLayerCollection,
-                    NoDataLayer,
-                    AnnotationLayer,
-                    SimpleLayer,
-                    TimeSeriesLayer)
+from . import jsonrpc
+from .jsonrpc import (json_rpc_request,
+                      json_rpc_notify,
+                      json_rpc_result,
+                      is_response,
+                      is_request)
+from .layers import (BBox,
+                     GeonotebookLayerCollection,
+                     NoDataLayer,
+                     AnnotationLayer,
+                     SimpleLayer,
+                     TimeSeriesLayer)
 
-from wrappers import RasterData, RasterDataCollection
+from .wrappers import RasterData, RasterDataCollection
 
 class Remote(object):
     """Provides an object that proxies procedures on a remote object.
