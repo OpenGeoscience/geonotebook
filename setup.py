@@ -92,12 +92,19 @@ def install_nbextension(cmd):
     enable_nbextension("notebook", "geonotebook/index", sys_prefix=True)
 
 
+def install_serverextension(cmd):
+    from notebook.serverextensions import toggle_serverextension_python
+    toggle_serverextension_python('geonotebook', enabled=True, sys_prefix=True)
+
+
+@post_install(install_serverextension)
 @post_install(install_nbextension)
 @post_install(install_kernel)
 class CustomInstall(install):
     pass
 
 
+@post_install(install_serverextension)
 @post_install(install_nbextension)
 @post_install(install_geonotebook_ini)
 @post_install(install_kernel)
