@@ -23,7 +23,7 @@ MACRO_TEMPLATE = \
 {% endmacro -%}
 
 {%- macro colormap(attrs) -%}
-<ColorMapEntry {% if attrs is mapping %}{% for k,v in six.iteritems(attrs) %} {{k}}="{{v}}"{% endfor %}{% endif %}/>
+<ColorMapEntry {% if attrs is mapping %}{% for k,v in attrs.items() %} {{k}}="{{v}}"{% endfor %}{% endif %}/>
 {%- endmacro -%}"""
 
 RASTER_DOCUMENT_TEMPLATE = \

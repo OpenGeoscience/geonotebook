@@ -1,6 +1,6 @@
 from .config import Config
 from collections import namedtuple
-import annotations
+from . import annotations
 from collections import OrderedDict
 import rasterio
 import numpy as np
@@ -254,7 +254,7 @@ class GeonotebookLayerCollection(object):
             raise Exception("Can only append GeonotebookLayers to Collection")
 
     def remove(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             del self._layers[value]
         elif isinstance(value, GeonotebookLayer):
             del self._layers[value.name]
