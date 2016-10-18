@@ -11,7 +11,26 @@ define(
             this.geo = geo;
             this.geojsmap = null;
             this.region = null;
+            this.annotation_color_palette = ['#db5f57', // {r:219, g: 95, b: 87}
+                                             '#dbae57', // {r:219, g:174, b: 87}
+                                             '#b9db57', // {r:185, g:219, b: 87}
+                                             '#69db57', // {r:105, g:219, b: 87}
+                                             '#57db94', // {r: 87, g:219, b:148}
+                                             '#57d3db', // {r: 87, g:211, b:219}
+                                             '#5784db', // {r: 87, g:132, b:219}
+                                             '#7957db', // {r:121, g: 87, b:219}
+                                             '#c957db', // {r:201, g: 87, b:219}
+                                             '#db579e'] // {r:219, g: 87, b:158}
+            this._color_counter = -1;
         };
+
+        Map.prototype.next_color = function(){
+            this._color_counter = this._color_counter + 1;
+
+            var idx = this._color_counter % this.annotation_color_palette.length
+
+            return this.annotation_color_palette[idx]
+        }
 
         Map.prototype.init_map = function(){
             $('#geonotebook-map').empty();
@@ -21,29 +40,12 @@ define(
                                      allowRotation: false
                                     });
 
-            this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
+            // this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
 
         };
 
         Map.prototype.rpc_error = function(error){
             console.log("JSONRPCError(" + error.code + "): " + error.message);
-        };
-
-        Map.prototype.set_region = function(ulx, uly, lrx, lry){
-
-            this.notebook._remote.set_region(ulx, uly, lrx, lry).then(
-                function(result){
-                    this.region = result;
-                }.bind(this),
-                this.rpc_error.bind(this));
-        };
-
-        Map.prototype.geo_select = function(event, args){
-
-            var ul = this.geojsmap.displayToGcs(event.display.upperLeft, "EPSG:4326");
-            var lr = this.geojsmap.displayToGcs(event.display.lowerRight, "EPSG:4326");
-
-            this.set_region(ul.x, ul.y, lr.x, lr.y);
         };
 
 
@@ -53,6 +55,8 @@ define(
                                    "add_wms_layer",
                                    "replace_wms_layer",
                                    "add_osm_layer",
+                                   "add_annotation_layer",
+                                   "clear_annotations",
                                    "remove_layer"];
 
         Map.prototype._debug = function(msg){
@@ -105,6 +109,95 @@ define(
         };
 
 
+        Map.prototype.clear_annotations = function() {
+            var annotation_layer = this.get_layer("annotation");
+            return annotation_layer.removeAllAnnotations();
+        }
+
+
+        Map.prototype.add_annotation = function(annotation){
+            annotation.options("style").fillColor = this.next_color();
+            annotation.options("style").fillOpacity = 0.8;
+            annotation.options("style").strokeWidth = 2;
+
+            var annotation_meta = {
+                id: annotation.id(),
+                name: annotation.name(),
+                rgb: annotation.options("style").fillColor
+            };
+
+            this.notebook._remote.add_annotation(
+                annotation.type(),
+                annotation.coordinates("EPSG:4326"),
+                annotation_meta
+            ).then(
+                function(result){
+                    annotation.layer().modified();
+                    annotation.draw();
+                }.bind(this),
+                this.rpc_error.bind(this));
+
+        };
+
+        // Note: point/polygon's fire 'state' when they are added to
+        //       the map,  while rectangle's fire 'add'
+        // See:  https://github.com/OpenGeoscience/geojs/issues/623
+        Map.prototype.add_annotation_handler = function(evt) {
+            var annotation = evt.annotation;
+            if (annotation.type() === "rectangle") {
+                this.add_annotation(annotation);
+            }
+
+        };
+        Map.prototype.state_annotation_handler = function(evt) {
+            var annotation = evt.annotation;
+            if(annotation.type() === "point" || annotation.type() === "polygon") {
+                this.add_annotation(annotation);
+            }
+
+        };
+
+        Map.prototype.add_annotation_layer = function(layer_name, params){
+            var layer = this.geojsmap.createLayer('annotation', {
+                annotations: ['rectangle', 'point', 'polygon']
+            });
+            layer.name(layer_name);
+
+
+
+            layer.geoOn(geo.event.annotation.add, this.add_annotation_handler.bind(this));
+//            layer.geoOn(geo.event.annotation.remove, handleAnnotationChange);
+            layer.geoOn(geo.event.annotation.state, this.state_annotation_handler.bind(this));
+
+            layer.geoOn('geonotebook:rectangle_annotation_mode', function(evt) {
+                layer.mode('rectangle');
+            });
+
+            layer.geoOn('geonotebook:point_annotation_mode', function(evt) {
+                layer.mode('point');
+            });
+
+            layer.geoOn('geonotebook:polygon_annotation_mode', function(evt) {
+                layer.mode('polygon');
+            });
+
+
+            return layer_name;
+        }
+
+        Map.prototype._set_layer_zindex = function(layer, index){
+            if( index !== undefined ){
+                var annotation_layer = this.get_layer("annotation");
+                layer.zIndex(index);
+                if( annotation_layer !== undefined ){
+                    // Annotation layer should always be on top
+                    var max = _.max(_.map(this.geojsmap.layers(), (e) => e.zIndex()));
+                    annotation_layer.zIndex(max + 1);
+                }
+
+            }
+        };
+
         Map.prototype.add_osm_layer = function(layer_name, url, params){
             var osm = this.geojsmap.createLayer('osm');
 
@@ -112,9 +205,7 @@ define(
             osm.url = url;
 
             // make sure zindex is explicitly set
-            if( params['zIndex'] ){
-                osm.zIndex(params['zIndex']);
-            }
+            this._set_layer_zindex(osm, params['zIndex']);
 
             return layer_name
         };
@@ -136,7 +227,8 @@ define(
                     attribution: null
                 });
                 wms.name(layer_name);
-                wms.zIndex(old_layer.zIndex())
+                this._set_layer_zindex(wms, old_layer.zIndex());
+
                 wms.url(function (x, y, zoom) {
 
                     var bb = wms.gcsTileBounds({
@@ -184,6 +276,11 @@ define(
 
         Map.prototype.add_wms_layer = function(layer_name, base_url, params){
 
+            // If a layer with this name already exists,  replace it
+            if(this.get_layer(layer_name) !== undefined){
+                this.geojsmap.deleteLayer(this.get_layer(layer_name));
+            }
+
             var projection = 'EPSG:3857';
 
             var wms = this.geojsmap.createLayer('osm', {
@@ -192,10 +289,7 @@ define(
             });
 
             // make sure zindex is explicitly set
-            if( params['zIndex'] ){
-                wms.zIndex(params['zIndex']);
-            }
-
+            this._set_layer_zindex(wms, params['zIndex']);
 
             wms.name(layer_name);
 

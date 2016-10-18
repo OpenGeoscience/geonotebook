@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pkg_resources as pr
 import collections
+from shapely.geometry import Polygon
 
 class RasterData(collections.Sequence):
 
@@ -53,10 +54,18 @@ class RasterData(collections.Sequence):
         assert not max(self.band_indexes) > self.reader.count, \
             IndexError("Band index out of range")
 
-
     def index(self, *args, **kwargs):
         return self.reader.index(*args, **kwargs)
 
+    def subset(self, annotation, **kwargs):
+        # from pudb.remote import set_trace; set_trace(term_size=(319, 82))
+        return annotation.subset(self, **kwargs)
+
+    def ix(self, x, y):
+        if len(self) == 1:
+            return self.reader.get_band_ix(self.band_indexes, x, y)[0]
+        else:
+            return self.reader.get_band_ix(self.band_indexes, x, y)
 
     def get_data(self, window=None, masked=True, axis=2, **kwargs):
         if len(self) == 1:
@@ -72,7 +81,7 @@ class RasterData(collections.Sequence):
                 kwargs["masked"] = False
                 return np.ma.masked_values(
                     np.stack([self.reader.get_band_data(i, window=window, **kwargs)
-                              for i in self.band_indexes], axis=axis), self.nodata[0])
+                              for i in self.band_indexes], axis=axis), self.nodata)
             else:
                 return np.stack([self.reader.get_band_data(i, window=window,
                                                            masked=masked,
@@ -82,14 +91,13 @@ class RasterData(collections.Sequence):
     def __len__(self):
         return len(self.band_indexes)
 
-    def __getitem__(self, key):
-        if isinstance(key, (list, tuple)):
-            return RasterData(self.path, indexes=key)
-        elif isinstance(key, int):
-            return RasterData(self.path, indexes=[key])
+    def __getitem__(self, keys):
+        if isinstance(keys, int):
+            return RasterData(self.path, indexes=[keys])
+        elif all([isinstance(k, int) for k in keys]):
+            return RasterData(self.path, indexes=keys)
         else:
-            raise IndexError("Bands may only be indexed by int or list of ints")
-
+            raise IndexError("Bands may only be indexed by an int or a list of ints")
 
     @property
     def min(self):
@@ -121,10 +129,19 @@ class RasterData(collections.Sequence):
 
     @property
     def nodata(self):
-        if len(self) == 1:
-            return self.reader.get_band_nodata(self.band_indexes[0])
-        else:
-            return [self.reader.get_band_nodata(i) for i in self.band_indexes]
+        # HACK,  we assume first band index's nodata is same
+        # for all bands
+        return self.reader.get_band_nodata(self.band_indexes[0])
+
+    @property
+    def shape(self):
+        ulx, uly, lrx, lry = self.reader.bounds
+        return Polygon([
+            (ulx, uly),
+            (lrx, uly),
+            (lrx, lry),
+            (ulx, lry),
+            (ulx, uly)])
 
     @property
     def count(self):
@@ -190,6 +207,12 @@ class RasterDataCollection(collections.Sequence):
         else:
             raise IndexError("{} must be of type slice, or int")
 
+
+    @property
+    def shape(self):
+        # NOTE: Assumes all datasets in collection have the same shape
+        return self[0].shape
+
     @property
     def min(self):
         if len(self) == 1:
@@ -220,13 +243,17 @@ class RasterDataCollection(collections.Sequence):
 
     @property
     def nodata(self):
+        # HACK: assume nodata is consistent across
+        #       all RasterData/bands.
+        return [rd.nodata for rd in self][0]
+
+    def ix(self, *args, **kwargs):
         if len(self) == 1:
-            return self[0].nodata
+            return self[0].ix(*args, **kwargs)
         else:
-            return [rd.nodata for rd in self]
-
-
-
+            return np.ma.masked_values(
+                [rd.ix(*args, **kwargs) for rd in self],
+                self.__getitem__((0,1)).nodata)
 
     def get_data(self, *args, **kwargs):
         masked = kwargs.get("masked", True)
@@ -246,6 +273,3 @@ class RasterDataCollection(collections.Sequence):
         # TODO: Fix this so it doesn't just assume
         #       index is consistent across timesteps
         return self.__getitem__(0).index(*args, **kwargs)
-
-
-###### DELETE EVERYTHING AFTER ME ##########

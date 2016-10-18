@@ -14,8 +14,9 @@ from jsonrpc import (json_rpc_request,
                      is_response,
                      is_request)
 from layers import (BBox,
-                    GeonotebookStack,
+                    GeonotebookLayerCollection,
                     NoDataLayer,
+                    AnnotationLayer,
                     SimpleLayer,
                     TimeSeriesLayer)
 
@@ -154,7 +155,7 @@ class Remote(object):
 
 
 class Geonotebook(object):
-    msg_types = ['get_protocol', 'set_center', 'set_region']
+    msg_types = ['get_protocol', 'set_center', 'add_annotation']
 
     _protocol = None
     _remote = None
@@ -248,7 +249,7 @@ class Geonotebook(object):
         self.x = None
         self.y = None
         self.z = None
-        self.layers = GeonotebookStack([])
+        self.layers = GeonotebookLayerCollection([])
 
         self._kernel = kernel
 
@@ -289,8 +290,10 @@ class Geonotebook(object):
         else:
             assert name is not None, \
                 RuntimeError("Non data layers require a 'name'")
-
-            layer = NoDataLayer(name, self._remote, vis_url=vis_url, **kwargs)
+            if layer_type == 'annotation':
+                layer = AnnotationLayer(name, self._remote, self.layers, **kwargs)
+            else:
+                layer = NoDataLayer(name, self._remote, vis_url=vis_url, **kwargs)
 
         def _add_layer(layer_name):
             self.layers.append(layer)
@@ -308,6 +311,11 @@ class Geonotebook(object):
 
             cb = self._remote.add_osm_layer(layer.name, layer.vis_url, params)\
                 .then(_add_layer, self.rpc_error)
+        elif layer_type == 'annotation':
+            params = layer.params
+
+            cb = self._remote.add_annotation_layer(layer.name, params)\
+                .then(_add_layer, self.rpc_error)
         else:
             # Exception?
             pass
@@ -315,6 +323,11 @@ class Geonotebook(object):
         return cb
 
     def remove_layer(self, layer_name):
+        # If layer_name is an object with a 'name' attribute we assume
+        # thats the layer you want removed.  This allows us to pass in
+        # GeonotebookLayer objects,  as well as regular string layer names
+        if hasattr(layer_name, 'name'):
+            layer_name = layer_name.name
 
         def _remove_layer(layer_name):
             self.layers.remove(layer_name)
@@ -326,21 +339,14 @@ class Geonotebook(object):
 
 
     ### RPC endpoints ###
-
-    def set_region(self, ulx, uly, lrx, lry):
-        if ulx == lrx and uly == lry:
-            raise jsonrpc.InvalidParams("Bounding box values cannot be the same!")
-
-        self.region = BBox(ulx, uly, lrx, lry)
-
-        for l in self.layers:
-            l.region = BBox(ulx, uly, lrx, lry)
-
-        return ulx, uly, lrx, lry
-
     def get_protocol(self):
         return self.__class__.class_protocol()
 
+
+
+    def add_annotation(self, *args, **kwargs):
+        self.layers.annotation.add_annotation(*args, **kwargs)
+        return True
 
 
 
@@ -373,7 +379,7 @@ class GeonotebookKernel(IPythonKernel):
             self.geonotebook._recv_msg(msg)
 
         except jsonrpc.JSONRPCError as e:
-            self.geonotebook._send_msg(json_rpc_result(None, e.toJson(), 'FOOBAR'))
+            self.geonotebook._send_msg(json_rpc_result(None, e.toJson(), msg['id']))
             self.log.error(u"JSONRPCError (%s): %s" % (e.code, e.message))
 
         except Exception as e:
@@ -404,8 +410,16 @@ class GeonotebookKernel(IPythonKernel):
 
         # THis should be handled in a callback that is fired off
         # When set protocol etc is complete.
-        self.geonotebook.add_layer(None, name="osm_base", layer_type="osm",
-                                   vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
+        self.geonotebook.add_layer(
+            None, name="osm_base", layer_type="osm",
+            vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            system_layer=True)
+
+        self.geonotebook.add_layer(
+            None, name="annotation",
+            layer_type="annotation", vis_url=None,
+            system_layer=True, expose_as="annotation")
+
 
     def do_shutdown(self, restart):
         self.geonotebook = None;
