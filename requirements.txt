@@ -6,3 +6,5 @@ rasterio==0.36.0
 requests==2.11.1
 promise==0.4.2
 Shapely==1.5.17
+matplotlib
+pyproj
