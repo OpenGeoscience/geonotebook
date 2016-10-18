@@ -3,7 +3,7 @@ import logging
 import os
 from logging.handlers import SysLogHandler
 
-from inspect import getmembers, ismethod, getargspec
+from inspect import getmembers, ismethod, isfunction, getargspec
 from promise import Promise
 from types import MethodType
 
@@ -101,7 +101,7 @@ class Remote(object):
             # return the callback
             return self._promises[msg['id']]
 
-        return MethodType(_protocol_closure, self, self.__class__)
+        return MethodType(_protocol_closure, self)
 
     def resolve(self, msg):
         """Resolve an open JSONRPC request
@@ -190,8 +190,14 @@ class Geonotebook(object):
                         'required': params[:r],
                         'optional': params[r:]}
 
+
+            # Note:  for the predicate we do ismethod or isfunction for PY2/PY3 support
+            # See: https://docs.python.org/3.0/whatsnew/3.0.html
+            # "The concept of “unbound methods” has been removed from the language.
+            # When referencing a method as a class attribute, you now get a plain function object."
             cls._protocol = [_method_protocol(fn, method) for fn, method in
-                             getmembers(cls, predicate=ismethod) if fn in cls.msg_types]
+                             getmembers(cls, predicate=lambda x: ismethod(x) or isfunction(x)) \
+                             if fn in cls.msg_types]
         return cls._protocol
 
     def _send_msg(self, msg):
