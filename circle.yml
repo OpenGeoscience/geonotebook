@@ -14,3 +14,7 @@ dependencies:
 #     - pip install -r requirements.txt
 
 #     - pip install .
+
+test:
+  override:
+    - tox --result-json /tmp/result.json
