@@ -3,11 +3,13 @@ dependencies:
     - sudo add-apt-repository -y ppa:ubuntugis
     - sudo apt-get update -y
     - sudo apt-get install gdal-bin libgdal-dev python3-numpy python-numpy
-    - pip install -r requirements-dev.txt
-#     - pip install -r requirements.txt
-
-#     - pip install .
+    - pip install tox tox-pyenv
+    - pyenv local 2.7.12 3.5.2
 
 test:
   override:
-    - tox --result-json /tmp/result.json
+    - tox --result-json /tmp/tox-result.json
+
+general:
+  artifacts:
+    - "/tmp/tox-result.json"
