@@ -2,8 +2,8 @@ machine:
   python:
     version: 2.7.12
   environment:
-    - CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:/usr/include/gdal
-    - C_INCLUDE_PATH=$C_INCLUDE_PATH:/usr/include/gdal
+    CPLUS_INCLUDE_PATH: $CPLUS_INCLUDE_PATH:/usr/include/gdal
+    C_INCLUDE_PATH: $C_INCLUDE_PATH:/usr/include/gdal
 
 dependencies:
   override:
