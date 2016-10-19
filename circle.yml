@@ -1,4 +1,6 @@
 machine:
+  pre:
+    - pip install python-tk python3-tk
   python:
     version: 2.7.12
   environment:
