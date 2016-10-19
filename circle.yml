@@ -1,21 +1,17 @@
 machine:
-  python:
-    version: 2.7.12
+#   python:
+#     version: 2.7.12
   environment:
     CPLUS_INCLUDE_PATH: $CPLUS_INCLUDE_PATH:/usr/include/gdal
     C_INCLUDE_PATH: $C_INCLUDE_PATH:/usr/include/gdal
 
 dependencies:
-  override:
+  pre:
     - sudo add-apt-repository -y ppa:ubuntugis
     - sudo apt-get update -y
     - sudo apt-get install gdal-bin libgdal-dev python3-numpy python-numpy
     # rasterio seems to freak out if numpy isn't installed ahead of time
-    - pip install $(grep "^numpy==" requirements.txt)
-    - pip install -r requirements.txt
-    - pip install -r requirements-dev.txt
-    - pip install .
-
-test:
-  override:
-    - python setup.py test
+#     - pip install $(grep "^numpy==" requirements.txt)
+#     - pip install -r requirements.txt
+#     - pip install -r requirements-dev.txt
+#     - pip install .

@@ -114,7 +114,7 @@ class CustomDevelop(develop):
 
 setup(
     name='geonotebook',
-    version='0.0.0-prealpha',
+    version='0.0.0',
     description='A Jupyter notebook extension for Geospatial Analysis',
     long_description='A Jupyter notebook extension for Geospatial Analysis',
     url='https://github.com/OpenDataAnalytics',

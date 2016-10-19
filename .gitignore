@@ -1,3 +1,4 @@
+.tox
 *.egg-info*
 *tern-port*
 *.pyc
