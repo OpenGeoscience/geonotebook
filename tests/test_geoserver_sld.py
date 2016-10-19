@@ -1,3 +1,6 @@
+import matplotlib as mpl
+mpl.use('Agg')
+
 import xml.etree.ElementTree as ET
 import unittest
 
