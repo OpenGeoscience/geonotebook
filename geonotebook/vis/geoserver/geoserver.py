@@ -146,7 +146,7 @@ class Geoserver(object):
                 sld_body = get_single_band_raster_sld(name, **options)
             else:
                 options['bands'] = data.band_indexes
-                options['range'] = zip(data.min, data.max)
+                options['interval'] = [vals for vals in zip(data.min, data.max)]
 
                 options.update(kwargs)
 

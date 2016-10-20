@@ -193,7 +193,7 @@ class Geonotebook(object):
 
             # Note:  for the predicate we do ismethod or isfunction for PY2/PY3 support
             # See: https://docs.python.org/3.0/whatsnew/3.0.html
-            # "The concept of “unbound methods” has been removed from the language.
+            # "The concept of "unbound methods" has been removed from the language.
             # When referencing a method as a class attribute, you now get a plain function object."
             cls._protocol = [_method_protocol(fn, method) for fn, method in
                              getmembers(cls, predicate=lambda x: ismethod(x) or isfunction(x)) \
