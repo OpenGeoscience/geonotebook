@@ -101,8 +101,8 @@ class Geoserver(object):
             # Slice the tuple so that
             # we don't get alpha and
             # convert values to 8 bit ints
-            rgb = tuple([int(255 * i) for i in rgba[:3]])
-            return "#{}".format(struct.pack('BBB',*rgb).encode('hex'))
+            rgb = tuple([min(max(int(255 * i), 0), 255) for i in rgba[:3]])
+            return "#{0:02x}{1:02x}{2:02x}".format(*rgb)
 
         # If colormap is an iterable return it
         # Sld code has checks for this anyway
