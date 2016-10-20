@@ -3,3 +3,4 @@
 *tern-port*
 *.pyc
 /notebooks/.geonotebook.ini
+.coverage

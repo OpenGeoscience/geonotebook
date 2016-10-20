@@ -1,2 +1,4 @@
 tox==2.4.1
+pytest==3.0.3
+pytest-cov==2.4.0
 mock==2.0.0
