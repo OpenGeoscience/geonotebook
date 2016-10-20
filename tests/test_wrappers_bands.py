@@ -120,167 +120,159 @@ class MockReader(object):
             return _get_band_data()
 
 
-def setUpModule():
+def setup_module():
     RasterData.register("mock", MockReader)
 
-def tearDownModule():
+def teardown_module():
     del RasterData._concrete_data_types["mock"]
 
 
-class TestRasterData(unittest.TestCase):
-    def setUp(self):
-        pass
+def test_count():
+    rd = RasterData("coords.mock")
+    assert rd.count == 5
 
-    def tearDown(self):
-        pass
+    rd = RasterData("missing.mock")
+    assert rd.count == 4
 
-    def test_count(self):
-        rd = RasterData("coords.mock")
-        self.assertEquals(rd.count, 5)
+def test_length():
+    rd = RasterData("coords.mock")
+    assert len(rd) == 5
 
-        rd = RasterData("missing.mock")
-        self.assertEquals(rd.count, 4)
+    rd = RasterData("missing.mock")
+    assert len(rd) == 4
 
-    def test_length(self):
-        rd = RasterData("coords.mock")
-        self.assertEquals(len(rd), 5)
+def test_min():
+    rd = RasterData("coords.mock")
+    assert rd.min == [1.0, 2.0, 3.0, 4.0, 5.0]
 
-        rd = RasterData("missing.mock")
-        self.assertEquals(len(rd), 4)
+    rd = RasterData("missing.mock")
+    assert rd.min == [1.0, 2.0, 3.0, 4.0]
 
-    def test_min(self):
-        rd = RasterData("coords.mock")
-        self.assertEquals(rd.min, [1.0, 2.0, 3.0, 4.0, 5.0])
+def test_max():
+    rd = RasterData("coords.mock")
+    assert rd.max == [55.0, 56.0, 57.0, 58.0, 59.0]
 
-        rd = RasterData("missing.mock")
-        self.assertEquals(rd.min, [1.0, 2.0, 3.0, 4.0])
-
-    def test_max(self):
-        rd = RasterData("coords.mock")
-        self.assertEquals(rd.max, [55.0, 56.0, 57.0, 58.0, 59.0])
-
-        rd = RasterData("missing.mock")
-        self.assertEquals(rd.max, [52.0, 52.0, 52.0, 52.0])
+    rd = RasterData("missing.mock")
+    assert rd.max == [52.0, 52.0, 52.0, 52.0]
 
 
-    def test_mean(self):
-        rd = RasterData("coords.mock")
-        self.assertEquals(rd.mean, [32.6, 32.68, 32.76, 32.84, 32.92])
+def test_mean():
+    rd = RasterData("coords.mock")
+    assert rd.mean == [32.6, 32.68, 32.76, 32.84, 32.92]
 
-        rd = RasterData("missing.mock")
-        self.assertEquals(rd.mean, [27.842105263157894,
-                                    27.894736842105264,
-                                    27.94736842105263,
-                                    28.0])
+    rd = RasterData("missing.mock")
+    assert rd.mean == [27.842105263157894,
+                                27.894736842105264,
+                                27.94736842105263,
+                                28.0]
 
-    def test_stddev(self):
-        rd = RasterData("coords.mock")
-        self.assertEquals(rd.stddev, [14.947909552843836,
-                                      14.925736162749226,
-                                      14.908467392726859,
-                                      14.896120300266107,
-                                      14.88870712990218])
+def test_stddev():
+    rd = RasterData("coords.mock")
+    assert rd.stddev == [14.947909552843836,
+                                  14.925736162749226,
+                                  14.908467392726859,
+                                  14.896120300266107,
+                                  14.88870712990218]
 
-        rd = RasterData("missing.mock")
-        self.assertEquals(rd.stddev, [13.554036718164102,
-                                      13.451256004129974,
-                                      13.351418943754043,
-                                      13.254592054315205])
+    rd = RasterData("missing.mock")
+    assert rd.stddev == [13.554036718164102,
+                                  13.451256004129974,
+                                  13.351418943754043,
+                                  13.254592054315205]
 
-    def test_get_data_returns_masked_array(self):
-        rd = RasterData("coords.mock")
-        self.assertTrue(isinstance(rd.get_data(), np.ma.core.MaskedArray))
+def test_get_data_returns_masked_array():
+    rd = RasterData("coords.mock")
+    assert isinstance(rd.get_data(), np.ma.core.MaskedArray)
 
-    def test_get_data_masked_false_returns_ndarray(self):
-        rd = RasterData("coords.mock")
-        self.assertTrue(isinstance(rd.get_data(), np.ndarray))
+def test_get_data_masked_false_returns_ndarray():
+    rd = RasterData("coords.mock")
+    assert isinstance(rd.get_data(), np.ndarray)
 
-    def test_get_data_shape(self):
-        rd = RasterData("rect.mock")
-        self.assertEquals(rd.get_data().shape, (5, 3, 2))
+def test_get_data_shape():
+    rd = RasterData("rect.mock")
+    assert rd.get_data().shape == (5, 3, 2)
 
-        self.assertEquals(rd.get_data(axis=0).shape, (2, 5, 3))
-        self.assertEquals(rd.get_data(axis=1).shape, (5, 2, 3))
-        self.assertEquals(rd.get_data(axis=2).shape, (5, 3, 2))
+    assert rd.get_data(axis=0).shape == (2, 5, 3)
+    assert rd.get_data(axis=1).shape == (5, 2, 3)
+    assert rd.get_data(axis=2).shape == (5, 3, 2)
 
-    def test_get_data_value(self):
-        rd = RasterData("rect.mock")
-        self.assertTrue(
-            (rd.get_data() == \
-             np.array([[[  1.,   2.],
-                        [ 21.,  21.],
-                        [ 31.,  31.]],
-                       [[ 12.,  12.],
-                        [ 22.,  22.],
-                        [ 32.,  32.]],
-                       [[ 13.,  13.],
-                        [ 23.,  23.],
-                        [ 33.,  33.]],
-                       [[ 14.,  14.],
-                        [ 24.,  24.],
-                        [ 34.,  34.]],
-                       [[ 15.,  15.],
-                        [ 25.,  25.],
-                        [ 35.,  35.]]])).all())
-
-
-    def test_window(self):
-        rd = RasterData("rect.mock")
-        self.assertTrue(
-            (rd.get_data(window=((1,1), (3,2))) == \
-             np.array([[[ 22.,  22.],
-                        [ 32.,  32.]]])).all())
+def test_get_data_value():
+    rd = RasterData("rect.mock")
+    assert (rd.get_data() == \
+         np.array([[[  1.,   2.],
+                    [ 21.,  21.],
+                    [ 31.,  31.]],
+                   [[ 12.,  12.],
+                    [ 22.,  22.],
+                    [ 32.,  32.]],
+                   [[ 13.,  13.],
+                    [ 23.,  23.],
+                    [ 33.,  33.]],
+                   [[ 14.,  14.],
+                    [ 24.,  24.],
+                    [ 34.,  34.]],
+                   [[ 15.,  15.],
+                    [ 25.,  25.],
+                    [ 35.,  35.]]])).all()
 
 
-        rd = RasterData("coords.mock")
-        self.assertTrue(
-            (rd.get_data(window=((2,2), (5,4))) == \
-             np.array([[[ 33.,  33.,  33.,  33.,  33.],
-                        [ 43.,  43.,  43.,  43.,  43.],
-                        [ 53.,  53.,  53.,  53.,  53.]],
-                       [[ 34.,  34.,  34.,  34.,  34.],
-                        [ 44.,  44.,  44.,  44.,  44.],
-                        [ 54.,  54.,  54.,  54.,  54.]]])).all())
+def test_window():
+    rd = RasterData("rect.mock")
+    assert \
+        (rd.get_data(window=((1,1), (3,2))) == \
+         np.array([[[ 22.,  22.],
+                    [ 32.,  32.]]])).all()
 
 
-    def test_masked_array(self):
-        rd = RasterData("missing.mock")
-        self.assertTrue(
-            (rd.get_data().mask == \
-             np.array([[[False, False, False, False],
-                        [False, False, False, False],
-                        [False, False, False, False],
-                        [False, False, False, False],
-                        [False, False, False, False]],
-                       [[False, False, False, False],
-                        [False, False, False, False],
-                        [False, False, False, False],
-                        [False, False, False, False],
-                        [False, False, False, False]],
-                       [[False, False, False, False],
-                        [False, False, False, False],
-                        [False, False, False, False],
-                        [False, False, False, False],
-                        [ True,  True,  True,  True]],
-                       [[False, False, False, False],
-                        [False, False, False, False],
-                        [False, False, False, False],
-                        [ True,  True,  True,  True],
-                        [ True,  True,  True,  True]],
-                       [[False, False, False, False],
-                        [False, False, False, False],
-                        [ True,  True,  True,  True],
-                        [ True,  True,  True,  True],
-                        [ True,  True,  True,  True]]])).all())
+    rd = RasterData("coords.mock")
+    assert \
+        (rd.get_data(window=((2,2), (5,4))) == \
+         np.array([[[ 33.,  33.,  33.,  33.,  33.],
+                    [ 43.,  43.,  43.,  43.,  43.],
+                    [ 53.,  53.,  53.,  53.,  53.]],
+                   [[ 34.,  34.,  34.,  34.,  34.],
+                    [ 44.,  44.,  44.,  44.,  44.],
+                    [ 54.,  54.,  54.,  54.,  54.]]])).all()
+
+
+def test_masked_array():
+    rd = RasterData("missing.mock")
+    assert \
+        (rd.get_data().mask == \
+         np.array([[[False, False, False, False],
+                    [False, False, False, False],
+                    [False, False, False, False],
+                    [False, False, False, False],
+                    [False, False, False, False]],
+                   [[False, False, False, False],
+                    [False, False, False, False],
+                    [False, False, False, False],
+                    [False, False, False, False],
+                    [False, False, False, False]],
+                   [[False, False, False, False],
+                    [False, False, False, False],
+                    [False, False, False, False],
+                    [False, False, False, False],
+                    [ True,  True,  True,  True]],
+                   [[False, False, False, False],
+                    [False, False, False, False],
+                    [False, False, False, False],
+                    [ True,  True,  True,  True],
+                    [ True,  True,  True,  True]],
+                   [[False, False, False, False],
+                    [False, False, False, False],
+                    [ True,  True,  True,  True],
+                    [ True,  True,  True,  True],
+                    [ True,  True,  True,  True]]])).all()
 
 
 
-    def test_getitem_list_returns_raster_data(self):
-        rd = RasterData("coords.mock")
-        self.assertTrue(isinstance(rd[1,2,3], RasterData))
-        self.assertEquals(len(rd[1,2,3]), 3)
+def test_getitem_list_returns_raster_data():
+    rd = RasterData("coords.mock")
+    assert isinstance(rd[1,2,3], RasterData)
+    assert len(rd[1,2,3]) == 3
 
-    def test_getitem_int_returns_raster_data(self):
-        rd = RasterData("coords.mock")
-        self.assertTrue(isinstance(rd[1], RasterData))
-        self.assertEquals(len(rd[1]), 1)
+def test_getitem_int_returns_raster_data():
+    rd = RasterData("coords.mock")
+    assert isinstance(rd[1], RasterData)
+    assert len(rd[1]) == 1
