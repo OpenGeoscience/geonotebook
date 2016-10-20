@@ -209,15 +209,15 @@ class TimeSeriesLayer(DataLayer):
 
         return self.current
 
-    def seek(self, idx):
+    def idx(self, idx):
         self._cur = idx
         return self._replace_layer()
 
-    def prev(self):
+    def backward(self):
         self._cur -= 1
         return self._replace_layer()
 
-    def next(self):
+    def forward(self):
         try:
             self._cur += 1
             return self._replace_layer()
