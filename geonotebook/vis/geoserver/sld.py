@@ -2,6 +2,7 @@ from jinja2 import Environment, DictLoader
 import matplotlib as mpl
 from matplotlib import pylab as plt
 import numpy as np
+import six
 
 
 MACRO_TEMPLATE = \
@@ -22,7 +23,7 @@ MACRO_TEMPLATE = \
 {% endmacro -%}
 
 {%- macro colormap(attrs) -%}
-<ColorMapEntry {% if attrs is mapping %}{% for k,v in attrs.iteritems() %} {{k}}="{{v}}"{% endfor %}{% endif %}/>
+<ColorMapEntry {% if attrs is mapping %}{% for k,v in attrs.items() %} {{k}}="{{v}}"{% endfor %}{% endif %}/>
 {%- endmacro -%}"""
 
 RASTER_DOCUMENT_TEMPLATE = \
@@ -70,15 +71,14 @@ SLDTemplates = Environment(loader=DictLoader({
 
 def get_multiband_raster_sld(
         name, title=None, bands=(1, 2, 3),
-        range=(0, 1), gamma=1.0, opacity=1.0,
+        interval=(0, 1), gamma=1.0, opacity=1.0,
         channelNames=("RedChannel", "GreenChannel", "BlueChannel")):
 
-
-    # Make sure range is a list of ranges - this test
+    # Make sure interval is a list of intervals - this test
     # is buggy and should be fixed.
     if not all(isinstance(e, list) or isinstance(e, tuple)
-               for e in range):
-        range = [range] * len(bands)
+               for e in interval):
+        interval = [interval] * len(bands)
 
     # Set title default if it wasn't passed in
     if title is None:
@@ -104,14 +104,14 @@ def get_multiband_raster_sld(
     assert all(isinstance(e, int) and e > 0 for e in bands), \
         "Bands must be specified as integer indexes starting from 1!"
 
-    # All ranges must be of length 2
-    assert all(len(e) == 2 for e in range), \
-        "Range must be a list of length {}".format(len(bands))
+    # All intervals must be of length 2
+    assert all(len(e) == 2 for e in interval), \
+        "Interval must be a list of length {}".format(len(bands))
 
-    # Ranges and bands must be the same length
-    assert len(bands) == len(range), \
-        "Number of bands ({}) must be equal to number of ranges ({})!".format(
-            len(bands), len(range))
+    # Intervals and bands must be the same length
+    assert len(bands) == len(interval), \
+        "Number of bands ({}) must be equal to number of intervals ({})!".format(
+            len(bands), len(interval))
 
     # Make sure gamma is a list the same length as the list of bands
     try:
@@ -129,7 +129,7 @@ def get_multiband_raster_sld(
         "opacity": opacity,
         "channels": []}
 
-    for n, b, r, g in zip(channelNames, bands, range, gamma):
+    for n, b, r, g in zip(channelNames, bands, interval, gamma):
         template_params['channels'].append({
             "name": n,
             "band": b,
@@ -187,11 +187,11 @@ def get_single_band_raster_sld(
 
 
 #if __name__ == "__main__":
-#     print get_single_band_raster_sld(
+#     print(get_single_band_raster_sld(
 #         'nVDI', band=9, colormap=[
 #             {"color": "#000000", "quantity": "95", "alpha": 0.1},
 #             {"color": "#0000FF", "quantity": "110"},
 #             {"color": "#00FF00", "quantity": "135"},
 #             {"color": "#FF0000", "quantity": "160"},
-#             {"color": "#FF00FF", "quantity": "185"}])
-#    print get_multiband_raster_sld('rgb', range=[(1, 2), (2, 3), (3,4)], gamma=(0.1, 0.2, 0.3), opacity=0.5)
+#             {"color": "#FF00FF", "quantity": "185"}]))
+#    print get_multiband_raster_sld('rgb', interval=[(1, 2), (2, 3), (3,4)], gamma=(0.1, 0.2, 0.3), opacity=0.5)

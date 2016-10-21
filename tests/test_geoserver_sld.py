@@ -1,3 +1,6 @@
+import matplotlib as mpl
+mpl.use('Agg')
+
 import xml.etree.ElementTree as ET
 import unittest
 
@@ -120,73 +123,73 @@ class TestMultiBandParams(unittest.TestCase):
         self.assertEquals(bands, out_bands)
 
     @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
-    def test_default_single_range_is_applied_to_all_bands(self, templates):
-        """ If range is not passed in and bands=(1,2,3)
-        template_params['range'] should equal [(0,1), (0,1), (0,1)] """
+    def test_default_single_interval_is_applied_to_all_bands(self, templates):
+        """ If interval is not passed in and bands=(1,2,3)
+        template_params['interval'] should equal [(0,1), (0,1), (0,1)] """
 
         render = templates.get_template.return_value.render
         name = 'Some_Name'
         multiband_xml = sld.get_multiband_raster_sld(name)
-        ranges = [(i['options']['minValue'], i['options']['maxValue'])
-                  for i in render.call_args[1]['channels']]
+        intervals = [(i['options']['minValue'], i['options']['maxValue'])
+                     for i in render.call_args[1]['channels']]
 
-        self.assertEquals(ranges, [(0, 1), (0, 1), (0, 1)])
+        self.assertEquals(intervals, [(0, 1), (0, 1), (0, 1)])
 
     @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
-    def test_given_single_range_is_applied_to_all_bands(self, templates):
-        """ If range is passed in as tuple (10, 20) and bands=(1,2,3)
-        template_params['range'] should equal [(10,20), (10,20), (10,20)] """
+    def test_given_single_interval_is_applied_to_all_bands(self, templates):
+        """ If interval is passed in as tuple (10, 20) and bands=(1,2,3)
+        template_params['interval'] should equal [(10,20), (10,20), (10,20)] """
 
         render = templates.get_template.return_value.render
         name = 'Some_Name'
-        range = (10, 20)
+        interval = (10, 20)
         multiband_xml = sld.get_multiband_raster_sld(name,
-                                                     range=range)
-        ranges = [(i['options']['minValue'], i['options']['maxValue'])
+                                                     interval=interval)
+        intervals = [(i['options']['minValue'], i['options']['maxValue'])
                   for i in render.call_args[1]['channels']]
 
-        self.assertEquals(ranges, [(10, 20), (10, 20), (10, 20)])
+        self.assertEquals(intervals, [(10, 20), (10, 20), (10, 20)])
 
     @mock.patch("geonotebook.vis.geoserver.sld.SLDTemplates")
-    def test_given_multi_range_is_applied_correctly(self, templates):
-        """ If range is passed in as a list of tuples
+    def test_given_multi_interval_is_applied_correctly(self, templates):
+        """ If interval is passed in as a list of tuples
         [(10,20), (40,50), (90,100)] and bands=(1,2,3)
-        template_params['range'] should equal
+        template_params['interval'] should equal
         to [(10,20), (40,50), (90,100)] """
 
         render = templates.get_template.return_value.render
         name = 'Some_Name'
-        ranges = [(10, 20), (40, 50), (90, 100)]
+        intervals = [(10, 20), (40, 50), (90, 100)]
         multiband_xml = sld.get_multiband_raster_sld(name,
-                                                     range=ranges)
-        out_ranges = [(i['options']['minValue'], i['options']['maxValue'])
+                                                     interval=intervals)
+        out_intervals = [(i['options']['minValue'], i['options']['maxValue'])
                       for i in render.call_args[1]['channels']]
 
-        self.assertEquals(ranges, out_ranges)
+        self.assertEquals(intervals, out_intervals)
 
-    def test_number_of_ranges_is_equal_to_number_of_bands(self):
-        """ If range is passed in as a list [(0,1),(0,1)] and
+    def test_number_of_intervals_is_equal_to_number_of_bands(self):
+        """ If interval is passed in as a list [(0,1),(0,1)] and
         bands (1,2,3) should throw an exception """
 
         name = 'Some_Name'
-        ranges = [(0, 1), (1, 2)]
+        interval = [(0, 1), (1, 2)]
 
         self.assertRaises(AssertionError, sld.get_multiband_raster_sld,
-                          name, range=ranges)
+                          name, interval=interval)
 
-    def test_ranges_must_have_two_values(self):
-        """ If ranges has more or less then two
+    def test_intervals_must_have_two_values(self):
+        """ If intervals has more or less then two
         elements, should throw an exception """
 
         name = 'Some_Name'
-        ranges_1 = (0, 1, 2)
-        ranges_2 = [(0, 1, 2), (0, 3, 4), (0)]
+        intervals_1 = (0, 1, 2)
+        intervals_2 = [(0, 1, 2), (0, 3, 4), (0)]
 
         self.assertRaises(AssertionError, sld.get_multiband_raster_sld,
-                          name, range=ranges_1)
+                          name, interval=intervals_1)
 
         self.assertRaises(AssertionError, sld.get_multiband_raster_sld,
-                          name, range=ranges_2)
+                          name, interval=intervals_2)
 
 
     def test_gamma_is_a_number(self):

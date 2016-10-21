@@ -58,7 +58,6 @@ class RasterData(collections.Sequence):
         return self.reader.index(*args, **kwargs)
 
     def subset(self, annotation, **kwargs):
-        # from pudb.remote import set_trace; set_trace(term_size=(319, 82))
         return annotation.subset(self, **kwargs)
 
     def ix(self, x, y):

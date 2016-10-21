@@ -1,1 +1,1 @@
-from geoserver import Geoserver
+from .geoserver import Geoserver

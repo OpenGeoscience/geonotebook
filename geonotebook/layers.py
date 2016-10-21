@@ -1,7 +1,10 @@
-from config import Config
+from .config import Config
 from collections import namedtuple
-import annotations
+from . import annotations
 from collections import OrderedDict
+import rasterio
+import numpy as np
+import six
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -206,15 +209,15 @@ class TimeSeriesLayer(DataLayer):
 
         return self.current
 
-    def seek(self, idx):
+    def idx(self, idx):
         self._cur = idx
         return self._replace_layer()
 
-    def prev(self):
+    def backward(self):
         self._cur -= 1
         return self._replace_layer()
 
-    def next(self):
+    def forward(self):
         try:
             self._cur += 1
             return self._replace_layer()
@@ -251,7 +254,7 @@ class GeonotebookLayerCollection(object):
             raise Exception("Can only append GeonotebookLayers to Collection")
 
     def remove(self, value):
-        if isinstance(value, basestring):
+        if isinstance(value, six.string_types):
             del self._layers[value]
         elif isinstance(value, GeonotebookLayer):
             del self._layers[value.name]
@@ -273,16 +276,16 @@ class GeonotebookLayerCollection(object):
             return None
 
     def __getitem__(self, value):
-        if isinstance(value, int):
-            return [layer for name, layer in self._layers.items()][value]
+        if isinstance(value, six.integer_types):
+            return [layer for name, layer in six.iteritems(self._layers)][value]
         else:
             return self._layers.__getitem__(value)
 
     def __setitem__(self, index, value):
         if isinstance(value, GeonotebookLayer):
-            if isinstance(index, int):
+            if isinstance(index, six.integer_types):
                 self.__setitem__(
-                    [name for name, layer in self._layers.items()][index],
+                    [name for name, layer in six.iteritems(self._layers)][index],
                     value)
             else:
                 self._layers.__setitem__(index, value)

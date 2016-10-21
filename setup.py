@@ -15,7 +15,7 @@ def post_install(func):
 
         def run(self):
             _run(self)
-            print "running post install function {}".format(func.__name__)
+            print("running post install function {}".format(func.__name__))
             func(self)
 
         command_subclass.run = run
@@ -79,7 +79,7 @@ def install_geonotebook_ini(cmd):
                        if sys_path.startswith("/") else \
                           os.path.join(sys.prefix, sys_path, os.path.basename(src))
 
-                print "copying {} to {}".format(src, dest)
+                print("copying {} to {}".format(src, dest))
 
                 shutil.copyfile(src, dest)
 
@@ -114,7 +114,7 @@ class CustomDevelop(develop):
 
 setup(
     name='geonotebook',
-    version='0.0.0-prealpha',
+    version='0.0.0',
     description='A Jupyter notebook extension for Geospatial Analysis',
     long_description='A Jupyter notebook extension for Geospatial Analysis',
     url='https://github.com/OpenDataAnalytics',
@@ -134,7 +134,10 @@ setup(
     data_files=[
         ('etc', ['config/geonotebook.ini'])
     ],
-    package_data={'geonotebook': ['static/*', 'static/css/*', 'static/lib/*']},
+    package_data={'geonotebook': ['static/*.js',
+                                  'static/lib/*.js',
+                                  'static/css/*.css',
+                                  'templates/*.html']},
     test_suite="tests",
     entry_points={
         'geonotebook.wrappers.raster': [

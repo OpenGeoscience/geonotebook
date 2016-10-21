@@ -10,20 +10,41 @@
   apt:
     name: "{{ item }}"
   with_items:
-    - python-pip
-    - libgdal-dev
     - gdal-bin
     - python-numpy
     - python-matplotlib
     - python-seaborn
+    - libgdal-dev
+    - python-numpy
+    - python-matplotlib
     - python-gdal
+    - python-matplotlib
+    - python-numpy
+    - python-pip
     - python-rasterio
     - python-requests
     - python-skimage
+    - python3-gdal
+    - python3-matplotlib
+    - python3-numpy
+    - python3-pip
+    - python3-rasterio
+    - python3-requests
+    - python3-skimage
 
 - name: Update pip and install ipywidgets
   pip:
     executable: pip2
+    name: "{{ item }}"
+    state: latest
+    chdir: "{{ geonotebook_dir }}"
+  with_items:
+    - pip
+    - ipywidgets
+
+- name: Update pip and install ipywidgets
+  pip:
+    executable: pip3
     name: "{{ item }}"
     state: latest
     chdir: "{{ geonotebook_dir }}"
@@ -41,15 +62,21 @@
 
 - name: Install geonotebook python requirements
   pip:
-    executable: pip2
+    executable: "{{ item }}"
     requirements: "{{geonotebook_dir}}/requirements.txt"
+  with_items:
+    - pip2
+    - pip3
 
 - name: Install the geonotebook package
   pip:
-    executable: pip2
+    executable: "{{ item }}"
     name: "."
     state: latest
     chdir: "{{ geonotebook_dir }}"
+  with_items:
+    - pip2
+    - pip3
 
 - name: Template out the geonotebook.ini configuration file
   template:

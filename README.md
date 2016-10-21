@@ -22,6 +22,9 @@ cd geonotebook
 ```bash
 mkvirtualenv -a . geonotebook
 
+# Numpy must be fully installed before rasterio
+pip install -r prerequirements.txt
+
 pip install -r requirements.txt
 
 pip install .

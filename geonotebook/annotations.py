@@ -1,7 +1,7 @@
 from shapely.geometry import Point as sPoint
 from shapely.geometry import Polygon as sPolygon
 from rasterio.features import rasterize
-from wrappers import RasterData, RasterDataCollection
+from .wrappers import RasterData, RasterDataCollection
 import numpy as np
 
 

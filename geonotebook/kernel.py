@@ -3,24 +3,24 @@ import logging
 import os
 from logging.handlers import SysLogHandler
 
-from inspect import getmembers, ismethod, getargspec
+from inspect import getmembers, ismethod, isfunction, getargspec
 from promise import Promise
 from types import MethodType
 
-import jsonrpc
-from jsonrpc import (json_rpc_request,
-                     json_rpc_notify,
-                     json_rpc_result,
-                     is_response,
-                     is_request)
-from layers import (BBox,
-                    GeonotebookLayerCollection,
-                    NoDataLayer,
-                    AnnotationLayer,
-                    SimpleLayer,
-                    TimeSeriesLayer)
+from . import jsonrpc
+from .jsonrpc import (json_rpc_request,
+                      json_rpc_notify,
+                      json_rpc_result,
+                      is_response,
+                      is_request)
+from .layers import (BBox,
+                     GeonotebookLayerCollection,
+                     NoDataLayer,
+                     AnnotationLayer,
+                     SimpleLayer,
+                     TimeSeriesLayer)
 
-from wrappers import RasterData, RasterDataCollection
+from .wrappers import RasterData, RasterDataCollection
 
 class Remote(object):
     """Provides an object that proxies procedures on a remote object.
@@ -66,7 +66,7 @@ class Remote(object):
             print "JSONError (%s): %s" % (error['code'], error['message'])
 
         def handle_reply(result):
-            print result
+            print(result)
 
         Geonotebook._remote.set_center(-74.25, 40.0, 4).then(
             handle_reply, handle_error)
@@ -101,7 +101,7 @@ class Remote(object):
             # return the callback
             return self._promises[msg['id']]
 
-        return MethodType(_protocol_closure, self, self.__class__)
+        return MethodType(_protocol_closure, self)
 
     def resolve(self, msg):
         """Resolve an open JSONRPC request
@@ -190,8 +190,14 @@ class Geonotebook(object):
                         'required': params[:r],
                         'optional': params[r:]}
 
+
+            # Note:  for the predicate we do ismethod or isfunction for PY2/PY3 support
+            # See: https://docs.python.org/3.0/whatsnew/3.0.html
+            # "The concept of "unbound methods" has been removed from the language.
+            # When referencing a method as a class attribute, you now get a plain function object."
             cls._protocol = [_method_protocol(fn, method) for fn, method in
-                             getmembers(cls, predicate=ismethod) if fn in cls.msg_types]
+                             getmembers(cls, predicate=lambda x: ismethod(x) or isfunction(x)) \
+                             if fn in cls.msg_types]
         return cls._protocol
 
     def _send_msg(self, msg):

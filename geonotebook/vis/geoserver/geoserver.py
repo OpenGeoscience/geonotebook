@@ -1,8 +1,11 @@
 from geonotebook.wrappers import RasterData
-from sld import get_single_band_raster_sld, get_multiband_raster_sld
+from .sld import get_single_band_raster_sld, get_multiband_raster_sld
 import requests
 import struct
 import os
+
+from six.moves import range
+
 
 class Client(object):
     def __init__(self, url, username='admin', password='geoserver'):
@@ -90,7 +93,7 @@ class Geoserver(object):
             """
 
             step = (stop - start) / float(count-1)
-            return [start + i * step for i in xrange(count)]
+            return [start + i * step for i in range(count)]
 
         def rgba2hex(rgba):
             """ Converts rgba values to hex """
@@ -98,8 +101,8 @@ class Geoserver(object):
             # Slice the tuple so that
             # we don't get alpha and
             # convert values to 8 bit ints
-            rgb = tuple([int(255 * i) for i in rgba[:3]])
-            return "#{}".format(struct.pack('BBB',*rgb).encode('hex'))
+            rgb = tuple([min(max(int(255 * i), 0), 255) for i in rgba[:3]])
+            return "#{0:02x}{1:02x}{2:02x}".format(*rgb)
 
         # If colormap is an iterable return it
         # Sld code has checks for this anyway
@@ -143,7 +146,7 @@ class Geoserver(object):
                 sld_body = get_single_band_raster_sld(name, **options)
             else:
                 options['bands'] = data.band_indexes
-                options['range'] = zip(data.min, data.max)
+                options['interval'] = [vals for vals in zip(data.min, data.max)]
 
                 options.update(kwargs)
 
