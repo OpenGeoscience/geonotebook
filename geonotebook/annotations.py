@@ -33,6 +33,11 @@ class Annotation(object):
     def _get_layer_collection(self):
         return self.layer.layer_collection if self.layer is not None else []
 
+    def get_data_window(self,minx, miny, maxx, maxy):
+        return ((min(minx, maxx), min(miny, maxy)),
+                (max(minx, maxx), max(miny, maxy)))
+
+
     @property
     def data(self):
         for layer in self._get_layer_collection():
@@ -53,8 +58,10 @@ class Rectangle(Annotation, sPolygon):
         super(Rectangle, self).__init__(coordinates, holes, **kwargs)
 
     def subset(self, raster_data, **kwargs):
-        window = (raster_data.index(self.bounds[0], self.bounds[3]),
-                  raster_data.index(self.bounds[2], self.bounds[1]))
+        ul = raster_data.index(self.bounds[0], self.bounds[1])
+        lr = raster_data.index(self.bounds[2], self.bounds[3])
+        window = self.get_data_window(ul[0], ul[1], lr[0], lr[1])
+
 
         # TODO: Trim window to valid range for raster data if out of bounds
 
@@ -75,16 +82,18 @@ class Polygon(Annotation, sPolygon):
         # Polygon is completely outside the dataset, return whatever
         # would have been returned by get_data()
         if not bool(clipped):
-            ul = raster_data.index(self.bounds[0], self.bounds[3])
-            lr = raster_data.index(self.bounds[2], self.bounds[1])
+            ul = raster_data.index(self.bounds[0], self.bounds[1])
+            lr = raster_data.index(self.bounds[2], self.bounds[3])
+            window = self.get_data_window(ul[0], ul[1], lr[0], lr[1])
 
-            return raster_data.get_data(window=(ul, lr), **kwargs)
+            return raster_data.get_data(window=window, **kwargs)
 
 
-        ul = raster_data.index(clipped.bounds[0], clipped.bounds[3])
-        lr = raster_data.index(clipped.bounds[2], clipped.bounds[1])
+        ul = raster_data.index(clipped.bounds[0], clipped.bounds[1])
+        lr = raster_data.index(clipped.bounds[2], clipped.bounds[3])
+        window = self.get_data_window(ul[0], ul[1], lr[0], lr[1])
 
-        data = raster_data.get_data(window=(ul, lr), **kwargs)
+        data = raster_data.get_data(window=window, **kwargs)
 
         # out_shape must be determined from data's shape,  get_data
         # may have returned a bounding box of data that is smaller than
@@ -104,7 +113,7 @@ class Polygon(Annotation, sPolygon):
         coordinates = []
         for lat, lon in clipped.exterior.coords:
             x, y = raster_data.index(lat, lon)
-            coordinates.append((y - ul[1], x - ul[0]))
+            coordinates.append((y - window[0][1], x - window[0][0]))
 
 
         # Mask the final polygon
