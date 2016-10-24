@@ -113,26 +113,6 @@ class DataLayer(GeonotebookLayer):
             "Must pass in vis_url or data to {}".format(
                 self.__class__.__name__)
 
-    @property
-    def region(self):
-        if self.data is None:
-            return None
-
-        if self._window is None:
-            return self.data.get_data()
-        else:
-            return self.data.get_data(window=self._window)
-
-
-    @region.setter
-    def region(self, value):
-        assert isinstance(value, BBox), \
-            "Region must be set to a value of type BBox"
-
-        if self.data is not None:
-            self._window = self.data.index(value.ulx, value.uly), \
-                self.data.index(value.lrx, value.lry)
-
 
 class SimpleLayer(DataLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):

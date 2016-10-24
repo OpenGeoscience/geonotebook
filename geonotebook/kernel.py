@@ -251,7 +251,6 @@ class Geonotebook(object):
 
         self._protocol = None
         self.view_port = None
-        self.region = None
         self.x = None
         self.y = None
         self.z = None
