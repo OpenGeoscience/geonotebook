@@ -1,7 +1,8 @@
-import unittest
+import pytest
 import numpy as np
 from geonotebook.wrappers.image import validate_index
 from geonotebook.wrappers import RasterData
+from geonotebook.annotations import Rectangle
 
 DATA = {"coords.mock": np.array([ [[ 1.0, 21.0, 31.0, 41.0, 51.0],
                                    [12.0, 22.0, 32.0, 42.0, 52.0],
@@ -127,6 +128,10 @@ def teardown_module():
     del RasterData._concrete_data_types["mock"]
 
 
+def test_bad_filetype():
+    with pytest.raises(NotImplementedError):
+        RasterData("foo.bar")
+
 def test_count():
     rd = RasterData("coords.mock")
     assert rd.count == 5
@@ -154,6 +159,18 @@ def test_max():
 
     rd = RasterData("missing.mock")
     assert rd.max == [52.0, 52.0, 52.0, 52.0]
+
+
+def test_subset():
+    rd = RasterData("coords.mock")
+    rect = Rectangle([(0,0), (2,0), (2,3), (0,3), (0,0)], None)
+    assert (rd.subset(rect) == \
+            np.array([[[  1.,   2.,   3.,   4.,   5.],
+                       [ 21.,  21.,  21.,  21.,  21.]],
+                      [[ 12.,  12.,  12.,  12.,  12.],
+                       [ 22.,  22.,  22.,  22.,  22.]],
+                      [[ 13.,  13.,  13.,  13.,  13.],
+                       [ 23.,  23.,  23.,  23.,  23.]]])).all()
 
 
 def test_mean():
