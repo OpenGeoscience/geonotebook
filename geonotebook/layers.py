@@ -56,7 +56,7 @@ class AnnotationLayer(GeonotebookLayer):
 
             self._annotations.append(
                 self._annotation_types[ann_type](x, y, **meta))
-        else:
+        elif ann_type in self._annotation_types.keys():
             coordinates = [(c['x'], c['y']) for c in coords]
 
             meta['layer'] = self
@@ -65,6 +65,8 @@ class AnnotationLayer(GeonotebookLayer):
 
             self._annotations.append(
                 self._annotation_types[ann_type](coordinates, holes, **meta))
+        else:
+            raise RuntimeError("Cannot add annotation of type %s" % ann_type)
 
     def clear_annotations(self):
         # clear_annotations on _remote returns the
