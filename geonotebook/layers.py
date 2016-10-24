@@ -259,6 +259,9 @@ class GeonotebookLayerCollection(object):
 
     def __setitem__(self, index, value):
         if isinstance(value, GeonotebookLayer):
+            if value._system_layer:
+                raise Exception("Cannot add a system layer via __setitem__")
+
             if isinstance(index, six.integer_types):
                 self.__setitem__(
                     [name for name, layer in six.iteritems(self._layers)][index],
@@ -269,7 +272,7 @@ class GeonotebookLayerCollection(object):
             raise Exception("Can only add GeonotebookLayers to Collection")
 
     def __repr__(self):
-        return "GeonotebookLayerCollection({})".format(
+        return "<GeonotebookLayerCollection({})>".format(
             ([layer for layer in self._layers.values()]).__repr__())
 
     def __len__(self):
