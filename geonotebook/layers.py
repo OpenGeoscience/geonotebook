@@ -106,9 +106,6 @@ class DataLayer(GeonotebookLayer):
         super(DataLayer, self).__init__(name, remote, **kwargs)
         self.data = data
 
-        # index into data in the form of ((ulx, uly), (lrx, lry))
-        self._window = None
-
         assert vis_url is not None or data is not None, \
             "Must pass in vis_url or data to {}".format(
                 self.__class__.__name__)
