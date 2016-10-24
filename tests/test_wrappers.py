@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import shapely
 from geonotebook.wrappers.image import validate_index
 from geonotebook.wrappers import RasterData
 from geonotebook.annotations import Rectangle
@@ -59,6 +60,12 @@ DATA = {"coords.mock": np.array([ [[ 1.0, 21.0, 31.0, 41.0, 51.0],
                                  [13.0, 23.0, 33.0],
                                  [14.0, 24.0, 34.0],
                                  [15.0, 25.0, 35.0]]]),
+        "single.mock" : np.array([ [[ 1.0, 21.0, 31.0],
+                                    [12.0, 22.0, 32.0],
+                                    [13.0, 23.0, 33.0],
+                                    [14.0, 24.0, 34.0],
+                                    [15.0, 25.0, 35.0]]])
+
 }
 
 
@@ -80,6 +87,15 @@ class MockReader(object):
     @property
     def width(self):
         return self.bands.shape[1]
+
+    @property
+    def bounds(self):
+        lat, lon = self.bands[0].shape
+        return (0, 0, lat, lon)
+
+    def get_band_ix(self, indexes, x, y):
+        return list(self.get_band_data(i)[y,x]
+                    for i in indexes)
 
     @validate_index
     def get_band_min(self, index, **kwargs):
@@ -128,6 +144,10 @@ def teardown_module():
     del RasterData._concrete_data_types["mock"]
 
 
+def test_name():
+    rd = RasterData("coords.mock")
+    assert rd.name == "coords"
+
 def test_bad_filetype():
     with pytest.raises(NotImplementedError):
         RasterData("foo.bar")
@@ -153,12 +173,18 @@ def test_min():
     rd = RasterData("missing.mock")
     assert rd.min == [1.0, 2.0, 3.0, 4.0]
 
+    rd = RasterData("single.mock")
+    assert rd.min == 1.0
+
 def test_max():
     rd = RasterData("coords.mock")
     assert rd.max == [55.0, 56.0, 57.0, 58.0, 59.0]
 
     rd = RasterData("missing.mock")
     assert rd.max == [52.0, 52.0, 52.0, 52.0]
+
+    rd = RasterData("single.mock")
+    assert rd.max == 35.0
 
 
 def test_subset():
@@ -179,23 +205,29 @@ def test_mean():
 
     rd = RasterData("missing.mock")
     assert rd.mean == [27.842105263157894,
-                                27.894736842105264,
-                                27.94736842105263,
-                                28.0]
+                       27.894736842105264,
+                       27.94736842105263,
+                       28.0]
+
+    rd = RasterData("single.mock")
+    assert rd.mean == pytest.approx(22.3333333333)
 
 def test_stddev():
     rd = RasterData("coords.mock")
     assert rd.stddev == [14.947909552843836,
-                                  14.925736162749226,
-                                  14.908467392726859,
-                                  14.896120300266107,
-                                  14.88870712990218]
+                         14.925736162749226,
+                         14.908467392726859,
+                         14.896120300266107,
+                         14.88870712990218]
 
     rd = RasterData("missing.mock")
     assert rd.stddev == [13.554036718164102,
-                                  13.451256004129974,
-                                  13.351418943754043,
-                                  13.254592054315205]
+                         13.451256004129974,
+                         13.351418943754043,
+                         13.254592054315205]
+
+    rd = RasterData("single.mock")
+    assert rd.stddev == 9.5335664307167285
 
 def test_get_data_returns_masked_array():
     rd = RasterData("coords.mock")
@@ -204,6 +236,29 @@ def test_get_data_returns_masked_array():
 def test_get_data_masked_false_returns_ndarray():
     rd = RasterData("coords.mock")
     assert isinstance(rd.get_data(), np.ndarray)
+
+def test_get_data_single_band():
+    rd = RasterData("single.mock")
+
+    assert (rd.get_data() == \
+            np.array([[  1.,  21.,  31.],
+                      [ 12.,  22.,  32.],
+                      [ 13.,  23.,  33.],
+                      [ 14.,  24.,  34.],
+                      [ 15.,  25.,  35.]])).all()
+
+def test_shape():
+    rd = RasterData("coords.mock")
+    assert hasattr(rd.shape, "exterior")
+    assert hasattr(rd.shape.exterior, "coords")
+    assert list(rd.shape.exterior.coords) == [(0.0, 0.0), (5.0, 0.0), (5.0, 5.0), (0.0, 5.0), (0.0, 0.0)]
+
+def test_ix():
+    rd = RasterData("coords.mock")
+    assert rd.ix(0,0) == [ 1.0, 2.0, 3.0, 4.0, 5.0]
+
+    rd = RasterData("single.mock")
+    assert rd.ix(0,0) == 1.
 
 def test_get_data_shape():
     rd = RasterData("rect.mock")
@@ -252,6 +307,38 @@ def test_window():
                     [ 54.,  54.,  54.,  54.,  54.]]])).all()
 
 
+def test_nonmasked_array():
+    rd = RasterData("missing.mock")
+    assert (rd.get_data(masked=False) == \
+            np.array([[[  1.00000000e+00,   2.00000000e+00,   3.00000000e+00,  4.00000000e+00],
+                       [  2.10000000e+01,   2.10000000e+01,   2.10000000e+01, 2.10000000e+01],
+                       [  3.10000000e+01,   3.10000000e+01,   3.10000000e+01, 3.10000000e+01],
+                       [  4.10000000e+01,   4.10000000e+01,   4.10000000e+01, 4.10000000e+01],
+                       [  5.10000000e+01,   5.10000000e+01,   5.10000000e+01, 5.10000000e+01]],
+                      [[  1.20000000e+01,   1.20000000e+01,   1.20000000e+01, 1.20000000e+01],
+                       [  2.20000000e+01,   2.20000000e+01,   2.20000000e+01, 2.20000000e+01],
+                       [  3.20000000e+01,   3.20000000e+01,   3.20000000e+01, 3.20000000e+01],
+                       [  4.20000000e+01,   4.20000000e+01,   4.20000000e+01, 4.20000000e+01],
+                       [  5.20000000e+01,   5.20000000e+01,   5.20000000e+01, 5.20000000e+01]],
+                      [[  1.30000000e+01,   1.30000000e+01,   1.30000000e+01, 1.30000000e+01],
+                       [  2.30000000e+01,   2.30000000e+01,   2.30000000e+01, 2.30000000e+01],
+                       [  3.30000000e+01,   3.30000000e+01,   3.30000000e+01, 3.30000000e+01],
+                       [  4.30000000e+01,   4.30000000e+01,   4.30000000e+01, 4.30000000e+01],
+                       [ -9.99900000e+03,  -9.99900000e+03,  -9.99900000e+03, -9.99900000e+03]],
+                      [[  1.40000000e+01,   1.40000000e+01,   1.40000000e+01, 1.40000000e+01],
+                       [  2.40000000e+01,   2.40000000e+01,   2.40000000e+01, 2.40000000e+01],
+                       [  3.40000000e+01,   3.40000000e+01,   3.40000000e+01, 3.40000000e+01],
+                       [ -9.99900000e+03,  -9.99900000e+03,  -9.99900000e+03, -9.99900000e+03],
+                       [ -9.99900000e+03,  -9.99900000e+03,  -9.99900000e+03, -9.99900000e+03]],
+                      [[  1.50000000e+01,   1.50000000e+01,   1.50000000e+01, 1.50000000e+01],
+                       [  2.50000000e+01,   2.50000000e+01,   2.50000000e+01, 2.50000000e+01],
+                       [ -9.99900000e+03,  -9.99900000e+03,  -9.99900000e+03, -9.99900000e+03],
+                       [ -9.99900000e+03,  -9.99900000e+03,  -9.99900000e+03, -9.99900000e+03],
+                       [ -9.99900000e+03,  -9.99900000e+03,  -9.99900000e+03, -9.99900000e+03]]])).all()
+
+
+
+
 def test_masked_array():
     rd = RasterData("missing.mock")
     assert \
@@ -289,7 +376,36 @@ def test_getitem_list_returns_raster_data():
     assert isinstance(rd[1,2,3], RasterData)
     assert len(rd[1,2,3]) == 3
 
+
 def test_getitem_int_returns_raster_data():
     rd = RasterData("coords.mock")
     assert isinstance(rd[1], RasterData)
     assert len(rd[1]) == 1
+
+def test_getitem_bad_throws_exception():
+    rd = RasterData("coords.mock")
+    with pytest.raises(AssertionError):
+        rd[0]
+
+    with pytest.raises(AssertionError):
+        rd[[0, 1, 2]]
+
+    with pytest.raises(IndexError):
+        rd['foo']
+
+    with pytest.raises(IndexError):
+        rd[['foo', 'bar', 'baz']]
+
+
+def test_raster_data_is_valid(tmpdir):
+    p = tmpdir.mkdir("data").join("test.tif")
+    p.write("BOGUS DATA")
+    assert RasterData.is_valid(str(p))
+
+def test_raster_data_is_not_valid_no_path(tmpdir):
+    assert not RasterData.is_valid("/some/bogus/path.tif")
+
+def test_raster_data_is_not_valid_no_class(tmpdir):
+    p = tmpdir.mkdir("data").join("test.foo")
+    p.write("BOGUS DATA")
+    assert not RasterData.is_valid(str(p))
