@@ -197,11 +197,8 @@ class TimeSeriesLayer(DataLayer):
         return self._replace_layer()
 
     def forward(self):
-        try:
-            self._cur += 1
-            return self._replace_layer()
-        except IndexError:
-            raise StopIteration()
+        self._cur += 1
+        return self._replace_layer()
 
 
 class GeonotebookLayerCollection(object):
