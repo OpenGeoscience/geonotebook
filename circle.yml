@@ -11,7 +11,7 @@ test:
     - mkdir -p $CIRCLE_TEST_REPORTS/pytest/
     - mkdir -p $CIRCLE_ARTIFACTS/coverage
     - >-
-      tox --cov=geonotebook
+      tox --result-json $CIRCLE_ARTIFACTS/tox-result.json --
+          --cov=geonotebook
           --cov-report html:$CIRCLE_ARTIFACTS/coverage
-          --result-json $CIRCLE_ARTIFACTS/tox-result.json
           --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
