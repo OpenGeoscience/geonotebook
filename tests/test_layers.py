@@ -1,60 +1,12 @@
-import os
 import pytest
 from geonotebook import layers, wrappers
 import mock
 from pytest_mock import mocker
-
-DEFAULT_CONFIG = """
-[default]
-vis_server = geoserver
-
-[geoserver]
-username = admin
-password = geoserver
-url = http://0.0.0.0:8080/geoserver
-"""
-
-class RDMock(object):
-    def __init__(self, **kwargs):
-        self.__dict__.update(kwargs)
+from .conftest import RDMock
 
 
-@pytest.fixture(autouse=True)
-def geonotebook_ini(tmpdir):
-    p = tmpdir.mkdir('config').join("geonotebook.ini")
-    p.write(DEFAULT_CONFIG)
-    os.environ["GEONOTEBOOK_INI"] = str(p)
+pytestmark = pytest.mark.usefixtures("geonotebook_ini")
 
-@pytest.fixture
-def visserver(mocker, monkeypatch):
-    import geonotebook
-    visserver = mocker.patch('geonotebook.vis.geoserver.geoserver.Geoserver')
-    monkeypatch.setitem(geonotebook.config.Config._valid_vis_hash, 'geoserver', visserver)
-    return visserver.return_value
-
-@pytest.fixture
-def point_coords():
-    return [{'x': -73.82630311108075, 'y': 42.74910719142488}]
-
-@pytest.fixture
-def rect_coords():
-    return [
-        {'x': -75.07115526394361, 'y': 42.497950296616835},
-        {'x': -75.07115526394361, 'y': 42.716333796366044},
-        {'x': -74.70974657440277, 'y': 42.716333796366044},
-        {'x': -74.70974657440277, 'y': 42.497950296616835},
-        {'x': -75.07115526394361, 'y': 42.497950296616835}]
-
-@pytest.fixture
-def poly_coords():
-    return [
-        { 'x': -74.36395430971865, 'y': 43.19961074294126},
-        { 'x': -74.51342580477566, 'y': 43.09869810847833},
-        { 'x': -74.35056880269862, 'y': 42.92905123923207},
-        { 'x': -74.12970793686812, 'y': 42.93721806175041},
-        { 'x': -74.02708571638122, 'y': 43.06936968778549},
-        { 'x': -74.19663547196826, 'y': 43.19961074294126},
-        { 'x': -74.36395430971865, 'y': 43.19961074294126}]
 
 
 def test_layer_reprs(visserver):
@@ -144,13 +96,6 @@ def test_simple_layer_override_vis_url(visserver):
 
     assert sl.vis_url == "http://some_other_url.com"
     assert visserver.ingest.call_count == 0
-
-# TimeSeriesLayer
-@pytest.fixture
-def rasterdata_list():
-    return [RDMock(name='test_data1.tif'),
-            RDMock(name='test_data2.tif'),
-            RDMock(name='test_data3.tif')]
 
 
 def test_timeseries_layer(visserver, rasterdata_list):
@@ -276,7 +221,3 @@ def test_timeseries_out_of_range(visserver, rasterdata_list):
 
     with pytest.raises(IndexError):
         tsl.idx(4)
-
-
-def test_fail():
-    assert 0

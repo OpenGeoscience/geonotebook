@@ -1,16 +1,6 @@
 import pytest
 from geonotebook import layers
 
-@pytest.fixture
-def glc():
-    """ glc: Geonotebook Layer Collection """
-
-    foo = layers.GeonotebookLayer('foo', None, vis_url='vis')
-    bar = layers.GeonotebookLayer('bar', None, vis_url='vis')
-    baz = layers.GeonotebookLayer('baz', None, vis_url='vis')
-
-    return layers.GeonotebookLayerCollection([foo, bar, baz])
-
 
 def test_geonotebooklayercollection_instantiated_with_geonotebooklayers():
     """ Instantiate GeonotebookLayerCollection with list of
