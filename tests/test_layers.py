@@ -276,3 +276,7 @@ def test_timeseries_out_of_range(visserver, rasterdata_list):
 
     with pytest.raises(IndexError):
         tsl.idx(4)
+
+
+def test_fail():
+    assert 0
