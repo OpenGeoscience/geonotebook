@@ -9,8 +9,9 @@ dependencies:
 test:
   override:
     - mkdir -p $CIRCLE_TEST_REPORTS/pytest/
-    - tox --result-json /tmp/tox-result.json -- --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
-
-general:
-  artifacts:
-    - "/tmp/tox-result.json"
+    - mkdir -p $CIRCLE_ARTIFACTS/coverage
+    - >-
+      tox --cov=geonotebook
+          --cov-report html:$CIRCLE_ARTIFACTS/coverage
+          --result-json $CIRCLE_ARTIFACTS/tox-result.json
+          --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
