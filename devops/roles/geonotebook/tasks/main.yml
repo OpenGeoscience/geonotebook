@@ -23,16 +23,14 @@
     - python-pip
     - python-rasterio
     - python-requests
-    - python-skimage
     - python3-gdal
     - python3-matplotlib
     - python3-numpy
     - python3-pip
     - python3-rasterio
     - python3-requests
-    - python3-skimage
 
-- name: Update pip and install ipywidgets
+- name: Update pip and install example notebook requirements
   pip:
     executable: pip2
     name: "{{ item }}"
@@ -41,8 +39,10 @@
   with_items:
     - pip
     - ipywidgets
+    - scikit-image
+    - seaborn
 
-- name: Update pip and install ipywidgets
+- name: Update pip3 and install example notebook requirements
   pip:
     executable: pip3
     name: "{{ item }}"
@@ -51,6 +51,12 @@
   with_items:
     - pip
     - ipywidgets
+    - scikit-image
+    - seaborn
+
+- name: Install ipywidgets
+  command: >-
+    jupyter nbextension enable --py --sys-prefix widgetsnbextension
 
 - name: Use system installed python-gdal
   lineinfile:
