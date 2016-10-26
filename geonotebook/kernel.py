@@ -117,7 +117,7 @@ class Remote(object):
         if msg['id'] in self._promises:
             try:
                 if msg['error'] is not None:
-                    self._promises[msg['id']].reject(msg['error'])
+                    self._promises[msg['id']].reject(Exception(msg['error']))
                 else:
                     self._promises[msg['id']].fulfill(msg['result'])
 
