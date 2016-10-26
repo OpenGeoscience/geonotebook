@@ -99,45 +99,45 @@ def test_remote_call_optional_only_missing_arguments():
 
 
 def test_remote_promise_resolve_success(r):
-    class nonlocal: pass
+    class Nonlocal(object): pass
 
     def success(val):
-        nonlocal.result = val
+        Nonlocal.result = val
 
     def error(val):
-        nonlocal.result = val
+        Nonlocal.result = val
 
     p = r.no_args().then(success, error)
     r.resolve({'id': 'TEST-ID', 'result': 'SUCCESS', 'error': None})
-    assert nonlocal.result == 'SUCCESS'
+    assert Nonlocal.result == 'SUCCESS'
 
 def test_remote_promise_resolve_error(r):
-    class nonlocal: pass
+    class Nonlocal(object): pass
 
     def success(val):
-        nonlocal.result = val
+        Nonlocal.result = val
 
     def error(val):
-        nonlocal.result = val
+        Nonlocal.result = val
 
     p = r.no_args().then(success, error)
     #import rpdb; rpdb.set_trace()
 
     r.resolve({'id': 'TEST-ID', 'result': None, 'error': 'ERROR'})
 
-    assert isinstance(nonlocal.result, Exception)
-    assert str(nonlocal.result) == "ERROR"
+    assert isinstance(Nonlocal.result, Exception)
+    assert str(Nonlocal.result) == "ERROR"
 
 
 @pytest.mark.skip(reason="See: geonotebook/issues/46")
 def test_remote_promise_resolve_with_bad_message(r, mocker):
-    class nonlocal: pass
+    class Nonlocal(object): pass
 
     def success(val):
-        nonlocal.result = val
+        Nonlocal.result = val
 
     def error(val):
-        nonlocal.result = val
+        Nonlocal.result = val
 
     p = r.no_args().then(success, error)
     with pytest.raises(Exception):
