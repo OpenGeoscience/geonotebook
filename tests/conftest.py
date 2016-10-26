@@ -271,6 +271,23 @@ def glc():
 
     return layers.GeonotebookLayerCollection([foo, bar, baz])
 
+@pytest.fixture
+def glc_annotation(rect, coords, single, missing):
+    glc = layers.GeonotebookLayerCollection([
+        layers.DataLayer('rect', None, rect, vis_url='vis'),
+        layers.DataLayer('coords', None, coords, vis_url='vis'),
+        layers.DataLayer('single', None, single, vis_url='vis'),
+        layers.DataLayer('missing', None, missing, vis_url='vis')])
+
+    glc.append(layers.AnnotationLayer(
+        'annotation', None, glc, expose_as="annotation", system_layer=True))
+
+    return glc
+
+@pytest.fixture
+def geonotebook_layer():
+    return layers.GeonotebookLayer('foo', None, vis_url='vis')
+
 
 # Vis Server fixtures
 
