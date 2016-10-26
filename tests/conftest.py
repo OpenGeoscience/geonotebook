@@ -5,8 +5,9 @@ import os
 import pytest
 import numpy as np
 from geonotebook import layers
+from contextlib import contextmanager
 from geonotebook.wrappers.image import validate_index
-from geonotebook.wrappers import RasterData
+from geonotebook.wrappers import RasterData, RasterDataCollection
 
 # RasterData fixtures and test code
 
@@ -72,6 +73,22 @@ DATA = {"coords.mock": np.array([ [[ 1.0, 21.0, 31.0, 41.0, 51.0],
                                     [15.0, 25.0, 35.0]]])
 
 }
+
+# Setup mock data for rasterdata collection tests
+DATA['rect1.mock'] = np.copy(DATA['rect.mock'])
+DATA['rect1.mock'][0][0][0] = 100.
+DATA['rect2.mock'] = np.copy(DATA['rect.mock'])
+DATA['rect2.mock'][0][0][0] = 200.
+DATA['rect3.mock'] = np.copy(DATA['rect.mock'])
+DATA['rect3.mock'][0][0][0] = 300.
+
+DATA['single1.mock'] = np.copy(DATA['single.mock'])
+DATA['single1.mock'][0][0] = 100.
+DATA['single2.mock'] = np.copy(DATA['single.mock'])
+DATA['single2.mock'][0][0] = 200.
+DATA['single3.mock'] = np.copy(DATA['single.mock'])
+DATA['single3.mock'][0][0] = 300.
+
 
 class MockReader(object):
     def __init__(self, path):
@@ -141,6 +158,23 @@ class MockReader(object):
             return _get_band_data()
 
 
+# Provide an easy way to register "mock" as a concreate data type
+# This is intended for a few tests that that need to directly instantiate
+# a RasterData or RasterDataCollection object in order to test object
+# creation. Unfortunately we can't use this context manager inside the
+# fixtures because of pytest magic.  See:
+# http://stackoverflow.com/questions/15801662/py-test-how-to-use-a-context-manager-in-a-funcarg-fixture
+@contextmanager
+def enable_mock():
+    RasterData.register("mock", MockReader)
+
+    yield
+
+    if "mock" in RasterData._concrete_data_types:
+        del RasterData._concrete_data_types["mock"]
+
+
+
 @pytest.fixture
 def coords():
     RasterData.register("mock", MockReader)
@@ -188,6 +222,40 @@ def rasterdata_list():
     return [RDMock(name='test_data1.tif'),
             RDMock(name='test_data2.tif'),
             RDMock(name='test_data3.tif')]
+
+
+
+# RasterDataCollection
+@pytest.fixture
+def rdc_rect():
+    RasterData.register("mock", MockReader)
+
+    yield RasterDataCollection([
+        "rect1.mock", "rect2.mock", "rect3.mock"])
+
+    if "mock" in RasterData._concrete_data_types:
+        del RasterData._concrete_data_types["mock"]
+
+
+@pytest.fixture
+def rdc_single():
+    RasterData.register("mock", MockReader)
+
+    yield RasterDataCollection([
+        "single1.mock", "single2.mock", "single3.mock"])
+
+    if "mock" in RasterData._concrete_data_types:
+        del RasterData._concrete_data_types["mock"]
+
+
+@pytest.fixture
+def rdc_one():
+    RasterData.register("mock", MockReader)
+
+    yield RasterDataCollection(["rect1.mock"])
+
+    if "mock" in RasterData._concrete_data_types:
+        del RasterData._concrete_data_types["mock"]
 
 
 

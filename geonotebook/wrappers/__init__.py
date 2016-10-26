@@ -226,7 +226,7 @@ class RasterDataCollection(collections.Sequence):
             return [rd.max for rd in self]
 
     @property
-    def max(self):
+    def mean(self):
         if len(self) == 1:
             return self[0].mean
         else:

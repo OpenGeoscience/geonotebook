@@ -1,9 +1,9 @@
 import pytest
 import shapely
 import numpy as np
-from geonotebook.wrappers import RasterData
+from geonotebook.wrappers import RasterData, RasterDataCollection
 from geonotebook.annotations import Rectangle
-
+from .conftest import enable_mock
 
 def test_name(coords):
     assert coords.name == "coords"
@@ -213,6 +213,7 @@ def test_getitem_bad_throws_exception(coords):
         coords[['foo', 'bar', 'baz']]
 
 
+
 def test_raster_data_is_valid(tmpdir):
     p = tmpdir.mkdir("data").join("test.tif")
     p.write("BOGUS DATA")
@@ -225,3 +226,195 @@ def test_raster_data_is_not_valid_no_class(tmpdir):
     p = tmpdir.mkdir("data").join("test.foo")
     p.write("BOGUS DATA")
     assert not RasterData.is_valid(str(p))
+
+
+# RasterDataCollection
+
+def test_rdc_incorrect_bands():
+    with enable_mock():
+        # index less than one
+        with pytest.raises(AssertionError):
+            rdc = RasterDataCollection(
+                ["rect.mock", "rect.mock", "rect.mock"],
+                indexes=[0,1,2])
+
+        # index greater than len(rdc)
+        with pytest.raises(AssertionError):
+            rdc = RasterDataCollection(
+                ["rect.mock", "rect.mock", "rect.mock"],
+                indexes=[10])
+
+
+def test_rdc_inconsistent_bands():
+    with enable_mock():
+        with pytest.raises(AssertionError):
+            rdc = RasterDataCollection(
+                ["rect.mock", "missing.mock"])
+
+def test_rdc_inconsistent_bands_verify_false():
+    with enable_mock():
+        rdc = RasterDataCollection(
+            ["single.mock", "missing.mock"], verify=False)
+        assert True
+
+def test_rdc_inconsistent_bands_verify_false_clip_to_first():
+    with enable_mock():
+        rdc = RasterDataCollection(
+            ["single.mock", "missing.mock"], verify=False)
+
+        assert len(rdc[0]) == 1
+
+        # missing.mock has 5 bands,  but is clipped to 1 band
+        # because single.mock only has one band
+        assert len(rdc[1]) == 1
+
+def test_rdc_iter(rdc_rect):
+    for i, rd in enumerate(rdc_rect):
+        assert rd.path == rdc_rect[i].path
+        assert (rd.get_data() == rdc_rect[i].get_data()).all()
+
+def test_rdc_len(rdc_rect):
+    assert len(rdc_rect) == 3
+
+def test_rdc_get_names(rdc_rect):
+    assert rdc_rect.get_names() == ['rect1', 'rect2', 'rect3']
+
+def test_rdc_getitem_int_index(rdc_rect):
+    rd = rdc_rect[0]
+    assert isinstance(rd, RasterData)
+    assert rd.name == 'rect1'
+
+def test_rdc_getitem_slice_index(rdc_rect):
+    rdc = rdc_rect[0:1]
+    assert isinstance(rdc, RasterDataCollection)
+    assert rdc.get_names() == ['rect1']
+
+    rdc = rdc_rect[0:2]
+    assert isinstance(rdc, RasterDataCollection)
+    assert rdc.get_names() == ['rect1', 'rect2']
+
+    rdc = rdc_rect[::2]
+    assert isinstance(rdc, RasterDataCollection)
+    assert rdc.get_names() == ['rect1', 'rect3']
+
+
+def test_rdc_getitme_bad_item(rdc_rect):
+    with pytest.raises(IndexError):
+        rdc_rect['foobar']
+
+    with pytest.raises(IndexError):
+        rdc_rect[['foo', 'bar']]
+
+
+def test_rdc_shape(rdc_rect):
+    assert hasattr(rdc_rect.shape, "exterior")
+    assert hasattr(rdc_rect.shape.exterior, "coords")
+    assert list(rdc_rect.shape.exterior.coords) == \
+        [(0.0, 0.0), (5.0, 0.0), (5.0, 3.0), (0.0, 3.0), (0.0, 0.0)]
+
+
+def test_rdc_min(rdc_rect, rdc_single, rdc_one):
+    assert rdc_rect.min == [[12.0, 2.0], [12.0, 2.0], [12.0, 2.0]]
+    assert rdc_one.min == [12.0, 2.0]
+    assert rdc_single.min == [12.0, 12.0, 12.0]
+
+
+def test_rdc_max(rdc_rect, rdc_single, rdc_one):
+    assert rdc_rect.max == [[100.0, 35.0], [200.0, 35.0], [300.0, 35.0]]
+    assert rdc_one.max == [100.0, 35.0]
+    assert rdc_single.max ==  [100.0, 200.0, 300.0]
+
+
+def test_rdc_mean(rdc_rect, rdc_single, rdc_one):
+    assert rdc_rect.mean == [[pytest.approx(28.9333333333), 22.4],
+                             [35.6, 22.4],
+                             [pytest.approx(42.2666666667), 22.4]]
+    assert rdc_one.mean == [pytest.approx(28.9333333333), 22.4]
+    assert rdc_single.mean == [38.8, 58.8, 78.8]
+
+def test_rdc_stddev(rdc_rect, rdc_single, rdc_one):
+    assert rdc_rect.stddev == [[20.47263756551385, 9.3865151502922881],
+                               [44.59715984977818, 9.3865151502922881],
+                               [69.30460943464648, 9.3865151502922881]]
+    assert rdc_one.stddev == [20.47263756551385, 9.3865151502922881]
+    assert rdc_single.stddev == [31.475281306659252, 70.983754009867155, 110.84535774372031]
+
+def test_rdc_nodata():
+    with enable_mock():
+        rdc = RasterDataCollection(['missing.mock', 'missing.mock'])
+        assert rdc.nodata == -9999.0
+
+def test_rdc_ix(rdc_rect, rdc_one, rdc_single):
+    assert (rdc_rect.ix(0,0) ==  [[ 100., 2.],
+                                  [ 200., 2.],
+                                  [ 300., 2.]]).all()
+    assert rdc_one.ix(0,0) == [100., 2.]
+    assert (rdc_single.ix(0,0) == [100., 200., 300.]).all()
+
+
+def test_rdc_get_data(rdc_rect):
+    assert isinstance(rdc_rect.get_data(), np.ma.masked_array)
+    assert (rdc_rect.get_data() == \
+        [[[[ 100.,  2.], [  21., 21.], [  31., 31.]],
+          [[  12., 12.], [  22., 22.], [  32., 32.]],
+          [[  13., 13.], [  23., 23.], [  33., 33.]],
+          [[  14., 14.], [  24., 24.], [  34., 34.]],
+          [[  15., 15.], [  25., 25.], [  35., 35.]]],
+         [[[ 200.,  2.], [  21., 21.], [  31., 31.]],
+          [[  12., 12.], [  22., 22.], [  32., 32.]],
+          [[  13., 13.], [  23., 23.], [  33., 33.]],
+          [[  14., 14.], [  24., 24.], [  34., 34.]],
+          [[  15., 15.], [  25., 25.], [  35., 35.]]],
+         [[[ 300.,  2.], [  21., 21.], [  31., 31.]],
+          [[  12., 12.], [  22., 22.], [  32., 32.]],
+          [[  13., 13.], [  23., 23.], [  33., 33.]],
+          [[  14., 14.], [  24., 24.], [  34., 34.]],
+          [[  15., 15.], [  25., 25.], [  35., 35.]]]]).all()
+
+
+def test_rdc_get_data_single_band(rdc_single):
+    assert isinstance(rdc_single.get_data(), np.ma.masked_array)
+    assert (rdc_single.get_data() == \
+            [[[ 100.,  100.,  100.],
+              [  12.,   22.,   32.],
+              [  13.,   23.,   33.],
+              [  14.,   24.,   34.],
+              [  15.,   25.,   35.]],
+             [[ 200.,  200.,  200.],
+              [  12.,   22.,   32.],
+              [  13.,   23.,   33.],
+              [  14.,   24.,   34.],
+              [  15.,   25.,   35.]],
+             [[ 300.,  300.,  300.],
+              [  12.,   22.,   32.],
+              [  13.,   23.,   33.],
+              [  14.,   24.,   34.],
+              [  15.,   25.,   35.]]]).all()
+
+
+def test_rdc_get_data_window(rdc_rect):
+    assert (rdc_rect.get_data(window=((0,0), (3,2))) == \
+            [[[[ 100.,  2.], [  21., 21.], [  31., 31.]],
+              [[  12., 12.], [  22., 22.], [  32., 32.]]],
+             [[[ 200.,  2.], [  21., 21.], [  31., 31.]],
+              [[  12., 12.], [  22., 22.], [  32., 32.]]],
+             [[[ 300.,  2.], [  21., 21.], [  31., 31.]],
+              [[  12., 12.], [  22., 22.], [  32., 32.]]]]).all()
+
+def test_rdc_get_data_window_single_band(rdc_single):
+    assert (rdc_single.get_data(window=((0,0), (3,2))) == \
+            [[[ 100., 100., 100.],
+              [  12.,  22.,  32.]],
+             [[ 200., 200., 200.],
+              [  12.,  22.,  32.]],
+             [[ 300., 300., 300.],
+              [  12.,  22.,  32.]]]).all()
+
+def test_rdc_get_data_masked_false(rdc_rect, rdc_single):
+    assert not isinstance(rdc_rect.get_data(masked=False), np.ma.masked_array)
+    assert not isinstance(rdc_single.get_data(masked=False), np.ma.masked_array)
+
+def test_rdc_index(rdc_rect, mocker):
+    idx = mocker.spy(RasterData, 'index')
+    assert rdc_rect.index(0,0) == (0,0)
+    assert idx.call_count == 1
