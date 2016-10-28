@@ -56,7 +56,7 @@ class AnnotationLayer(GeonotebookLayer):
 
             self._annotations.append(
                 self._annotation_types[ann_type](x, y, **meta))
-        else:
+        elif ann_type in self._annotation_types.keys():
             coordinates = [(c['x'], c['y']) for c in coords]
 
             meta['layer'] = self
@@ -65,6 +65,8 @@ class AnnotationLayer(GeonotebookLayer):
 
             self._annotations.append(
                 self._annotation_types[ann_type](coordinates, holes, **meta))
+        else:
+            raise RuntimeError("Cannot add annotation of type %s" % ann_type)
 
     def clear_annotations(self):
         # clear_annotations on _remote returns the
@@ -106,32 +108,9 @@ class DataLayer(GeonotebookLayer):
         super(DataLayer, self).__init__(name, remote, **kwargs)
         self.data = data
 
-        # index into data in the form of ((ulx, uly), (lrx, lry))
-        self._window = None
-
         assert vis_url is not None or data is not None, \
             "Must pass in vis_url or data to {}".format(
                 self.__class__.__name__)
-
-    @property
-    def region(self):
-        if self.data is None:
-            return None
-
-        if self._window is None:
-            return self.data.get_data()
-        else:
-            return self.data.get_data(window=self._window)
-
-
-    @region.setter
-    def region(self, value):
-        assert isinstance(value, BBox), \
-            "Region must be set to a value of type BBox"
-
-        if self.data is not None:
-            self._window = self.data.index(value.ulx, value.uly), \
-                self.data.index(value.lrx, value.lry)
 
 
 class SimpleLayer(DataLayer):
@@ -218,11 +197,8 @@ class TimeSeriesLayer(DataLayer):
         return self._replace_layer()
 
     def forward(self):
-        try:
-            self._cur += 1
-            return self._replace_layer()
-        except IndexError:
-            raise StopIteration()
+        self._cur += 1
+        return self._replace_layer()
 
 
 class GeonotebookLayerCollection(object):
@@ -283,6 +259,9 @@ class GeonotebookLayerCollection(object):
 
     def __setitem__(self, index, value):
         if isinstance(value, GeonotebookLayer):
+            if value._system_layer:
+                raise Exception("Cannot add a system layer via __setitem__")
+
             if isinstance(index, six.integer_types):
                 self.__setitem__(
                     [name for name, layer in six.iteritems(self._layers)][index],
@@ -293,7 +272,7 @@ class GeonotebookLayerCollection(object):
             raise Exception("Can only add GeonotebookLayers to Collection")
 
     def __repr__(self):
-        return "GeonotebookLayerCollection({})".format(
+        return "<GeonotebookLayerCollection({})>".format(
             ([layer for layer in self._layers.values()]).__repr__())
 
     def __len__(self):

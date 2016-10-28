@@ -23,11 +23,10 @@ class RasterData(collections.Sequence):
     def is_valid(cls, path):
         try:
             f = open(path, "r")
-        except OSError:
+        except (IOError, OSError):
             return False
-        finally:
-            f.close()
 
+        f.close()
         kind = os.path.splitext(path)[1][1:]
 
         return kind in cls._concrete_data_types.keys()
@@ -227,7 +226,7 @@ class RasterDataCollection(collections.Sequence):
             return [rd.max for rd in self]
 
     @property
-    def max(self):
+    def mean(self):
         if len(self) == 1:
             return self[0].mean
         else:

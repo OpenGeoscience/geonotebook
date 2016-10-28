@@ -8,8 +8,6 @@ dependencies:
 
 test:
   override:
-    - tox --result-json /tmp/tox-result.json
-
-general:
-  artifacts:
-    - "/tmp/tox-result.json"
+    - mkdir -p $CIRCLE_TEST_REPORTS/pytest/
+    - mkdir -p $CIRCLE_ARTIFACTS/coverage
+    - tox --result-json $CIRCLE_ARTIFACTS/tox-result.json -- --cov-report html:$CIRCLE_ARTIFACTS/coverage --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml

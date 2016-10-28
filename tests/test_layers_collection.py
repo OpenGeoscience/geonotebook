@@ -1,16 +1,6 @@
 import pytest
 from geonotebook import layers
 
-@pytest.fixture
-def glc():
-    """ glc: Geonotebook Layer Collection """
-
-    foo = layers.GeonotebookLayer('foo', None, vis_url='vis')
-    bar = layers.GeonotebookLayer('bar', None, vis_url='vis')
-    baz = layers.GeonotebookLayer('baz', None, vis_url='vis')
-
-    return layers.GeonotebookLayerCollection([foo, bar, baz])
-
 
 def test_geonotebooklayercollection_instantiated_with_geonotebooklayers():
     """ Instantiate GeonotebookLayerCollection with list of
@@ -18,6 +8,9 @@ def test_geonotebooklayercollection_instantiated_with_geonotebooklayers():
 
     with pytest.raises(Exception):
         layers.GeonotebookLayerCollection([1, 2, 3])
+
+def test_layer_collection_length(glc):
+    assert len(glc) == 3
 
 
 def test_geonotebooklayercollection_has_geonotebooklayer_items(glc):
@@ -82,3 +75,115 @@ def test_dictionary_key_access_key_error(glc):
     """
     with pytest.raises(KeyError):
         glc['derp']
+
+
+def test_layer_collection_append_layer(glc):
+    l = layers.GeonotebookLayer('test_layer', None)
+    glc.append(l)
+
+    assert glc['test_layer'] == l
+    assert glc[-1] == l
+
+def test_layer_collection_append_same_layer(glc):
+    l = layers.GeonotebookLayer('test_layer', None)
+    glc.append(l)
+
+    with pytest.raises(Exception):
+        glc.append(l)
+
+def test_layer_collection_append_system_layer(glc):
+    pre_length = len(glc)
+    l = layers.GeonotebookLayer('test_layer', None, system_layer=True)
+    glc.append(l)
+
+    # System layers don't show up in length
+    assert len(glc) == pre_length
+
+    # System layers are not accessible via key index
+    with pytest.raises(KeyError):
+        glc['test_layer']
+
+def test_layer_collection_append_same_system_layer(glc):
+    l = layers.GeonotebookLayer('test_layer', None, system_layer=True)
+    glc.append(l)
+
+    with pytest.raises(Exception):
+        glc.append(l)
+
+
+def test_layer_collection_append_exposed_layer(glc):
+    pre_length = len(glc)
+    l = layers.GeonotebookLayer('test_layer', None, expose_as='test')
+    glc.append(l)
+    # Expose_as is not just for system layers
+    assert glc['test_layer'] == l
+    assert pre_length == len(glc) - 1
+
+    assert glc.test == l
+
+
+def test_layer_collection_append_exposed_layer_bad_attr(glc):
+    l = layers.GeonotebookLayer('test_layer', None, expose_as='_layers')
+    with pytest.raises(RuntimeError):
+        glc.append(l)
+
+
+def test_layer_collection_append_exposed_system_layer(glc):
+    pre_length = len(glc)
+    l = layers.GeonotebookLayer('test_layer', None,
+                                system_layer=True, expose_as='test')
+    glc.append(l)
+
+    # System layers don't show up in length
+    assert len(glc) == pre_length
+
+    # System layers are not accessible via key index
+    with pytest.raises(KeyError):
+        glc['test_layer']
+
+    # Test exposed attribute
+    assert glc.test == l
+
+
+def test_layer_collection_remove_layer_by_name(glc):
+    glc.remove('foo')
+    assert len(glc) == 2
+
+    with pytest.raises(KeyError):
+        glc['foo']
+
+def test_layer_collection_remove_layer_by_layer(glc):
+    l = glc.find('foo')
+    glc.remove(l)
+    assert len(glc) == 2
+
+    with pytest.raises(KeyError):
+        glc['foo']
+
+def test_layer_collection_setitem(glc):
+    l = layers.GeonotebookLayer('test_layer', None)
+    glc['foo'] = l
+    assert glc.find("foo") == l
+    assert glc[0] == l
+
+def test_layer_collection_setitem_with_int(glc):
+    l = layers.GeonotebookLayer('test_layer', None)
+    glc[0] = l
+    assert glc.find("foo") == l
+    assert glc[0] == l
+
+
+def test_layer_collection_setitem_with_bad_value(glc):
+    with pytest.raises(Exception):
+        glc['foo'] = 'bar'
+
+def test_layer_collection_setitem_with_system_layer(glc):
+    l = layers.GeonotebookLayer('test_layer', None, system_layer=True)
+    with pytest.raises(Exception):
+        glc['test_layer'] = l
+
+
+def test_layer_collection_repr(glc):
+    assert str(glc) == "<GeonotebookLayerCollection("\
+        "[<GeonotebookLayer('foo')>, <GeonotebookLayer('bar')>, " + \
+        "<GeonotebookLayer('baz')>])>"

@@ -4,3 +4,5 @@
 *.pyc
 /notebooks/.geonotebook.ini
 .coverage
+.cache
+htmlcov/
