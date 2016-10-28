@@ -13,7 +13,6 @@
     - gdal-bin
     - python-numpy
     - python-matplotlib
-    - python-seaborn
     - libgdal-dev
     - python-numpy
     - python-matplotlib
@@ -38,9 +37,6 @@
     chdir: "{{ geonotebook_dir }}"
   with_items:
     - pip
-    - ipywidgets
-    - scikit-image
-    - seaborn
 
 - name: Update pip3 and install example notebook requirements
   pip:
@@ -50,13 +46,6 @@
     chdir: "{{ geonotebook_dir }}"
   with_items:
     - pip
-    - ipywidgets
-    - scikit-image
-    - seaborn
-
-- name: Install ipywidgets
-  command: >-
-    jupyter nbextension enable --py --sys-prefix widgetsnbextension
 
 - name: Use system installed python-gdal
   lineinfile:
