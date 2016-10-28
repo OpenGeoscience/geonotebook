@@ -13,7 +13,6 @@
     - gdal-bin
     - python-numpy
     - python-matplotlib
-    - python-seaborn
     - libgdal-dev
     - python-numpy
     - python-matplotlib
@@ -23,16 +22,14 @@
     - python-pip
     - python-rasterio
     - python-requests
-    - python-skimage
     - python3-gdal
     - python3-matplotlib
     - python3-numpy
     - python3-pip
     - python3-rasterio
     - python3-requests
-    - python3-skimage
 
-- name: Update pip and install ipywidgets
+- name: Update pip and install example notebook requirements
   pip:
     executable: pip2
     name: "{{ item }}"
@@ -40,9 +37,8 @@
     chdir: "{{ geonotebook_dir }}"
   with_items:
     - pip
-    - ipywidgets
 
-- name: Update pip and install ipywidgets
+- name: Update pip3 and install example notebook requirements
   pip:
     executable: pip3
     name: "{{ item }}"
@@ -50,7 +46,6 @@
     chdir: "{{ geonotebook_dir }}"
   with_items:
     - pip
-    - ipywidgets
 
 - name: Use system installed python-gdal
   lineinfile:

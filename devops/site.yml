@@ -66,6 +66,19 @@
         name: awscli
         state: latest
 
+    - name: Install example notebook requirements
+      pip:
+        executable: "{{ item }}"
+        requirements: "{{geonotebook_dir}}/notebooks/requirements.txt"
+      with_items:
+        - pip2
+        - pip3
+
+    - name: Install ipywidgets
+      command: >-
+        jupyter nbextension enable --py --sys-prefix widgetsnbextension
+
+
     - name: Create example directory
       file:
         path: "/home/{{ item.username }}/examples"
