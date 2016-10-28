@@ -74,13 +74,8 @@ define(
                 var args = utils.annotate(this[msg_type]);
 
                 return {procedure: msg_type,
-                        required: args.filter(function(arg){ return !arg.includes("="); }),
-                        optional: args.filter(
-                            function(arg){ return arg.includes("="); }).map(
-                                function(arg) {
-                                    return arg.split("=")[0].trim();
-                                })
-                       };
+                        required: args.filter(function(arg){ return !arg.default;  }),
+                        optional: args.filter(function(arg){ return !!arg.default; }) };
 
 
             }.bind(this));
@@ -198,7 +193,7 @@ define(
             }
         };
 
-        Map.prototype.add_osm_layer = function(layer_name, url, params){
+        Map.prototype.add_osm_layer = function(layer_name, url, params, foo=10){
             var osm = this.geojsmap.createLayer('osm');
 
             osm.name(layer_name);

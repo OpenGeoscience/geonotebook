@@ -79,6 +79,22 @@ class Remote(object):
 
         """
 
+        assert 'required' in protocol, \
+            "protocol {} must define required arguments".format(protocol['procedure'])
+        assert 'optional' in protocol, \
+            "protocol {} must define optional arguments".format(protocol['procedure'])
+
+        for arg in protocol["required"]:
+            assert 'key' in arg, \
+                "protocol {} is malfomred, argument {} does not have a key".format(
+                    protocol['procedure'], arg)
+
+        for arg in protocol["optional"]:
+            assert 'key' in arg, \
+                "protocol {} is malfomred, argument {} does not have a key".format(
+                    protocol['procedure'], arg)
+
+
         def _protocol_closure(self, *args, **kwargs):
             try:
                 self.validate(protocol, *args, **kwargs)
@@ -86,10 +102,13 @@ class Remote(object):
                 # TODO: log something here
                 raise e
 
+            def make_param(key, value, required=True):
+                return {'key': key, 'value': value, 'required': required}
             # Get the paramaters
-            params = list(args)
+            params = [make_param(k['key'], v) for k,v in zip(protocol['required'], args)]
             # Not technically available until ES6
-            params.extend([kwargs[k] for k in protocol['optional'] if k in kwargs])
+            params.extend([make_param(k['key'], kwargs[k['key']], required=False)
+                           for k in protocol['optional'] if k['key'] in kwargs])
 
             # Create the message
             msg = json_rpc_request(protocol['procedure'], params)
@@ -143,10 +162,6 @@ class Remote(object):
 
         for p in self.protocol:
             assert 'procedure' in p, \
-                ""
-            assert 'required' in p, \
-                ""
-            assert 'optional' in p, \
                 ""
 
             setattr(self, p['procedure'], self._make_protocol_method(p))

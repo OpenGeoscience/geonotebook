@@ -104,6 +104,51 @@ define(
             this.comm.send(msg);
         };
 
+        Geonotebook.prototype.get_object = function(msg){
+            // TODO: Add object routing here
+            return this.map;
+        };
+
+        // Here we resolve the passed in paramaters availale in msg.params
+        // with the arguments of the function defined by fn.$arg_meta.
+        // fn.$arg_meta is an array of objects like the following:
+        //     [{key: 'layer_name', defaults: false},
+        //      {key: 'url', defaults: false},
+        //      (key: 'opacity', defaults: 1.0}]
+        // while msg.params is a list like the following:
+        //     [{key: 'layer_name', value: 'foobar', required: true},
+        //       {key: 'url', value: 'http://example.com/x/y/z.png',
+        //        required: true}]
+        //
+        // notice in this example msg.params does not have 'opacity.' That
+        // is ok because opacity is an 'optional' argument, in this case
+        // resolve_arg_list will return undefined for opacity and the default
+        // argument defined on the function will take over.
+        Geonotebook.prototype.resolve_arg_list = function(fn, msg){
+            if( fn.$arg_meta !== undefined ){
+                // make a hash of the paramaters where param['key'] => param
+                var param_hash = msg.params.reduce(function(obj, p) {
+                    obj[p['key']] = p;
+                    return obj;
+                }, {});
+
+                return fn.$arg_meta.map(function(arg){
+                    // we found the paramater in the param_hash
+                    if( param_hash[arg['key']] !== undefined) {
+                        return param_hash[arg['key']]['value'];
+                    } else if (!!arg['default']) {
+                        return undefined;
+                    } else {
+                        throw jsonrpc.InvalidParam(
+                            msg.method + ' did not recieve a required param ' + arg['key']);
+                    }
+                });
+
+            } else {
+                throw jsonrpc.ParseError("$arg_meta not available on " + msg.method + "!");
+            }
+        }
+
         Geonotebook.prototype.recv_msg = function(message) {
             var msg = this._unwrap(message);
             // TODO: move this into request/response like a
@@ -127,10 +172,17 @@ define(
                 else if( jsonrpc.is_request(msg) ) {
                     try {
                         // Apply the map method from the msg on the paramaters
-                        var result = this.map[msg.method].apply(this.map, msg.params);
+                        var obj = this.get_object(msg);
 
-                        // Reply with the result of the call
-                        this.send_msg(jsonrpc.response(result, null, msg.id));
+                        if (obj[msg.method] !== undefined){
+                            var result = obj[msg.method].apply(
+                                this.map, this.resolve_arg_list(obj[msg.method], msg));
+                            // Reply with the result of the call
+                            this.send_msg(jsonrpc.response(result, null, msg.id));
+                        } else {
+                            throw jsonrpc.MethodNotfound("Method " + msg.method + " not found!")
+                        }
+
                     } catch (ex) {
                         // If we catch an error report it back to the RPC caller
                         this.send_msg(jsonrpc.response(null, ex, msg.id));

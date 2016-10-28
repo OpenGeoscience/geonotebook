@@ -31,23 +31,28 @@ define([],
                    var FN_ARG = /^\s*(_?)(.+?)\1\s*$/;
                    var STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 
-                   var $inject = [];
+                   var $arg_meta = [];
                    var fnText, argDecl;
 
                    if (typeof fn == 'function') {
-                       if (!($inject = fn.$inject)) {
-                           $inject = [];
+                       if (!($arg_meta = fn.$arg_meta)) {
+                           $arg_meta = [];
                            fnText = fn.toString().replace(STRIP_COMMENTS, '');
                            argDecl = fnText.match(FN_ARGS);
                            argDecl[1].split(FN_ARG_SPLIT).forEach(function(arg){
                                arg.replace(FN_ARG, function(all, underscore, name){
-                                   $inject.push(name);
+                                   if( !name.includes("=") ){
+                                       $arg_meta.push({key: name, default: false})
+                                   } else {
+                                       $arg_meta.push({key: name.split("=")[0],
+                                                   default: name.split("=")[1]})
+                                   }
                                });
                            });
-                           fn.$inject = $inject;
+                           fn.$arg_meta = $arg_meta;
                        }
                    }
-                   return $inject;
+                   return $arg_meta;
                }
 
            };
