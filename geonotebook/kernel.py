@@ -191,7 +191,6 @@ class Geonotebook(object):
         if cls._protocol is None:
             def _method_protocol(fn, method):
                 spec = getargspec(method)
-
                 # spec.args[1:] so we don't include 'self'
                 params = spec.args[1:]
                 # The number of optional arguments
@@ -199,21 +198,27 @@ class Geonotebook(object):
                 # The number of required arguments
                 r = len(params) - d
 
+                def make_param(p, default=False):
+                    return {'key': p, 'default': default}
+
                 # Would be nice to include whether or to expect a reply, or
                 # If this is just a notification function
                 return {'procedure': fn,
-                        'required': params[:r],
-                        'optional': params[r:]}
-
+                        'required': [make_param(p) for p in params[:r]],
+                        'optional': [make_param(p, default=d) for p,d
+                                     in zip(params[r:], spec.defaults)] \
+                        if spec.defaults is not None else []}
 
             # Note:  for the predicate we do ismethod or isfunction for PY2/PY3 support
             # See: https://docs.python.org/3.0/whatsnew/3.0.html
             # "The concept of "unbound methods" has been removed from the language.
             # When referencing a method as a class attribute, you now get a plain function object."
-            cls._protocol = [_method_protocol(fn, method) for fn, method in
+            cls._protocol = {fn:_method_protocol(fn, method) for fn, method in
                              getmembers(cls, predicate=lambda x: ismethod(x) or isfunction(x)) \
-                             if fn in cls.msg_types]
-        return cls._protocol
+                             if fn in cls.msg_types}
+
+
+        return cls._protocol.values()
 
     def _send_msg(self, msg):
         """Send a message to the client.
@@ -226,6 +231,25 @@ class Geonotebook(object):
 
         """
         self._kernel.comm.send(msg)
+
+    def _reconcile_paramaters(self, method, params):
+        param_hash = {p['key']:p for p in params}
+
+        # Loop through protocol reconciling paramaters
+        # from out of the param_hash.  Note - does not do
+        # any error checking - exceptions will be caught
+        # and transformed into RPC errors
+        try:
+            args = [param_hash[p['key']]['value']
+                    for p in self._protocol[method]['required']]
+        except KeyError:
+            raise jsonrpc.InvalidParams(u"missing required params for method: %s" % method)
+
+        kwargs = {p['key']:param_hash[p['key']]['value']
+                  for p in self._protocol[method]['optional']
+                  if p['key'] in param_hash}
+
+        return args, kwargs
 
     def _recv_msg(self, msg):
         """Recieve an RPC message from the client
@@ -243,10 +267,11 @@ class Geonotebook(object):
         # Otherwise process the request from the remote RPC client.
         elif is_request(msg):
             method, params = msg['method'], msg['params']
-
-            if method in self.msg_types:
+            if method in self._protocol.keys():
                 try:
-                    result = getattr(self, method)(*params)
+                    args, kwargs = self._reconcile_paramaters(method, params)
+
+                    result = getattr(self, method)(*args, **kwargs)
                     self._send_msg(json_rpc_result(result, None, msg['id']))
                 except Exception as e:
                     if isinstance(e, jsonrpc.JSONRPCError):
@@ -264,7 +289,6 @@ class Geonotebook(object):
 
     def __init__(self, kernel, *args, **kwargs):
 
-        self._protocol = None
         self.view_port = None
         self.x = None
         self.y = None
@@ -279,7 +303,8 @@ class Geonotebook(object):
 
     ### Remote RPC wrappers ###
 
-    def set_center(self, x, y, z):
+    def set_center(self, x, y, z, foo=10):
+        self.log.info(u'foo: %s' % foo)
         def _set_center(result):
             self.x, self.y, self.z = result
 
@@ -458,7 +483,7 @@ class GeonotebookKernel(IPythonKernel):
 
 
     def __init__(self, **kwargs):
-        kwargs['log'].setLevel(logging.INFO)
+        kwargs['log'].setLevel(logging.DEBUG)
         self.log = kwargs['log']
 
         super(GeonotebookKernel, self).__init__(**kwargs)

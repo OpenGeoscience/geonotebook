@@ -37,8 +37,34 @@ define(
             this._callbacks = {};
 
             _.each(protocols, function(protocol){
-                this[protocol.procedure] = function(){
-                    var params = Array.from(arguments);
+                this[protocol.procedure] = function(...args){
+                    var optionals = {}
+                    // too few arguments
+                    if(args.length < protocol.required.length){
+                        throw jsonrpc.InvalidRequest(
+                            "Too few arguments passed to " + protocol.procedure);
+
+                    } else if (args.length > protocol.required.length + 1) {
+                        throw jsonrpc.InvalidRequest(
+                            "Too many arguments passed to " + protocol.procedure);
+                    // Options have been passed in (maybe)
+                    } else if (args.length == protocol.required.length + 1) {
+                        optionals = args.pop();
+                        // optionals is not an object?
+                        if(optionals === null || typeof optionals !== 'object'){
+                            throw jsonrpc.InvalidRequest(
+                                "Optional arguments must be an object, recieved " +
+                                    optionals + " for proceedure " + protocol.proceedure);
+
+                        }
+                    } // else args.length == required.length and optionals should be empty
+
+                    var params = _.zip(args, protocol.required).map(function([a, p]){
+                        return {key: p.key, value: a, required: true};
+                    }).concat(_.keys(optionals).map(function(k){
+                        return {key: k, value: optionals[k], required: false};
+                    }));
+
                     // how to handle kwargs?
                     var msg = jsonrpc.request(protocol.procedure, params);
                     // Generating a UUID http://stackoverflow.com/a/2117523
