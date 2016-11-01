@@ -9,14 +9,14 @@ def r(mocker):
                   'required': [],
                   'optional': []},
                  {'procedure': 'required_only',
-                  'required': ["a", "b"],
+                  'required': [{"key": "a"}, {"key": "b"}],
                   'optional': []},
                  {'procedure': 'optional_only',
                   'required': [],
-                  'optional': ["x", "y", "z"]},
+                  'optional': [{"key": "x"}, {"key": "y"}, {"key": "z"}]},
                  {'procedure': 'required_and_optional',
-                  'required': ["a", "b"],
-                  'optional': ["x", "y", "z"]}]
+                  'required': [{"key": "a"}, {"key": "b"}],
+                  'optional': [{"key": "x"}, {"key": "y"}, {"key": "z"}]}]
 
     r = Remote(None, protocols)
 
@@ -65,12 +65,17 @@ def test_remote_call_no_args_with_args(r):
 def test_remote_call_required_only(r):
     r.required_only('foo', 'bar')
     assert r._send_msg.call_count == 1
-    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': ['foo', 'bar'],
+    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [{'key': 'a',
+                                                                  'value': 'foo',
+                                                                  'required': True},
+                                                                 {'key': 'b',
+                                                                  'value': 'bar',
+                                                                  'required': True}],
                                     'method': 'required_only', 'id': 'TEST-ID'})
 
 def test_remote_call_required_only_with_too_few_args(r):
     with pytest.raises(AssertionError):
-        r.no_args('foo')
+        r.required_only('foo')
 
 def test_remote_call_required_only_with_too_many_args(r):
     with pytest.raises(AssertionError):
@@ -80,7 +85,9 @@ def test_remote_call_required_only_with_too_many_args(r):
 def test_remote_call_optional_only(r):
     r.optional_only(x='foo', y='bar', z='baz')
     assert r._send_msg.call_count == 1
-    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': ['foo', 'bar', 'baz'],
+    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [{'key': 'x', 'value': 'foo', 'required': False},
+                                                                 {'key': 'y', 'value': 'bar', 'required': False},
+                                                                 {'key': 'z', 'value': 'baz', 'required': False}],
                                     'method': 'optional_only', 'id': 'TEST-ID'})
 
 
@@ -89,11 +96,11 @@ def test_remote_call_optional_only(r):
     r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [],
                                     'method': 'optional_only', 'id': 'TEST-ID'})
 
-@pytest.mark.skip(reason="See: geonotebook/issues/45")
-def test_remote_call_optional_only_missing_arguments():
+def test_remote_call_optional_only_missing_arguments(r):
     r.optional_only(x='foo', z='bar')
-    assert r._send_msg.call_count == 3
-    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': ["???"],
+    assert r._send_msg.call_count == 1
+    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [{'key': 'x', 'value': 'foo', 'required': False},
+                                                                 {'key': 'z', 'value': 'bar', 'required': False}],
                                     'method': 'optional_only', 'id': 'TEST-ID'})
 
 
