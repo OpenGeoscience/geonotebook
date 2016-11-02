@@ -389,8 +389,8 @@ class Geonotebook(object):
 
 
 
-    def add_annotation(self, *args, **kwargs):
-        self.layers.annotation.add_annotation(*args, **kwargs)
+    def add_annotation(self, ann_type, coords, meta):
+        self.layers.annotation.add_annotation(ann_type, coords, meta)
         return True
 
 
