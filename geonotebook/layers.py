@@ -5,6 +5,7 @@ from collections import OrderedDict
 import rasterio
 import numpy as np
 import six
+from .jsonrpc import remote
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -21,9 +22,8 @@ class GeonotebookLayer(object):
     # some kind of functionality (e.g. the annotatoin layer).
     _expose_as = None
 
-    def __init__(self, name, remote, **kwargs):
+    def __init__(self, name, **kwargs):
         self.config = Config()
-        self.remote = remote
         self.name = name
 
         self._system_layer = kwargs.get("system_layer", False)
@@ -41,11 +41,10 @@ class AnnotationLayer(GeonotebookLayer):
         "polygon": annotations.Polygon
     }
 
-    def __init__(self, name, remote, layer_collection, **kwargs):
-        super(AnnotationLayer, self).__init__(name, remote, **kwargs)
+    def __init__(self, name, layer_collection, **kwargs):
+        super(AnnotationLayer, self).__init__(name, **kwargs)
         self.layer_collection = layer_collection
         self.params = kwargs
-        self._remote = remote
         self._annotations = []
 
     def add_annotation(self, ann_type, coords, meta):
@@ -79,7 +78,7 @@ class AnnotationLayer(GeonotebookLayer):
         def rpc_error(error):
             self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
 
-        return self._remote.clear_annotations().then(_clear_annotations, rpc_error)
+        return remote.clear_annotations().then(_clear_annotations, rpc_error)
 
     @property
     def points(self):
@@ -98,14 +97,14 @@ class AnnotationLayer(GeonotebookLayer):
 
 
 class NoDataLayer(GeonotebookLayer):
-    def __init__(self, name, remote, vis_url, **kwargs):
-        super(NoDataLayer, self).__init__(name, remote, **kwargs)
+    def __init__(self, name, vis_url, **kwargs):
+        super(NoDataLayer, self).__init__(name, **kwargs)
         self.vis_url = vis_url
 
 
 class DataLayer(GeonotebookLayer):
-    def __init__(self, name, remote, data, vis_url=None, **kwargs):
-        super(DataLayer, self).__init__(name, remote, **kwargs)
+    def __init__(self, name, data, vis_url=None, **kwargs):
+        super(DataLayer, self).__init__(name, **kwargs)
         self.data = data
 
         assert vis_url is not None or data is not None, \
@@ -114,8 +113,8 @@ class DataLayer(GeonotebookLayer):
 
 
 class SimpleLayer(DataLayer):
-    def __init__(self, name, remote, data, vis_url=None, **kwargs):
-        super(SimpleLayer, self).__init__(name, remote, data, vis_url=vis_url, **kwargs)
+    def __init__(self, name, data, vis_url=None, **kwargs):
+        super(SimpleLayer, self).__init__(name, data, vis_url=vis_url, **kwargs)
         self.vis_url = vis_url
 
         if self.vis_url is None:
@@ -127,10 +126,9 @@ class SimpleLayer(DataLayer):
 
 
 class TimeSeriesLayer(DataLayer):
-    def __init__(self, name, remote, data, vis_url=None, **kwargs):
-        super(TimeSeriesLayer, self).__init__(name, remote, data, vis_url=None, **kwargs)
+    def __init__(self, name, data, vis_url=None, **kwargs):
+        super(TimeSeriesLayer, self).__init__(name, data, vis_url=None, **kwargs)
         self.__cur = 0
-        self._remote = remote
 
         # TODO: check vis_url is valid length etc
         self._vis_url = vis_url if vis_url is not None else [None] * len(self.data)
@@ -183,8 +181,8 @@ class TimeSeriesLayer(DataLayer):
                 self.current, name=self.current.name)
 
         # TODO: Need better handlers here for post-replace callbacks
-        self._remote.replace_wms_layer(self.name, self.vis_url, self.params)\
-            .then(lambda resp: True, lambda: True)
+        remote.replace_wms_layer(self.name, self.vis_url, self.params)\
+              .then(lambda resp: True, lambda: True)
 
         return self.current
 

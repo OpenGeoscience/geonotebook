@@ -325,20 +325,20 @@ class Geonotebook(object):
             # TODO verify layer exists in geoserver?
             name = data.name if name is None else name
 
-            layer = SimpleLayer(name, self._remote, data=data, vis_url=vis_url, **kwargs)
+            layer = SimpleLayer(name, data=data, vis_url=vis_url, **kwargs)
         elif isinstance(data, RasterDataCollection):
             assert name is not None, \
                 RuntimeError("RasterDataCollection layers require a 'name'")
 
-            layer = TimeSeriesLayer(name, self._remote, data=data, vis_url=vis_url, **kwargs)
+            layer = TimeSeriesLayer(name,  data=data, vis_url=vis_url, **kwargs)
 
         else:
             assert name is not None, \
                 RuntimeError("Non data layers require a 'name'")
             if layer_type == 'annotation':
-                layer = AnnotationLayer(name, self._remote, self.layers, **kwargs)
+                layer = AnnotationLayer(name, self.layers, **kwargs)
             else:
-                layer = NoDataLayer(name, self._remote, vis_url=vis_url, **kwargs)
+                layer = NoDataLayer(name, vis_url=vis_url, **kwargs)
 
         def _add_layer(layer_name):
             self.layers.append(layer)

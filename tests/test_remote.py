@@ -1,6 +1,6 @@
 import pytest
 
-from geonotebook.kernel import Remote
+from geonotebook.jsonrpc import Remote
 
 @pytest.fixture
 def remote(mocker):
@@ -18,7 +18,8 @@ def remote(mocker):
                   'required': [{"key": "a"}, {"key": "b"}],
                   'optional': [{"key": "x"}, {"key": "y"}, {"key": "z"}]}]
 
-    r = Remote(None, protocols)
+    r = Remote()
+    r(None, protocols)
 
     # Mock out the UUID.uuid4 function to return a consistent ID for testing
     mocker.patch('geonotebook.jsonrpc.uuid.uuid4', return_value='TEST-ID')
@@ -27,23 +28,27 @@ def remote(mocker):
     return r
 
 def test_remote_bad_protocol():
+    r = Remote()
     with pytest.raises(AssertionError):
-        Remote(None, ['foo', 'bar'])
+        r(None, ['foo', 'bar'])
 
 def test_remote_bad_protocol_missing_procedure():
+    r = Remote()
     with pytest.raises(AssertionError):
-        Remote(None, [{'required': [],
-                       'optional': []}])
+        r(None, [{'required': [],
+                  'optional': []}])
 
 def test_remote_bad_protocol_missing_required():
+    r = Remote()
     with pytest.raises(AssertionError):
-        Remote(None, [{'procedure': 'no_args',
-                       'optional': []}])
+        r(None, [{'procedure': 'no_args',
+                  'optional': []}])
 
 def test_remote_bad_protocol_missing_optional():
+    r = Remote()
     with pytest.raises(AssertionError):
-        Remote(None, [{'procedure': 'no_args',
-                       'required': []}])
+        r(None, [{'procedure': 'no_args',
+                  'required': []}])
 
 def test_remote_init(remote):
     assert hasattr(remote.no_args, '__call__')

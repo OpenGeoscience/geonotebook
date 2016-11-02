@@ -265,28 +265,28 @@ def rdc_one():
 def glc():
     """ glc: Geonotebook Layer Collection """
 
-    foo = layers.GeonotebookLayer('foo', None, vis_url='vis')
-    bar = layers.GeonotebookLayer('bar', None, vis_url='vis')
-    baz = layers.GeonotebookLayer('baz', None, vis_url='vis')
+    foo = layers.GeonotebookLayer('foo', vis_url='vis')
+    bar = layers.GeonotebookLayer('bar', vis_url='vis')
+    baz = layers.GeonotebookLayer('baz', vis_url='vis')
 
     return layers.GeonotebookLayerCollection([foo, bar, baz])
 
 @pytest.fixture
 def glc_annotation(rect, coords, single, missing):
     glc = layers.GeonotebookLayerCollection([
-        layers.DataLayer('rect', None, rect, vis_url='vis'),
-        layers.DataLayer('coords', None, coords, vis_url='vis'),
-        layers.DataLayer('single', None, single, vis_url='vis'),
-        layers.DataLayer('missing', None, missing, vis_url='vis')])
+        layers.DataLayer('rect', rect, vis_url='vis'),
+        layers.DataLayer('coords', coords, vis_url='vis'),
+        layers.DataLayer('single', single, vis_url='vis'),
+        layers.DataLayer('missing', missing, vis_url='vis')])
 
     glc.append(layers.AnnotationLayer(
-        'annotation', None, glc, expose_as="annotation", system_layer=True))
+        'annotation', glc, expose_as="annotation", system_layer=True))
 
     return glc
 
 @pytest.fixture
 def geonotebook_layer():
-    return layers.GeonotebookLayer('foo', None, vis_url='vis')
+    return layers.GeonotebookLayer('foo', vis_url='vis')
 
 
 # Vis Server fixtures
