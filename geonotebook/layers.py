@@ -5,7 +5,7 @@ from collections import OrderedDict
 import rasterio
 import numpy as np
 import six
-from .jsonrpc import remote
+from .jsonrpc import rpc
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -78,7 +78,7 @@ class AnnotationLayer(GeonotebookLayer):
         def rpc_error(error):
             self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
 
-        return remote.clear_annotations().then(_clear_annotations, rpc_error)
+        return rpc.remote.clear_annotations().then(_clear_annotations, rpc_error)
 
     @property
     def points(self):
@@ -181,8 +181,8 @@ class TimeSeriesLayer(DataLayer):
                 self.current, name=self.current.name)
 
         # TODO: Need better handlers here for post-replace callbacks
-        remote.replace_wms_layer(self.name, self.vis_url, self.params)\
-              .then(lambda resp: True, lambda: True)
+        rpc.remote.replace_wms_layer(self.name, self.vis_url, self.params)\
+                  .then(lambda resp: True, lambda: True)
 
         return self.current
 

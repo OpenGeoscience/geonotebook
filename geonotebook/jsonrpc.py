@@ -1,7 +1,7 @@
 import uuid
 from promise import Promise
 from types import MethodType
-
+from inspect import getmembers, ismethod, isfunction, getargspec
 
 class JSONRPCError(Exception):
     code = 0
@@ -91,7 +91,6 @@ class Remote(object):
     call. Remote defines a '_promises' variable which is a dict of message
     id's to Promises.
     """
-
 
     def validate(self, protocol, *args, **kwargs):
         """Validate a protocol definition.
@@ -217,19 +216,156 @@ class Remote(object):
         :rtype: None
 
         """
-
+        self.uninitialized = True
         self._promises = {}
 
     def __call__(self, transport, protocol):
         self._send_msg = transport
         self.protocol = protocol
 
-        for p in self.protocol:
-            assert 'procedure' in p, \
-                ""
+        if self.uninitialized:
+            for p in self.protocol:
+                assert 'procedure' in p, \
+                    ""
+                if not hasattr(self, p['procedure']):
+                    setattr(self, p['procedure'], self._make_protocol_method(p))
+                else:
+                    raise Exception(
+                        "Cannot create remote method"
+                        " %s, attribute already exists!" % p['procedure'])
 
-            setattr(self, p['procedure'], self._make_protocol_method(p))
+        self.uninitialized = False
 
         return self
 
-remote = Remote()
+
+class Router(object):
+    _protocol = {}
+
+    def __init__(self):
+        self.comm = None
+        self.remote = Remote()
+
+    def class_protocol(self, cls):
+        """Initializes the RPC protocol description.
+
+        Provides a static, lazy loaded description of the functions that
+        are available to be called by the RPC mechanism.
+
+        :param cls: The class (e.g. Geonotebook)
+        :returns: the protocol description
+        :rtype: dict
+
+        """
+
+        if cls not in self._protocol:
+            def _method_protocol(fn, method):
+                spec = getargspec(method)
+                # spec.args[1:] so we don't include 'self'
+                params = spec.args[1:]
+                # The number of optional arguments
+                d = len(spec.defaults) if spec.defaults is not None else 0
+                # The number of required arguments
+                r = len(params) - d
+
+                def make_param(p, default=False):
+                    return {'key': p, 'default': default}
+
+                # Would be nice to include whether or to expect a reply, or
+                # If this is just a notification function
+                return {'procedure': fn,
+                        'required': [make_param(p) for p in params[:r]],
+                        'optional': [make_param(p, default=d) for p,d
+                                     in zip(params[r:], spec.defaults)] \
+                        if spec.defaults is not None else []}
+
+            # Note:  for the predicate we do ismethod or isfunction for PY2/PY3 support
+            # See: https://docs.python.org/3.0/whatsnew/3.0.html
+            # "The concept of "unbound methods" has been removed from the language.
+            # When referencing a method as a class attribute, you now get a plain function object."
+            self._protocol[cls] = \
+                {fn: _method_protocol(fn, method) for fn, method in
+                 getmembers(cls, predicate=lambda x:
+                            ismethod(x) or isfunction(x))
+                 if fn in cls.msg_types}
+
+        return cls
+
+    def get_protocol(self):
+        return [p for cls, protocols in self._protocol.items()
+                for p in protocols.values()]
+
+    def set_remote_protocol(self, comm, protocols):
+        self.comm = comm
+        self.remote(self.send_msg, protocols)
+
+
+    def send_msg(self, msg):
+        """Send a message to the client.
+
+        'msg' should be a well formed RPC message.
+
+        :param msg: The RPC message
+        :returns: Nothing
+        :rtype: None
+
+        """
+        self.comm.send(msg)
+
+
+    def _reconcile_paramaters(self, params, protocol):
+        param_hash = {p['key']: p for p in params}
+
+        # Loop through protocol reconciling paramaters
+        # from out of the param_hash.  Note - does not do
+        # any error checking - exceptions will be caught
+        # and transformed into RPC errors
+        args = [param_hash[p['key']]['value'] for p in protocol['required']]
+
+        kwargs = {p['key']: param_hash[p['key']]['value']
+                  for p in protocol['optional'] if p['key'] in param_hash}
+
+        return args, kwargs
+
+    # TODO: Hack until we actually implement object routing
+    def get_obj(self, msg):
+        return self.geonotebook
+
+    def recv_msg(self, msg):
+        """Recieve an RPC message from the client
+
+        :param msg: An RPC message
+        :returns: Nothing
+        :rtype: None
+
+        """
+        # If this is a response,  pass it along to the Remote object to be
+        # processesd by the correct reply/error handler
+        if is_response(msg):
+            rpc.remote.resolve(msg)
+
+        # Otherwise process the request from the remote RPC client.
+        elif is_request(msg):
+            method, params = msg['method'], msg['params']
+            for cls, protocols in self._protocol.items():
+                if method in protocols.keys():
+                    try:
+                        args, kwargs = self._reconcile_paramaters(
+                            params, protocols[method])
+
+                        result = getattr(self.get_obj(msg), method)(*args, **kwargs)
+                        self.send_msg(json_rpc_result(result, None, msg['id']))
+                    except KeyError:
+                        raise InvalidParams(u"missing required params for method: %s" % method)
+                    except Exception as e:
+                        if isinstance(e, JSONRPCError):
+                            raise e
+                        else:
+                            raise ServerError(str(e))
+                else:
+                    raise MethodNotFound("Method not allowed")
+        else:
+            raise ParseError("Could not parse msg: %s" % msg)
+
+
+rpc = Router()
