@@ -135,7 +135,7 @@ define(
             return this.map;
         };
 
-        // Here we resolve the passed in paramaters availale in msg.params
+        // Here we resolve the passed in parameters availale in msg.params
         // with the arguments of the function defined by fn.$arg_meta.
         // fn.$arg_meta is an array of objects like the following:
         //     [{key: 'layer_name', defaults: false},
@@ -152,14 +152,14 @@ define(
         // argument defined on the function will take over.
         Geonotebook.prototype.resolve_arg_list = function(fn, msg){
             if( fn.$arg_meta !== undefined ){
-                // make a hash of the paramaters where param['key'] => param
+                // make a hash of the parameters where param['key'] => param
                 var param_hash = msg.params.reduce(function(obj, p) {
                     obj[p['key']] = p;
                     return obj;
                 }, {});
 
                 return fn.$arg_meta.map(function(arg){
-                    // we found the paramater in the param_hash
+                    // we found the parameter in the param_hash
                     if( param_hash[arg['key']] !== undefined) {
                         return param_hash[arg['key']]['value'];
                     } else if (!!arg['default']) {
@@ -197,7 +197,7 @@ define(
                 // Handle a RPC request
                 else if( jsonrpc.is_request(msg) ) {
                     try {
-                        // Apply the map method from the msg on the paramaters
+                        // Apply the map method from the msg on the parameters
                         var obj = this.get_object(msg);
 
                         if (obj[msg.method] !== undefined){

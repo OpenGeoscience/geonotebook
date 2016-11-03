@@ -123,11 +123,11 @@ class Geoserver(object):
             return colormap
 
 
-    # get_params should take a generic list of paramaters e.g. 'bands',
+    # get_params should take a generic list of parameters e.g. 'bands',
     # 'range', 'gamma' and convert these into a list of vis_server specific
-    # paramaters which will be passed along to the tile render handler in
+    # parameters which will be passed along to the tile render handler in
     # add_layer. This is intended to allow the vis_server to include style
-    # paramaters and subsetting operations. select bands, set ranges
+    # parameters and subsetting operations. select bands, set ranges
     # on a particular dataset etc.
     def get_params(self, name, data, **kwargs):
         if data is not None:

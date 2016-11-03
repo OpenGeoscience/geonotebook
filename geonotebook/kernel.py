@@ -104,7 +104,7 @@ class Remote(object):
 
             def make_param(key, value, required=True):
                 return {'key': key, 'value': value, 'required': required}
-            # Get the paramaters
+            # Get the parameters
             params = [make_param(k['key'], v) for k,v in zip(protocol['required'], args)]
             # Not technically available until ES6
             params.extend([make_param(k['key'], kwargs[k['key']], required=False)
@@ -232,10 +232,10 @@ class Geonotebook(object):
         """
         self._kernel.comm.send(msg)
 
-    def _reconcile_paramaters(self, method, params):
+    def _reconcile_parameters(self, method, params):
         param_hash = {p['key']:p for p in params}
 
-        # Loop through protocol reconciling paramaters
+        # Loop through protocol reconciling parameters
         # from out of the param_hash.  Note - does not do
         # any error checking - exceptions will be caught
         # and transformed into RPC errors
@@ -269,7 +269,7 @@ class Geonotebook(object):
             method, params = msg['method'], msg['params']
             if method in self._protocol.keys():
                 try:
-                    args, kwargs = self._reconcile_paramaters(method, params)
+                    args, kwargs = self._reconcile_parameters(method, params)
 
                     result = getattr(self, method)(*args, **kwargs)
                     self._send_msg(json_rpc_result(result, None, msg['id']))
