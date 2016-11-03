@@ -246,50 +246,52 @@ class Router(object):
         self.comm = None
         self.remote = Remote()
 
-    def class_protocol(self, cls):
-        """Initializes the RPC protocol description.
+    def class_protocol(self, *msg_types):
+        def _class_protocol(cls):
+            """Initializes the RPC protocol description.
 
-        Provides a static, lazy loaded description of the functions that
-        are available to be called by the RPC mechanism.
+            Provides a static, lazy loaded description of the functions that
+            are available to be called by the RPC mechanism.
 
-        :param cls: The class (e.g. Geonotebook)
-        :returns: the protocol description
-        :rtype: dict
+            :param cls: The class (e.g. Geonotebook)
+            :returns: the protocol description
+            :rtype: dict
 
-        """
+            """
 
-        if cls not in self._protocol:
-            def _method_protocol(fn, method):
-                spec = getargspec(method)
-                # spec.args[1:] so we don't include 'self'
-                params = spec.args[1:]
-                # The number of optional arguments
-                d = len(spec.defaults) if spec.defaults is not None else 0
-                # The number of required arguments
-                r = len(params) - d
+            if cls not in self._protocol:
+                def _method_protocol(fn, method):
+                    spec = getargspec(method)
+                    # spec.args[1:] so we don't include 'self'
+                    params = spec.args[1:]
+                    # The number of optional arguments
+                    d = len(spec.defaults) if spec.defaults is not None else 0
+                    # The number of required arguments
+                    r = len(params) - d
 
-                def make_param(p, default=False):
-                    return {'key': p, 'default': default}
+                    def make_param(p, default=False):
+                        return {'key': p, 'default': default}
 
-                # Would be nice to include whether or to expect a reply, or
-                # If this is just a notification function
-                return {'procedure': fn,
-                        'required': [make_param(p) for p in params[:r]],
-                        'optional': [make_param(p, default=d) for p,d
-                                     in zip(params[r:], spec.defaults)] \
-                        if spec.defaults is not None else []}
+                    # Would be nice to include whether or to expect a reply, or
+                    # If this is just a notification function
+                    return {'procedure': fn,
+                            'required': [make_param(p) for p in params[:r]],
+                            'optional': [make_param(p, default=d) for p,d
+                                         in zip(params[r:], spec.defaults)] \
+                            if spec.defaults is not None else []}
 
-            # Note:  for the predicate we do ismethod or isfunction for PY2/PY3 support
-            # See: https://docs.python.org/3.0/whatsnew/3.0.html
-            # "The concept of "unbound methods" has been removed from the language.
-            # When referencing a method as a class attribute, you now get a plain function object."
-            self._protocol[cls] = \
-                {fn: _method_protocol(fn, method) for fn, method in
-                 getmembers(cls, predicate=lambda x:
-                            ismethod(x) or isfunction(x))
-                 if fn in cls.msg_types}
+                # Note:  for the predicate we do ismethod or isfunction for PY2/PY3 support
+                # See: https://docs.python.org/3.0/whatsnew/3.0.html
+                # "The concept of "unbound methods" has been removed from the language.
+                # When referencing a method as a class attribute, you now get a plain function object."
+                self._protocol[cls] = \
+                    {fn: _method_protocol(fn, method) for fn, method in
+                     getmembers(cls, predicate=lambda x:
+                                ismethod(x) or isfunction(x))
+                     if fn in msg_types}
 
-        return cls
+            return cls
+        return _class_protocol
 
     def get_protocol(self):
         return [p for cls, protocols in self._protocol.items()

@@ -1,11 +1,13 @@
-from geonotebook.kernel import Geonotebook
 import pytest
+from geonotebook.jsonrpc import rpc
+
+mock_functions = ['no_args', 'required_only', 'kw_only',
+                  'mixed', 'varargs', 'kwargs']
 
 @pytest.fixture
 def nbclass():
-    class MockNotebook(Geonotebook):
-        msg_types = ['no_args', 'required_only', 'kw_only',
-                     'mixed', 'varargs', 'kwargs']
+    @rpc.class_protocol(*mock_functions)
+    class MockNotebook(object):
 
         def no_args(self):
             pass
@@ -30,8 +32,7 @@ def nbclass():
 
 @pytest.fixture
 def nbprotocol(nbclass):
-    return nbclass.class_protocol()
-
+    return rpc.get_protocol()
 
 @pytest.fixture
 def nbprotocoldict(nbprotocol):
@@ -82,8 +83,8 @@ def test_protocol_keys(nbprotocol):
 
 
 def test_protocols_match_msg_types(nbclass):
-    assert set(nbclass.msg_types) == \
-        set([p['procedure'] for p in nbclass.class_protocol()])
+    assert set(mock_functions) == \
+        set([p['procedure'] for p in rpc.get_protocol()])
 
 
 def test_protocol_required_params_no_args(no_args):
