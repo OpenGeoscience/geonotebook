@@ -193,7 +193,7 @@ define(
             }
         };
 
-        Map.prototype.add_osm_layer = function(layer_name, url, params, foo=10){
+        Map.prototype.add_osm_layer = function(layer_name, url, params){
             var osm = this.geojsmap.createLayer('osm');
 
             osm.name(layer_name);

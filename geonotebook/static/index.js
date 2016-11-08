@@ -138,9 +138,9 @@ define(
         // Here we resolve the passed in parameters availale in msg.params
         // with the arguments of the function defined by fn.$arg_meta.
         // fn.$arg_meta is an array of objects like the following:
-        //     [{key: 'layer_name', defaults: false},
-        //      {key: 'url', defaults: false},
-        //      (key: 'opacity', defaults: 1.0}]
+        //     [{key: 'layer_name', default: false},
+        //      {key: 'url', default: false},
+        //      (key: 'opacity', default2: 1.0}]
         // while msg.params is a list like the following:
         //     [{key: 'layer_name', value: 'foobar', required: true},
         //       {key: 'url', value: 'http://example.com/x/y/z.png',

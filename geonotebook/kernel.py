@@ -86,12 +86,12 @@ class Remote(object):
 
         for arg in protocol["required"]:
             assert 'key' in arg, \
-                "protocol {} is malfomred, argument {} does not have a key".format(
+                "protocol {} is malformed, argument {} does not have a key".format(
                     protocol['procedure'], arg)
 
         for arg in protocol["optional"]:
             assert 'key' in arg, \
-                "protocol {} is malfomred, argument {} does not have a key".format(
+                "protocol {} is malformed, argument {} does not have a key".format(
                     protocol['procedure'], arg)
 
 
@@ -303,7 +303,7 @@ class Geonotebook(object):
 
     ### Remote RPC wrappers ###
 
-    def set_center(self, x, y, z, foo=10):
+    def set_center(self, x, y, z):
         self.log.info(u'foo: %s' % foo)
         def _set_center(result):
             self.x, self.y, self.z = result
