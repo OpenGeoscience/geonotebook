@@ -5,12 +5,12 @@ from collections import OrderedDict
 import rasterio
 import numpy as np
 import six
-from .jsonrpc import rpc
+from .jsonrpc import RemoteMixin
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
 
-class GeonotebookLayer(object):
+class GeonotebookLayer(RemoteMixin, object):
     # Control whether or not a layer can be modified
     # within a geonotebook layer collection or not. e.g. base OSM
     # map layer should not be deleted by the user
@@ -23,6 +23,7 @@ class GeonotebookLayer(object):
     _expose_as = None
 
     def __init__(self, name, **kwargs):
+        super(GeonotebookLayer, self).__init__()
         self.config = Config()
         self.name = name
 
@@ -78,7 +79,7 @@ class AnnotationLayer(GeonotebookLayer):
         def rpc_error(error):
             self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
 
-        return rpc.remote.clear_annotations().then(_clear_annotations, rpc_error)
+        return self.remote.clear_annotations().then(_clear_annotations, rpc_error)
 
     @property
     def points(self):
@@ -181,8 +182,8 @@ class TimeSeriesLayer(DataLayer):
                 self.current, name=self.current.name)
 
         # TODO: Need better handlers here for post-replace callbacks
-        rpc.remote.replace_wms_layer(self.name, self.vis_url, self.params)\
-                  .then(lambda resp: True, lambda: True)
+        self.remote.replace_wms_layer(self.name, self.vis_url, self.params)\
+                   .then(lambda resp: True, lambda: True)
 
         return self.current
 

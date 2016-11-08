@@ -117,7 +117,7 @@ def test_timeseries_layer_forward(mocker, visserver, rasterdata_list):
     # Don't try to make any remote calls! We set 'create' to True here
     # Because remote's API is generated dynamically by the nbextension's
     # get_protocol.
-    remote = mocker.patch('geonotebook.layers.rpc.remote', create=True, return_value=True)
+    remote = mocker.patch.object(tsl, '_remote', create=True, return_value=True)
     # Test
     assert tsl.current.name == "test_data1.tif"
     assert visserver.ingest.call_count == 1
@@ -170,7 +170,7 @@ def test_timeseries_layer_backward(mocker, visserver, rasterdata_list):
     # Don't try to make any remote calls! We set 'create' to True here
     # Because remote's API is generated dynamically by the nbextension's
     # get_protocol.
-    remote = mocker.patch('geonotebook.layers.rpc.remote', create=True, return_value=True)
+    remote = mocker.patch.object(tsl, '_remote', create=True, return_value=True)
     assert tsl.params == {'foo': 'bar'}
 
     visserver.ingest.return_value = "http://bogus_url.com/test_data2.tif"
@@ -193,11 +193,12 @@ def test_timeseries_layer_idx(mocker, visserver, rasterdata_list):
     visserver.get_params.return_value = {'foo': 'bar'}
 
     tsl = layers.TimeSeriesLayer('tsl', rasterdata_list)
+    remote = mocker.patch.object(tsl, '_remote', create=True, return_value=True)
 
     # Don't try to make any remote calls! We set 'create' to True here
     # Because remote's API is generated dynamically by the nbextension's
     # get_protocol.
-    remote = mocker.patch('geonotebook.layers.rpc.remote', create=True, return_value=True)
+
     assert tsl.params == {'foo': 'bar'}
 
     visserver.ingest.return_value = "http://bogus_url.com/test_data3.tif"

@@ -157,6 +157,8 @@ class Remote(object):
 
 
         def _protocol_closure(self, *args, **kwargs):
+            prefix = kwargs.pop("__prefix", None)
+
             try:
                 self.validate(protocol, *args, **kwargs)
             except Exception as e:
@@ -165,49 +167,32 @@ class Remote(object):
 
             def make_param(key, value, required=True):
                 return {'key': key, 'value': value, 'required': required}
+
             # Get the paramaters
             params = [make_param(k['key'], v) for k,v in zip(protocol['required'], args)]
-            # Not technically available until ES6
+
             params.extend([make_param(k['key'], kwargs[k['key']], required=False)
                            for k in protocol['optional'] if k['key'] in kwargs])
 
-            # Create the message
-            msg = json_rpc_request(protocol['procedure'], params)
+            # Get the procedure name (possibly with prepended object_id)
+            procedure = ".".join(str(prefix), str(protocol['procedure'])) \
+                        if prefix is not None else str(protocol['procedure'])
 
-            # Set up the callback
-            self._promises[msg['id']] = Promise()
+            # Create the message
+            msg = json_rpc_request(procedure, params)
+
+            # Set up the promise
+            p = self.add_promise(msg['id'], Promise())
+
+            # send the message
             self._send_msg(msg)
 
-            # return the callback
-            return self._promises[msg['id']]
+            return p
 
         return MethodType(_protocol_closure, self)
 
-    def resolve(self, msg):
-        """Resolve an open JSONRPC request
 
-        Takes a JSONRPC result message and passes it to either the on_fulfilled handler
-        or the on_rejected handler of the Promise.
-
-        :param msg: JSONRPC result message
-        :returns: Nothing
-        :rtype: None
-
-        """
-        if msg['id'] in self._promises:
-            try:
-                if msg['error'] is not None:
-                    self._promises[msg['id']].reject(Exception(msg['error']))
-                else:
-                    self._promises[msg['id']].fulfill(msg['result'])
-
-            except Exception as e:
-                raise e
-        else:
-            self.log.warn("Could not find promise with id %s" % msg['id'])
-
-
-    def __init__(self):
+    def __init__(self, transport, add_promise):
         """Initialize the Remote object.
 
         :param transport: function that takes a JSONRPC request message
@@ -217,13 +202,12 @@ class Remote(object):
 
         """
         self.uninitialized = True
-        self._promises = {}
-
-    def __call__(self, transport, protocol):
         self._send_msg = transport
-        self.protocol = protocol
+        self.add_promise = add_promise
 
+    def __call__(self, protocol):
         if self.uninitialized:
+            self.protocol = protocol
             for p in self.protocol:
                 assert 'procedure' in p, \
                     ""
@@ -244,9 +228,14 @@ class Router(object):
 
     def __init__(self):
         self.comm = None
-        self.remote = Remote()
+        self._promises = {}
+        self.remote = Remote(self.send_msg, self.add_promise)
 
-    def class_protocol(self, *msg_types):
+    def add_promise(self, _id, promise):
+        self._promises[_id] = promise
+        return self._promises[_id]
+
+    def endpoints(self, *msg_types):
         def _class_protocol(cls):
             """Initializes the RPC protocol description.
 
@@ -258,6 +247,10 @@ class Router(object):
             :rtype: dict
 
             """
+            # Dynamically inject RemoteMixin into class
+            # cls = type(cls.__name__,
+            #            tuple([RemoteMixin] + list(cls.__mro__[1:])),
+            #            dict(cls.__dict__))
 
             if cls not in self._protocol:
                 def _method_protocol(fn, method):
@@ -293,13 +286,16 @@ class Router(object):
             return cls
         return _class_protocol
 
-    def get_protocol(self):
-        return [p for cls, protocols in self._protocol.items()
-                for p in protocols.values()]
+    def get_protocol(self, cls=None):
+        if cls is not None:
+            return self._protocols[cls].values()
+        else:
+            return [p for _, protocols in self._protocol.items()
+                    for p in protocols.values()]
 
     def set_remote_protocol(self, comm, protocols):
         self.comm = comm
-        self.remote(self.send_msg, protocols)
+        self.remote(protocols)
 
 
     def send_msg(self, msg):
@@ -313,6 +309,32 @@ class Router(object):
 
         """
         self.comm.send(msg)
+
+
+
+    def resolve(self, msg):
+        """Resolve an open JSONRPC request
+
+        Takes a JSONRPC result message and passes it to either the on_fulfilled handler
+        or the on_rejected handler of the Promise.
+
+        :param msg: JSONRPC result message
+        :returns: Nothing
+        :rtype: None
+
+        """
+        if msg['id'] in self._promises:
+            try:
+                if msg['error'] is not None:
+                    self._promises[msg['id']].reject(Exception(msg['error']))
+                else:
+                    self._promises[msg['id']].fulfill(msg['result'])
+
+            except Exception as e:
+                raise e
+        else:
+            self.log.warn("Could not find promise with id %s" % msg['id'])
+
 
 
     def _reconcile_paramaters(self, params, protocol):
@@ -344,7 +366,7 @@ class Router(object):
         # If this is a response,  pass it along to the Remote object to be
         # processesd by the correct reply/error handler
         if is_response(msg):
-            rpc.remote.resolve(msg)
+            self.resolve(msg)
 
         # Otherwise process the request from the remote RPC client.
         elif is_request(msg):
@@ -371,3 +393,39 @@ class Router(object):
 
 
 rpc = Router()
+
+
+class RemoteMixin(object):
+
+    def _add_prefix(self, func):
+        def __add_prefix(*args, **kwargs):
+            if self._remote_id is not None:
+                kwargs['__prefix'] = self._remote_id
+
+            return func(*args, **kwargs)
+
+        return __add_prefix
+
+    def __init__(self, *args, **kwargs):
+        super(RemoteMixin, self).__init__(*args, **kwargs)
+        self._remote_id = None
+        self._remote = None
+
+    # We must lazy load remote so that rpc.remote's protocol is available
+    @property
+    def remote(self):
+        if self._remote is None:
+            self._remote = Remote(rpc.send_msg, rpc.add_promise)
+            self.remote(rpc.remote.protocol)
+
+            # Decorate each function to ensure it is called with a
+            # kwarg '__prefix'  that coorisponds to this objects id.
+            for p in rpc.remote.protocol:
+                setattr(self.remote, p['procedure'], self._add_prefix(
+                    getattr(self.remote, p['procedure'])))
+
+        return self._remote
+
+
+    def _get_id(self):
+        return str(id(self))

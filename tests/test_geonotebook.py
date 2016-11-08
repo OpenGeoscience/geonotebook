@@ -6,7 +6,7 @@ mock_functions = ['no_args', 'required_only', 'kw_only',
 
 @pytest.fixture
 def nbclass():
-    @rpc.class_protocol(*mock_functions)
+    @rpc.endpoints(*mock_functions)
     class MockNotebook(object):
 
         def no_args(self):
