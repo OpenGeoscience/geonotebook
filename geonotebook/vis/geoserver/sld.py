@@ -1,8 +1,4 @@
 from jinja2 import Environment, DictLoader
-import matplotlib as mpl
-from matplotlib import pylab as plt
-import numpy as np
-import six
 
 
 MACRO_TEMPLATE = \
