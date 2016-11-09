@@ -1,6 +1,6 @@
 dependencies:
   override:
-#    - sudo add-apt-repository -y ppa:ubuntugis
+    - sudo add-apt-repository -y ppa:ubuntugis
     - sudo apt-get update -y
     - sudo apt-get install gdal-bin libgdal-dev python3-numpy python-numpy
     - pip install tox tox-pyenv
