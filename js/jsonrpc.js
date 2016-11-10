@@ -1,58 +1,65 @@
-define(
-    ["underscore"],
-    function(_){
-        var JSONRPCError = function(code){
-            return function(message, data){
+import _ from 'underscore';
 
-                console.log("JSONRPCError (" +code  + "): " + message);
+function JSONRPCError (code) {
+  return function (message, data) {
+    console.log('JSONRPCError (' + code + '): ' + message);
 
-                if (data !== undefined ){
-                    return {
-                        code: code,
-                        message: message,
-                        data: data
-                    };
-                } else {
-                    return {
-                        code: code,
-                        message: message
-                    };
-                }
-            };
-        };
+    if (data !== undefined) {
+      return {
+        code: code,
+        message: message,
+        data: data
+      };
+    } else {
+      return {
+        code: code,
+        message: message
+      };
+    }
+  };
+}
 
+function request (method, params, opts) {
+  opts = _.defaults((typeof opts === 'undefined') ? {} : opts,
+                          {jsonrpc: '2.0'});
 
-        return {
-            request: function(method, params, opts){
-                opts = _.defaults((typeof opts === 'undefined') ? {} : opts,
-                                  {jsonrpc: "2.0"});
+  return _.extend({
+    method: method,
+    params: params}, opts);
+}
 
-                return _.extend({
-                    method: method,
-                    params: params}, opts);
-            },
+function response (result, error, id) {
+        // TODO validate taht result/error are mutually exclusive
+  return {result: result,
+    error: error,
+    id: id };
+}
 
+function is_request (msg) {
+  return 'method' in msg && 'params' in msg && 'id' in msg;
+}
 
-            response:  function(result, error, id){
-                // TODO validate taht result/error are mutually exclusive
-                return {result: result,
-                        error: error,
-                        id: id };
-            },
+function is_response (msg) {
+  return 'result' in msg && 'error' in msg && 'id' in msg;
+}
 
-            is_request: function(msg){
-                return 'method' in msg && 'params' in msg && 'id' in msg;
-            },
+const ParseError = JSONRPCError(-32700);
+const InvalidRequest = JSONRPCError(-32600);
+const MethodNotFound = JSONRPCError(-32601);
+const InvalidParams = JSONRPCError(-32602);
+const InternalError = JSONRPCError(-32603);
+const ServerError = JSONRPCError(-32000);
 
-            is_response: function(msg){
-                return 'result' in msg && 'error' in msg && 'id' in msg;
-            },
-
-            ParseError: JSONRPCError(-32700),
-            InvalidRequest: JSONRPCError(-32600),
-            MethodNotFound: JSONRPCError(-32601),
-            InvalidParams: JSONRPCError(-32602),
-            InternalError: JSONRPCError(-32603),
-            ServerError: JSONRPCError(-32000)
-        };
-    });
+export {
+  JSONRPCError,
+  request,
+  response,
+  is_request,
+  is_response,
+  ParseError,
+  InvalidRequest,
+  MethodNotFound,
+  InvalidParams,
+  InternalError,
+  ServerError
+};
