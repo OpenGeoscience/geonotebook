@@ -288,7 +288,7 @@ class Router(object):
 
     def get_protocol(self, cls=None):
         if cls is not None:
-            return self._protocols[cls].values()
+            return self._protocol[cls].values()
         else:
             return [p for _, protocols in self._protocol.items()
                     for p in protocols.values()]
