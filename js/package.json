@@ -3,8 +3,7 @@
   "version": "0.0.1",
   "description": "Client side components of geonotebook",
   "main": "index.js",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/OpenGeoscience/geonotebook.git"
@@ -13,5 +12,12 @@
   "bugs": {
     "url": "https://github.com/OpenGeoscience/geonotebook/issues"
   },
-  "homepage": "https://github.com/OpenGeoscience/geonotebook#readme"
+  "homepage": "https://github.com/OpenGeoscience/geonotebook#readme",
+  "dependencies": {
+    "geojs": "^0.10.4"
+  },
+  "devDependencies": {
+    "eslint": "^3.9.1",
+    "webpack": "^2.1.0-beta.25"
+  }
 }
