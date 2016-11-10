@@ -74,13 +74,8 @@ define(
                 var args = utils.annotate(this[msg_type]);
 
                 return {procedure: msg_type,
-                        required: args.filter(function(arg){ return !arg.includes("="); }),
-                        optional: args.filter(
-                            function(arg){ return arg.includes("="); }).map(
-                                function(arg) {
-                                    return arg.split("=")[0].trim();
-                                })
-                       };
+                        required: args.filter(function(arg){ return !arg.default;  }),
+                        optional: args.filter(function(arg){ return !!arg.default; }) };
 
 
             }.bind(this));
@@ -89,7 +84,7 @@ define(
 
         Map.prototype.set_center = function(x, y, z){
             if ( x < -180.0 || x > 180.0 || y < -90.0 || y > 90.0) {
-                throw new jsonrpc.InvalidParams("Invalid paramaters sent to set_center!");
+                throw new jsonrpc.InvalidParams("Invalid parameters sent to set_center!");
             }
             this.geojsmap.center({x: x, y: y});
             this.geojsmap.zoom(z);

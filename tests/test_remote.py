@@ -3,20 +3,20 @@ import pytest
 from geonotebook.kernel import Remote
 
 @pytest.fixture
-def r(mocker):
+def remote(mocker):
 
     protocols = [{'procedure': 'no_args',
                   'required': [],
                   'optional': []},
                  {'procedure': 'required_only',
-                  'required': ["a", "b"],
+                  'required': [{"key": "a"}, {"key": "b"}],
                   'optional': []},
                  {'procedure': 'optional_only',
                   'required': [],
-                  'optional': ["x", "y", "z"]},
+                  'optional': [{"key": "x"}, {"key": "y"}, {"key": "z"}]},
                  {'procedure': 'required_and_optional',
-                  'required': ["a", "b"],
-                  'optional': ["x", "y", "z"]}]
+                  'required': [{"key": "a"}, {"key": "b"}],
+                  'optional': [{"key": "x"}, {"key": "y"}, {"key": "z"}]}]
 
     r = Remote(None, protocols)
 
@@ -45,60 +45,67 @@ def test_remote_bad_protocol_missing_optional():
         Remote(None, [{'procedure': 'no_args',
                        'required': []}])
 
-def test_remote_init(r):
-    assert hasattr(r.no_args, '__call__')
-    assert hasattr(r.required_only, '__call__')
-    assert hasattr(r.required_and_optional, '__call__')
+def test_remote_init(remote):
+    assert hasattr(remote.no_args, '__call__')
+    assert hasattr(remote.required_only, '__call__')
+    assert hasattr(remote.required_and_optional, '__call__')
 
 
-def test_remote_call_no_args(r):
-    r.no_args()
-    assert r._send_msg.call_count == 1
-    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [],
+def test_remote_call_no_args(remote):
+    remote.no_args()
+    assert remote._send_msg.call_count == 1
+    remote._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [],
                                     'method': 'no_args', 'id': 'TEST-ID'})
 
-def test_remote_call_no_args_with_args(r):
+def test_remote_call_no_args_with_args(remote):
     with pytest.raises(AssertionError):
-        r.no_args('foo', 'bar')
+        remote.no_args('foo', 'bar')
 
 
-def test_remote_call_required_only(r):
-    r.required_only('foo', 'bar')
-    assert r._send_msg.call_count == 1
-    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': ['foo', 'bar'],
+def test_remote_call_required_only(remote):
+    remote.required_only('foo', 'bar')
+    assert remote._send_msg.call_count == 1
+    remote._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [{'key': 'a',
+                                                                  'value': 'foo',
+                                                                  'required': True},
+                                                                 {'key': 'b',
+                                                                  'value': 'bar',
+                                                                  'required': True}],
                                     'method': 'required_only', 'id': 'TEST-ID'})
 
-def test_remote_call_required_only_with_too_few_args(r):
+def test_remote_call_required_only_with_too_few_args(remote):
     with pytest.raises(AssertionError):
-        r.no_args('foo')
+        remote.required_only('foo')
 
-def test_remote_call_required_only_with_too_many_args(r):
+def test_remote_call_required_only_with_too_many_args(remote):
     with pytest.raises(AssertionError):
-        r.no_args('foo', 'bar', 'baz')
+        remote.no_args('foo', 'bar', 'baz')
 
 
-def test_remote_call_optional_only(r):
-    r.optional_only(x='foo', y='bar', z='baz')
-    assert r._send_msg.call_count == 1
-    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': ['foo', 'bar', 'baz'],
+def test_remote_call_optional_only(remote):
+    remote.optional_only(x='foo', y='bar', z='baz')
+    assert remote._send_msg.call_count == 1
+    remote._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [{'key': 'x', 'value': 'foo', 'required': False},
+                                                                 {'key': 'y', 'value': 'bar', 'required': False},
+                                                                 {'key': 'z', 'value': 'baz', 'required': False}],
                                     'method': 'optional_only', 'id': 'TEST-ID'})
 
 
-    r.optional_only()
-    assert r._send_msg.call_count == 2
-    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [],
+    remote.optional_only()
+    assert remote._send_msg.call_count == 2
+    remote._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [],
                                     'method': 'optional_only', 'id': 'TEST-ID'})
 
-@pytest.mark.skip(reason="See: geonotebook/issues/45")
-def test_remote_call_optional_only_missing_arguments():
-    r.optional_only(x='foo', z='bar')
-    assert r._send_msg.call_count == 3
-    r._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': ["???"],
+def test_remote_call_optional_only_missing_arguments(remote):
+    remote.optional_only(x='foo', z='bar')
+    assert remote._send_msg.call_count == 1
+    remote._send_msg.assert_called_with({'jsonrpc': '2.0', 'params': [{'key': 'x', 'value': 'foo', 'required': False},
+                                                                 {'key': 'z', 'value': 'bar', 'required': False}],
                                     'method': 'optional_only', 'id': 'TEST-ID'})
 
 
 
-def test_remote_promise_resolve_success(r):
+def test_remote_promise_resolve_success(remote):
     class Nonlocal(object): pass
 
     def success(val):
@@ -107,11 +114,11 @@ def test_remote_promise_resolve_success(r):
     def error(val):
         Nonlocal.result = val
 
-    p = r.no_args().then(success, error)
-    r.resolve({'id': 'TEST-ID', 'result': 'SUCCESS', 'error': None})
+    p = remote.no_args().then(success, error)
+    remote.resolve({'id': 'TEST-ID', 'result': 'SUCCESS', 'error': None})
     assert Nonlocal.result == 'SUCCESS'
 
-def test_remote_promise_resolve_error(r):
+def test_remote_promise_resolve_error(remote):
     class Nonlocal(object): pass
 
     def success(val):
@@ -120,10 +127,10 @@ def test_remote_promise_resolve_error(r):
     def error(val):
         Nonlocal.result = val
 
-    p = r.no_args().then(success, error)
+    p = remote.no_args().then(success, error)
     #import rpdb; rpdb.set_trace()
 
-    r.resolve({'id': 'TEST-ID', 'result': None, 'error': 'ERROR'})
+    remote.resolve({'id': 'TEST-ID', 'result': None, 'error': 'ERROR'})
 
     assert isinstance(Nonlocal.result, Exception)
     assert str(Nonlocal.result) == "ERROR"
@@ -139,16 +146,16 @@ def test_remote_promise_resolve_with_bad_message(r, mocker):
     def error(val):
         Nonlocal.result = val
 
-    p = r.no_args().then(success, error)
+    p = remote.no_args().then(success, error)
     with pytest.raises(Exception):
-        r.resolve('bad message')
+        remote.resolve('bad message')
 
-    p = r.no_args().then(success, error)
+    p = remote.no_args().then(success, error)
     with pytest.raises(Exception):
-        r.resolve({'id': 'TEST-ID', 'bad': 'message'})
+        remote.resolve({'id': 'TEST-ID', 'bad': 'message'})
 
-    p = r.no_args().then(success, error)
+    p = remote.no_args().then(success, error)
 
-    warn = mocker.patch.object(r.log, 'warn')
-    r.resolve({'id': 'BAD-ID'})
+    warn = mockeremote.patch.object(remote.log, 'warn')
+    remote.resolve({'id': 'BAD-ID'})
     assert warn.called_once == 1
