@@ -7,9 +7,12 @@ dependencies:
     - sudo apt-get install -y gdal-bin libgdal-dev python3-numpy python-numpy
     - pip install tox tox-pyenv
     - pyenv local 2.7.12 3.5.2
+    - npm install --prefix js
 
 test:
-  override:
+  pre:
     - mkdir -p $CIRCLE_TEST_REPORTS/pytest/
     - mkdir -p $CIRCLE_ARTIFACTS/coverage
+  override:
     - tox --result-json $CIRCLE_ARTIFACTS/tox-result.json -- --cov-report html:$CIRCLE_ARTIFACTS/coverage --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
+    - npm run lint --prefix js
