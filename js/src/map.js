@@ -1,10 +1,10 @@
 import _ from 'underscore';
-import GeoMap from 'geojs/map';
-import geo_event from 'geojs/event';
+import geo from 'geojs';
 
 import * as utils from './utils';
 import jsonrpc from './jsonrpc';
 
+var geo_event = geo.event;
 var MapObject = function (notebook) {
   this.notebook = notebook;
   this.geojsmap = null;
@@ -34,7 +34,7 @@ MapObject.prototype.next_color = function () {
 
 MapObject.prototype.init_map = function () {
   $('#geonotebook-map').empty();
-  this.geojsmap = GeoMap({node: '#geonotebook-map',
+  this.geojsmap = geo.map({node: '#geonotebook-map',
     width: $('#geonotebook-map').width(),
     height: $('#geonotebook-map').height(),
     allowRotation: false
