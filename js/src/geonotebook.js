@@ -1,4 +1,3 @@
-/* global Jupyter, events */
 import _ from 'underscore';
 
 import jsonrpc from './jsonrpc';
@@ -69,24 +68,17 @@ Remote.prototype.resolve = function (msg) {
 // kernel initialization,  the 'Map' object,  which is a wrapper around
 // a GeoJS map as well as the _remote object for making remote proceedure
 // calls to the Python kernel.
-var Geonotebook = function () {
+var Geonotebook = function (Jupyter, events) {
   this.comm = null;
   this.map = null;
   this.protocol_negotiation_complete = false;
   this._remote = null;
-    // Expose the geonotebook object on the Jupyter object
-    // This makes the notebook available from the
-    // base/js/namespace AMD
-  var that = this;
-  if (!Jupyter.hasOwnProperty('Geonotebook')) {
-    Object.defineProperty(Jupyter, 'Geonotebook', {
-      get: function () {
-        return that;
-      },
-      enumerable: true,
-      configurable: false
-    });
-  }
+
+  this.init_html_and_css();
+  this.map = new GeoMap();
+  this.register_events(Jupyter, events);
+  this.load_annotation_buttons(Jupyter);
+  Jupyter.map = this.map;
 };
 
 Geonotebook.prototype._unwrap = function (msg) {
@@ -159,7 +151,7 @@ Geonotebook.prototype.init_html_and_css = function () {
   $('#ipython-main-app').after('<div id="geonotebook-panel"><div id="geonotebook-map" /></div>');
 };
 
-Geonotebook.prototype.bind_key_to_geonotebook_event = function (key_binding, action_name, action_opts) {
+Geonotebook.prototype.bind_key_to_geonotebook_event = function (Jupyter, key_binding, action_name, action_opts) {
   var prefix = 'geonotebook';
 
   action_opts = action_opts || {};
@@ -173,8 +165,9 @@ Geonotebook.prototype.bind_key_to_geonotebook_event = function (key_binding, act
   return full_action_name;
 };
 
-Geonotebook.prototype.load_annotation_buttons = function () {
+Geonotebook.prototype.load_annotation_buttons = function (Jupyter) {
   var point_event = this.bind_key_to_geonotebook_event(
+        Jupyter,
         'g,p', 'point_annotation_mode', {
           icon: 'fa-circle-o',
           help: 'Start a point annotation',
@@ -182,6 +175,7 @@ Geonotebook.prototype.load_annotation_buttons = function () {
 
         });
   var rect_event = this.bind_key_to_geonotebook_event(
+        Jupyter,
         'g,r', 'rectangle_annotation_mode', {
           icon: 'fa-square-o',
           help: 'Start a rectangle annotation',
@@ -189,6 +183,7 @@ Geonotebook.prototype.load_annotation_buttons = function () {
         });
 
   var poly_event = this.bind_key_to_geonotebook_event(
+        Jupyter,
         'g,g', 'polygon_annotation_mode', {
           icon: 'fa-lemon-o',
           help: 'Start a polygon annotation',
@@ -198,15 +193,4 @@ Geonotebook.prototype.load_annotation_buttons = function () {
   Jupyter.toolbar.add_buttons_group([point_event, rect_event, poly_event]);
 };
 
-Geonotebook.prototype.load_ipython_extension = function () {
-  if (Jupyter.kernelselector.current_selection === 'geonotebook2' ||
-        Jupyter.kernelselector.current_selection === 'geonotebook3') {
-    this.init_html_and_css();
-    this.map = new GeoMap(this);
-    this.register_events(Jupyter, events);
-
-    this.load_annotation_buttons();
-        // Expose globablly for debugging purposes
-    Jupyter.map = this.map;
-  }
-};
+export default Geonotebook;

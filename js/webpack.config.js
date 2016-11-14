@@ -1,35 +1,48 @@
+var webpack = require('webpack');
 var loaders = [
-  { test: /.js$/, loader: 'babel-loader' }
+  {
+    test: /.js$/,
+    loader: 'babel-loader',
+    exclude: /node_modules/,
+    query: {
+      presets: ['es2015']
+    }
+  }, {
+    test: /\.json$/,
+    loader: 'json-loader'
+  }, {
+    test: /vgl\.js$/,
+    loader: 'expose?vgl!imports?mat4=gl-mat4,vec4=gl-vec4,vec3=gl-vec3,vec2=gl-vec2,$=jquery'
+  }
 ];
 var resolve = {
   alias: {
-    geonotebook: './src'
+    geonotebook: './src',
+    geojs: 'geojs/src',
+    jquery: 'jquery/dist/jquery',
+    proj4: 'proj4/lib',
+    vgl: 'vgl/vgl.js',
+    d3: 'd3/d3.js',
+    mousetrap: 'mousetrap/mousetrap.js'
   }
 };
-
-var buildExtension = require('@jupyterlab/extension-builder/lib/builder').buildExtension;
-
-buildExtension({
-  name: 'jupyter-geonotebook',
-  entry: './src/labplugin',
-  outputDir: '../geonotebook/static',
-  useDefaultLoaders: false,
-  config: {
-    module: {
-      loaders: loaders
-    },
-    resolve: resolve
-  }
-
+var define_plugin = new webpack.DefinePlugin({
+  GEO_SHA: '""',
+  GEO_VERSION: '""'
 });
 
 module.exports = [
   {// Notebook extension
-    entry: './src/index',
+    entry: './src/extension',
     output: {
-      filename: 'geonotebook.js',
+      filename: 'index.js',
       path: '../geonotebook/static',
       libraryTarget: 'amd'
-    }
+    },
+    module: {
+      loaders: loaders
+    },
+    resolve: resolve,
+    plugins: [define_plugin]
   }
 ];
