@@ -1,4 +1,6 @@
 import _ from 'underscore';
+import 'geojs';
+
 import GeoMap from 'geojs/map';
 import event from 'geojs/event';
 
@@ -75,18 +77,15 @@ MapObject.prototype.get_protocol = function () {
 
     return {
       procedure: msg_type,
-      required: _.filter(args, (arg) => !arg.includes('=')),
-      optional: _.filter(args, (arg) => arg.includes('=')).map(
-                        function (arg) {
-                          return arg.split('=')[0].trim();
-                        })
+      required: args.filter(function (arg) { return !arg.default; }),
+      optional: args.filter(function (arg) { return !!arg.default; })
     };
   });
 };
 
 MapObject.prototype.set_center = function (x, y, z) {
   if (x < -180.0 || x > 180.0 || y < -90.0 || y > 90.0) {
-    throw new jsonrpc.InvalidParams('Invalid paramaters sent to set_center!');
+    throw new jsonrpc.InvalidParams('Invalid parameters sent to set_center!');
   }
   this.geojsmap.center({x: x, y: y});
   this.geojsmap.zoom(z);
@@ -148,7 +147,7 @@ MapObject.prototype.state_annotation_handler = function (evt) {
   }
 };
 
-MapObject.prototype.add_annotation_layer = function (layer_name) {
+MapObject.prototype.add_annotation_layer = function (layer_name, params) {
   var layer = this.geojsmap.createLayer('annotation', {
     annotations: ['rectangle', 'point', 'polygon']
   });

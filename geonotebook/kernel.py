@@ -304,7 +304,6 @@ class Geonotebook(object):
     ### Remote RPC wrappers ###
 
     def set_center(self, x, y, z):
-        self.log.info(u'foo: %s' % foo)
         def _set_center(result):
             self.x, self.y, self.z = result
 
