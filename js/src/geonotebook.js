@@ -1,3 +1,4 @@
+import './css/styles.css';
 import _ from 'underscore';
 
 import jsonrpc from './jsonrpc';

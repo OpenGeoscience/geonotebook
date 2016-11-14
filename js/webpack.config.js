@@ -1,4 +1,5 @@
 var webpack = require('webpack');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var loaders = [
   {
     test: /.js$/,
@@ -7,6 +8,13 @@ var loaders = [
     query: {
       presets: ['es2015']
     }
+  }, {
+    test: /\.css$/,
+    exclude: /node_modules/,
+    loaders: [
+      ExtractTextPlugin.extract('style-loader', 'css-loader'),
+      'css-loader'
+    ]
   }, {
     test: /\.json$/,
     loader: 'json-loader'
@@ -43,6 +51,9 @@ module.exports = [
       loaders: loaders
     },
     resolve: resolve,
-    plugins: [define_plugin]
+    plugins: [
+      define_plugin,
+      new ExtractTextPlugin('styles.css')
+    ]
   }
 ];

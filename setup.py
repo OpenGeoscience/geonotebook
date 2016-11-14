@@ -135,8 +135,7 @@ setup(
         ('etc', ['config/geonotebook.ini'])
     ],
     package_data={'geonotebook': ['static/*.js',
-                                  'static/lib/*.js',
-                                  'static/css/*.css',
+                                  'static/*.css',
                                   'templates/*.html']},
     test_suite="tests",
     entry_points={
