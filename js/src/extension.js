@@ -1,6 +1,6 @@
 /* global requirejs */
 
-var Geonotebook = require('./geonotebook').default;
+import { Geonotebook } from 'geonotebook';
 
 if (window.require) {
   window.require.config({

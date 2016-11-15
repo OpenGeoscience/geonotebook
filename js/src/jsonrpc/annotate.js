@@ -1,6 +1,6 @@
 import _ from 'underscore';
 
-  /*
+/*
 The MIT License
 
 Copyright (c) 2010-2016 Google, Inc. http://angularjs.org

@@ -3,9 +3,8 @@ import 'geojs';
 
 import GeoMap from 'geojs/map';
 import event from 'geojs/event';
-
-import * as utils from './utils';
-import jsonrpc from './jsonrpc';
+import annotate from './jsonrpc/annotate';
+import constants from './jsonrpc/constants';
 
 var geo_event = event;
 var MapObject = function (notebook) {
@@ -73,7 +72,7 @@ MapObject.prototype._debug = function (msg) {
 
 MapObject.prototype.get_protocol = function () {
   return _.map(this.msg_types, (msg_type) => {
-    var args = utils.annotate(this[msg_type]);
+    var args = annotate(this[msg_type]);
 
     return {
       procedure: msg_type,
@@ -85,7 +84,7 @@ MapObject.prototype.get_protocol = function () {
 
 MapObject.prototype.set_center = function (x, y, z) {
   if (x < -180.0 || x > 180.0 || y < -90.0 || y > 90.0) {
-    throw new jsonrpc.InvalidParams('Invalid parameters sent to set_center!');
+    throw new constants.InvalidParams('Invalid parameters sent to set_center!');
   }
   this.geojsmap.center({x: x, y: y});
   this.geojsmap.zoom(z);

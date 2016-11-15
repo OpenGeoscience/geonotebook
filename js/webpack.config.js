@@ -25,7 +25,7 @@ var loaders = [
 ];
 var resolve = {
   alias: {
-    geonotebook: './src',
+    geonotebook: './index',
     geojs: 'geojs/src',
     jquery: 'jquery/dist/jquery',
     proj4: 'proj4/lib',
