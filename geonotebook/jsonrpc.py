@@ -67,12 +67,13 @@ def json_rpc_result(result, error, msg_id):
         "id": msg_id}
 
 
-def json_rpc_request(method, params=None, jsonrpc="2.0"):
+def json_rpc_request(method, params=None, jsonrpc="2.0", prefix=None):
     return {
         "method": method,
         "params": params,
         "jsonrpc": jsonrpc,
-        "id": str(uuid.uuid4())}
+        "id": ":".join([prefix, str(uuid.uuid4())])
+        if prefix is not None else str(uuid.uuid4())}
 
 
 def json_rpc_notify(method, params=None, jsonrpc="2.0"):
@@ -174,12 +175,11 @@ class Remote(object):
             params.extend([make_param(k['key'], kwargs[k['key']], required=False)
                            for k in protocol['optional'] if k['key'] in kwargs])
 
-            # Get the procedure name (possibly with prepended object_id)
-            procedure = ".".join(str(prefix), str(protocol['procedure'])) \
-                        if prefix is not None else str(protocol['procedure'])
+
+            procedure = str(protocol['procedure'])
 
             # Create the message
-            msg = json_rpc_request(procedure, params)
+            msg = json_rpc_request(procedure, params, prefix=prefix)
 
             # Set up the promise
             p = self.add_promise(msg['id'], Promise())
@@ -251,7 +251,6 @@ class Router(object):
             # cls = type(cls.__name__,
             #            tuple([RemoteMixin] + list(cls.__mro__[1:])),
             #            dict(cls.__dict__))
-
             if cls not in self._protocol:
                 def _method_protocol(fn, method):
                     spec = getargspec(method)
@@ -277,7 +276,9 @@ class Router(object):
                 # See: https://docs.python.org/3.0/whatsnew/3.0.html
                 # "The concept of "unbound methods" has been removed from the language.
                 # When referencing a method as a class attribute, you now get a plain function object."
-                self._protocol[cls] = \
+                key = ".".join([cls.__module__, cls.__name__])
+
+                self._protocol[key] = \
                     {fn: _method_protocol(fn, method) for fn, method in
                      getmembers(cls, predicate=lambda x:
                                 ismethod(x) or isfunction(x))
@@ -286,12 +287,8 @@ class Router(object):
             return cls
         return _class_protocol
 
-    def get_protocol(self, cls=None):
-        if cls is not None:
-            return self._protocol[cls].values()
-        else:
-            return [p for _, protocols in self._protocol.items()
-                    for p in protocols.values()]
+    def get_protocol(self):
+        return self._protocol
 
     def set_remote_protocol(self, comm, protocols):
         self.comm = comm
@@ -397,6 +394,8 @@ rpc = Router()
 
 class RemoteMixin(object):
 
+    _object_registry = {}
+
     def _add_prefix(self, func):
         def __add_prefix(*args, **kwargs):
             if self._remote_id is not None:
@@ -408,6 +407,7 @@ class RemoteMixin(object):
 
     def __init__(self, *args, **kwargs):
         super(RemoteMixin, self).__init__(*args, **kwargs)
+        self.register()
         self._remote_id = None
         self._remote = None
 
@@ -426,6 +426,16 @@ class RemoteMixin(object):
 
         return self._remote
 
+    def register(self):
+        key = self._get_id()
+        self._object_registry[key] = self
+
+    def unregister(self):
+        key = self._get_id()
+        try:
+            del self._object_registry[key]
+        except KeyError:
+            pass
 
     def _get_id(self):
         return str(id(self))

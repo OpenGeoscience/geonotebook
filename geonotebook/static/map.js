@@ -2,10 +2,11 @@ define(
     ["jquery",
      "underscore",
      "require",
+     "base/js/events",
      "./lib/jsonrpc",
      "./lib/geo",
      "./lib/utils"],
-    function($, _, require, jsonrpc, geo, utils){
+    function($, _, require, events, jsonrpc, geo, utils){
         var Map = function(notebook, div){
             this.notebook = notebook;
             this.geo = geo;
@@ -22,7 +23,21 @@ define(
                                              '#c957db', // {r:201, g: 87, b:219}
                                              '#db579e'] // {r:219, g: 87, b:158}
             this._color_counter = -1;
+
+            events.on('geonotebook.protocol_negotiation_complete', function(event, router){
+                this.remote = router.remote_factory(this);
+
+                $('#geonotebook-map').empty();
+                this.geojsmap = geo.map({node: '#geonotebook-map',
+                                         width: $("#geonotebook-map").width(),
+                                         height: $("#geonotebook-map").height(),
+                                         allowRotation: false
+                                        });
+            }.bind(this));
+
         };
+
+        jsonrpc.router.register_class(Map, "geonotebook.kernel.Geonotebook");
 
         Map.prototype.next_color = function(){
             this._color_counter = this._color_counter + 1;
@@ -31,18 +46,6 @@ define(
 
             return this.annotation_color_palette[idx]
         }
-
-        Map.prototype.init_map = function(){
-            $('#geonotebook-map').empty();
-            this.geojsmap = geo.map({node: '#geonotebook-map',
-                                     width: $("#geonotebook-map").width(),
-                                     height: $("#geonotebook-map").height(),
-                                     allowRotation: false
-                                    });
-
-            // this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
-
-        };
 
         Map.prototype.rpc_error = function(error){
             console.log("JSONRPCError(" + error.code + "): " + error.message);
@@ -121,7 +124,7 @@ define(
                 rgb: annotation.options("style").fillColor
             };
 
-            this.notebook._remote.add_annotation(
+            this.remote.add_annotation(
                 annotation.type(),
                 annotation.coordinates("EPSG:4326"),
                 annotation_meta
