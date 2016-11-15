@@ -7,6 +7,7 @@
     "build": "npm run build:dev",
     "build:dev": "webpack -d --progress --cache",
     "build:prod": "webpack -p --progress",
+    "build:ci": "webpack -d",
     "lint": "eslint --cache ."
   },
   "repository": {
