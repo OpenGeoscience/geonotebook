@@ -7,7 +7,9 @@ dependencies:
     - sudo apt-get install -y gdal-bin libgdal-dev python3-numpy python-numpy
     - pip install tox tox-pyenv
     - pyenv local 2.7.12 3.5.2
+    - nvm use v6
     - npm install --prefix js
+    - npm run build --prefix js
 
 test:
   pre:
