@@ -224,7 +224,7 @@ MapObject.prototype.replace_wms_layer = function (layer_name, base_url, params) 
       var local_params = {
         'SERVICE': 'WMS',
         'VERSION': '1.3.0',
-        'REQUEST': 'GetMapObject',
+        'REQUEST': 'GetMap',
                 //                     'LAYERS': layer_name, // US Elevation
         'STYLES': '',
         'BBOX': bbox_mercator,
@@ -282,7 +282,7 @@ MapObject.prototype.add_wms_layer = function (layer_name, base_url, params) {
     var local_params = {
       'SERVICE': 'WMS',
       'VERSION': '1.3.0',
-      'REQUEST': 'GetMapObject',
+      'REQUEST': 'GetMap',
 //                     'LAYERS': layer_name, // US Elevation
       'STYLES': '',
       'BBOX': bbox_mercator,
