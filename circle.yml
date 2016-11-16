@@ -9,8 +9,6 @@ dependencies:
     - pyenv local 2.7.12 3.5.2
     - nvm use v6
     - npm config set progress false
-    - npm install --prefix js
-    - npm run build:ci --prefix js
 
 test:
   pre:
