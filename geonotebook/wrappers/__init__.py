@@ -1,8 +1,11 @@
+import collections
 import os
+
 import numpy as np
 import pkg_resources as pr
-import collections
+
 from shapely.geometry import Polygon
+
 
 class RasterData(collections.Sequence):
 
@@ -30,7 +33,6 @@ class RasterData(collections.Sequence):
         kind = os.path.splitext(path)[1][1:]
 
         return kind in cls._concrete_data_types.keys()
-
 
     def __init__(self, path, kind=None, indexes=None):
         if kind is None:
@@ -78,8 +80,10 @@ class RasterData(collections.Sequence):
                 # same for all other bands.  all around kind of a hack
                 kwargs["masked"] = False
                 return np.ma.masked_values(
-                    np.stack([self.reader.get_band_data(i, window=window, **kwargs)
-                              for i in self.band_indexes], axis=axis), self.nodata)
+                    np.stack([
+                        self.reader.get_band_data(i, window=window, **kwargs)
+                        for i in self.band_indexes
+                    ], axis=axis), self.nodata)
             else:
                 return np.stack([self.reader.get_band_data(i, window=window,
                                                            masked=masked,
@@ -95,7 +99,9 @@ class RasterData(collections.Sequence):
         elif all([isinstance(k, int) for k in keys]):
             return RasterData(self.path, indexes=keys)
         else:
-            raise IndexError("Bands may only be indexed by an int or a list of ints")
+            raise IndexError(
+                "Bands may only be indexed by an int or a list of ints"
+            )
 
     @property
     def min(self):
@@ -170,7 +176,8 @@ class RasterDataCollection(collections.Sequence):
         # in which case you've made your own bed.
         band_count = RasterData(self._items[0]).count
 
-        self.band_indexes = range(1, band_count + 1) if indexes is None else indexes
+        self.band_indexes = range(1, band_count + 1) \
+            if indexes is None else indexes
 
         assert not min(self.band_indexes) < 1, \
             IndexError("Bands are indexed from 1")
@@ -196,15 +203,18 @@ class RasterDataCollection(collections.Sequence):
 
         if isinstance(key, slice):
             idx = key.indices(len(self._items))
-            return RasterDataCollection([self._items[i] for i in range(*idx)],
-                                        indexes=self.band_indexes if bands is None else bands,
-                                        verify=False)
+            return RasterDataCollection(
+                [self._items[i] for i in range(*idx)],
+                indexes=self.band_indexes if bands is None else bands,
+                verify=False
+            )
         elif isinstance(key, int):
-            return RasterData(self._items[key],
-                              indexes=self.band_indexes if bands is None else bands)
+            return RasterData(
+                self._items[key],
+                indexes=self.band_indexes if bands is None else bands
+            )
         else:
             raise IndexError("{} must be of type slice, or int")
-
 
     @property
     def shape(self):
@@ -251,7 +261,7 @@ class RasterDataCollection(collections.Sequence):
         else:
             return np.ma.masked_values(
                 [rd.ix(*args, **kwargs) for rd in self],
-                self.__getitem__((0,1)).nodata)
+                self.__getitem__((0, 1)).nodata)
 
     def get_data(self, *args, **kwargs):
         masked = kwargs.get("masked", True)
@@ -260,7 +270,7 @@ class RasterDataCollection(collections.Sequence):
             kwargs["masked"] = False
             return np.ma.masked_values(
                 np.array([rd.get_data(*args, **kwargs) for rd in self]),
-                self.__getitem__((0,1)).nodata)
+                self.__getitem__((0, 1)).nodata)
         else:
             return np.array([rd.get_data(*args, **kwargs) for rd in self])
 

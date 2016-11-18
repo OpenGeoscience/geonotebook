@@ -1,9 +1,9 @@
-import pkg_resources as pr
-from . import vis
-import os, sys
-
+import os
+import sys
 
 from six.moves import configparser
+
+from . import vis
 
 
 def get_config(path=None):

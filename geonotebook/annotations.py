@@ -1,14 +1,12 @@
+import numpy as np
+from rasterio.features import rasterize
 from shapely.geometry import Point as sPoint
 from shapely.geometry import Polygon as sPolygon
-from rasterio.features import rasterize
-from .wrappers import RasterData, RasterDataCollection
-import numpy as np
 
 
 class Annotation(object):
     def __init__(self, *args, **kwargs):
         self.layer = kwargs.pop('layer', None)
-
         self._metadata = kwargs
         for k, v in kwargs.items():
             setattr(Annotation, k, property(self._get_metadata(k),
@@ -17,26 +15,24 @@ class Annotation(object):
 
         super(Annotation, self).__init__(*args)
 
-
     def _get_metadata(self, k):
-        def __get_metadata(self):
+        def _get_metadata(self):
             return self._metadata[k]
-        return __get_metadata
+        return _get_metadata
 
     def _set_metadata(self, k):
-        def __set_metadata(self, v):
+        def _set_metadata(self, v):
             # TODO: these will have to communicate
             # updates to the clientside via self.layer._remote
             self._metadata[k] = v
-        return __set_metadata
+        return _set_metadata
 
     def _get_layer_collection(self):
         return self.layer.layer_collection if self.layer is not None else []
 
-    def get_data_window(self,minx, miny, maxx, maxy):
+    def get_data_window(self, minx, miny, maxx, maxy):
         return ((min(minx, maxx), min(miny, maxy)),
                 (max(minx, maxx), max(miny, maxy)))
-
 
     @property
     def data(self):
@@ -61,7 +57,6 @@ class Rectangle(Annotation, sPolygon):
         ul = raster_data.index(self.bounds[0], self.bounds[1])
         lr = raster_data.index(self.bounds[2], self.bounds[3])
         window = self.get_data_window(ul[0], ul[1], lr[0], lr[1])
-
 
         # TODO: Trim window to valid range for raster data if out of bounds
 
@@ -88,7 +83,6 @@ class Polygon(Annotation, sPolygon):
 
             return raster_data.get_data(window=window, **kwargs)
 
-
         ul = raster_data.index(clipped.bounds[0], clipped.bounds[1])
         lr = raster_data.index(clipped.bounds[2], clipped.bounds[3])
         window = self.get_data_window(ul[0], ul[1], lr[0], lr[1])
@@ -108,13 +102,10 @@ class Polygon(Annotation, sPolygon):
         else:
             out_shape = data.shape[-2], data.shape[-1]
 
-
-
         coordinates = []
         for lat, lon in clipped.exterior.coords:
             x, y = raster_data.index(lat, lon)
             coordinates.append((y - window[0][1], x - window[0][0]))
-
 
         # Mask the final polygon
         mask = rasterize(
