@@ -6,7 +6,7 @@ def test_JSONRPCError():  # noqa: N802
     assert err.message == 'test error'
     assert err.code == 0
     assert err.data is None
-    assert err.toJson() == {
+    assert err.tojson() == {
         'name': 'JSONRPCError',
         'code': 0,
         'message': 'JSONRPCError: test error',
@@ -15,7 +15,7 @@ def test_JSONRPCError():  # noqa: N802
 
 
 def test_ParseError():  # noqa: N802
-    assert jsonrpc.ParseError().toJson() == {
+    assert jsonrpc.ParseError().tojson() == {
         'name': 'ParseError',
         'code': -32700,
         'message': 'ParseError: Parse Error.',
@@ -24,7 +24,7 @@ def test_ParseError():  # noqa: N802
 
 
 def test_InvalidRequest():  # noqa: N802
-    assert jsonrpc.InvalidRequest().toJson() == {
+    assert jsonrpc.InvalidRequest().tojson() == {
         'name': 'InvalidRequest',
         'code': -32600,
         'message': 'InvalidRequest: Invalid Request.',
@@ -33,7 +33,7 @@ def test_InvalidRequest():  # noqa: N802
 
 
 def test_MethodNotFound():  # noqa: N802
-    assert jsonrpc.MethodNotFound().toJson() == {
+    assert jsonrpc.MethodNotFound().tojson() == {
         'name': 'MethodNotFound',
         'code': -32601,
         'message': 'MethodNotFound: Method not found.',
@@ -42,7 +42,7 @@ def test_MethodNotFound():  # noqa: N802
 
 
 def test_InvalidParams():  # noqa: N802
-    assert jsonrpc.InvalidParams().toJson() == {
+    assert jsonrpc.InvalidParams().tojson() == {
         'name': 'InvalidParams',
         'code': -32602,
         'message': 'InvalidParams: Invalid params.',
@@ -51,7 +51,7 @@ def test_InvalidParams():  # noqa: N802
 
 
 def test_InternalError():  # noqa: N802
-    assert jsonrpc.InternalError().toJson() == {
+    assert jsonrpc.InternalError().tojson() == {
         'name': 'InternalError',
         'code': -32603,
         'message': 'InternalError: Internal Error.',
@@ -60,7 +60,7 @@ def test_InternalError():  # noqa: N802
 
 
 def test_ServerError():  # noqa: N802
-    assert jsonrpc.ServerError().toJson() == {
+    assert jsonrpc.ServerError().tojson() == {
         'name': 'ServerError',
         'code': -32000,
         'message': 'ServerError: Server Error.',
