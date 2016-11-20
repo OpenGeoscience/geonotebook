@@ -1,21 +1,24 @@
 import pytest
-from geonotebook import layers, wrappers
-import mock
-from pytest_mock import mocker
-from .conftest import RDMock
 
+from geonotebook import layers
+from .conftest import RDMock
 
 pytestmark = pytest.mark.usefixtures("geonotebook_ini")
 
 
-
 def test_layer_reprs(visserver):
-    assert str(layers.GeonotebookLayer('gnbl', None)) == "<GeonotebookLayer('gnbl')>"
-    assert str(layers.AnnotationLayer('al', None, None)) == "<AnnotationLayer('al')>"
+    assert str(layers.GeonotebookLayer('gnbl', None)) == \
+        "<GeonotebookLayer('gnbl')>"
+    assert str(layers.AnnotationLayer('al', None, None)) == \
+        "<AnnotationLayer('al')>"
     assert str(layers.NoDataLayer('ndl', None, None)) == "<NoDataLayer('ndl')>"
-    assert str(layers.DataLayer('dl', None, None, vis_url='bogus')) == "<DataLayer('dl')>"
-    assert str(layers.SimpleLayer('sl', None, None, vis_url='bogus')) == "<SimpleLayer('sl')>"
-    assert str(layers.TimeSeriesLayer('tsl', None, [RDMock(name='bogus_data')])) == \
+    assert str(layers.DataLayer('dl', None, None, vis_url='bogus')) == \
+        "<DataLayer('dl')>"
+    assert str(layers.SimpleLayer('sl', None, None, vis_url='bogus')) == \
+        "<SimpleLayer('sl')>"
+    assert str(
+        layers.TimeSeriesLayer('tsl', None, [RDMock(name='bogus_data')])
+    ) == \
         "<TimeSeriesLayer('tsl')>"
 
 
@@ -34,6 +37,7 @@ def test_annotation_layer_add_rect_annotation(rect_coords):
     assert len(al.rectangles) == 1
     assert al.rectangles[0].layer == al
     assert len(al.rectangles[0].exterior.coords) == 5
+
 
 def test_annotation_layer_add_poly_annotation(poly_coords):
     al = layers.AnnotationLayer('al', None, None)
@@ -60,12 +64,14 @@ def test_nodata_layer(visserver):
     assert visserver.ingest.call_count == 0
     assert visserver.get_params.call_count == 0
 
+
 # DataLayer
 def test_data_layer(visserver):
     data = RDMock(name="test_data.tif")
     dl = layers.DataLayer("dl", None, data)
     assert dl.name == "dl"
     assert dl.data == data
+
 
 def test_data_layer_with_no_data_and_no_vis_url(visserver):
     with pytest.raises(AssertionError):
@@ -88,6 +94,7 @@ def test_simple_layer(visserver):
 def test_simple_layer_with_no_data_and_no_vis_url(visserver):
     with pytest.raises(AssertionError):
         layers.SimpleLayer("dl", None, None, vis_url=None)
+
 
 def test_simple_layer_override_vis_url(visserver):
     visserver.ingest.return_value = "http://bogus_url.com"
@@ -117,7 +124,7 @@ def test_timeseries_layer_forward(mocker, visserver, rasterdata_list):
     # Don't try to make any remote calls! We set 'create' to True here
     # Because _remote's API is generated dynamically by the nbextension's
     # get_protocol.
-    mocker.patch.object(tsl, '_remote',  create=True)
+    mocker.patch.object(tsl, '_remote', create=True)
 
     # Test
     assert tsl.current.name == "test_data1.tif"
@@ -142,7 +149,6 @@ def test_timeseries_layer_forward(mocker, visserver, rasterdata_list):
     assert visserver.get_params.call_count == 2
     tsl._remote.replace_wms_layer.assert_called_with(
         "tsl", "http://bogus_url.com/test_data2.tif", {'foo': 'bar1'})
-
 
     # Setup
     visserver.ingest.return_value = "http://bogus_url.com/test_data3.tif"
@@ -171,7 +177,7 @@ def test_timeseries_layer_backward(mocker, visserver, rasterdata_list):
     # Don't try to make any remote calls! We set 'create' to True here
     # Because _remote's API is generated dynamically by the nbextension's
     # get_protocol.
-    mocker.patch.object(tsl, '_remote',  create=True)
+    mocker.patch.object(tsl, '_remote', create=True)
     assert tsl.params == {'foo': 'bar'}
 
     visserver.ingest.return_value = "http://bogus_url.com/test_data2.tif"
@@ -198,7 +204,7 @@ def test_timeseries_layer_idx(mocker, visserver, rasterdata_list):
     # Don't try to make any remote calls! We set 'create' to True here
     # Because _remote's API is generated dynamically by the nbextension's
     # get_protocol.
-    mocker.patch.object(tsl, '_remote',  create=True)
+    mocker.patch.object(tsl, '_remote', create=True)
     assert tsl.params == {'foo': 'bar'}
 
     visserver.ingest.return_value = "http://bogus_url.com/test_data3.tif"
