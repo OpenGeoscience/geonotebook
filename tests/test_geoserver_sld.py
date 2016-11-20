@@ -385,7 +385,7 @@ def test_channels_exists_in_template_params_single(render):
 
 
 def test_default_channel_name_is_passed_correctly(render):
-    # if no custom channelName template_params['channels'][0]['name']
+    # if no custom channel_name template_params['channels'][0]['name']
     # should be equal to GrayChannel
 
     name = 'Super Fancy Name'
@@ -396,14 +396,14 @@ def test_default_channel_name_is_passed_correctly(render):
 
 
 def test_assigned_channel_name_is_passed_correctly(render):
-    # If custom channelName template_params['channels'][0]['name']
-    # should be equal to custom channelName
+    # If custom channel_name template_params['channels'][0]['name']
+    # should be equal to custom channel_name
 
     name = 'Super Fancy Name'
     band = 1
     channel_name = "Super Channel Name"
     sld.get_single_band_raster_sld(name, band,
-                                   channelName=channel_name)
+                                   channel_name=channel_name)
 
     assert render.call_args[1]['channels'][0]['name'] == channel_name
 
