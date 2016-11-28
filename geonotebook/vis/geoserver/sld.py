@@ -1,16 +1,22 @@
-from jinja2 import Environment, DictLoader
+from jinja2 import DictLoader, Environment
 
 
 MACRO_TEMPLATE = \
-"""{%- macro channel(channel_name, channel, options=None) %}
+    """{%- macro channel(channel_name, channel, options=None) %}
 <{{ channel_name }}>
     <SourceChannelName>{{ channel }}</SourceChannelName>
     {%- if options is mapping %}
     <ContrastEnhancement>
         <Normalize>
-            <VendorOption name="algorithm">{{ options.algorithm|default("StretchToMinimumMaximum") }}</VendorOption>
-            <VendorOption name="minValue">{{ options.minValue|default(0) }}</VendorOption>
-            <VendorOption name="maxValue">{{ options.maxValue|default(1) }}</VendorOption>
+            <VendorOption name="algorithm">
+                {{ options.algorithm|default("StretchToMinimumMaximum") }}
+            </VendorOption>
+            <VendorOption name="minValue">
+                {{ options.minValue|default(0) }}
+            </VendorOption>
+            <VendorOption name="maxValue">
+                {{ options.maxValue|default(1) }}
+            </VendorOption>
         </Normalize>
         <GammaValue>{{ options.gamma|default(0.5) }}</GammaValue>
     </ContrastEnhancement>
@@ -19,11 +25,17 @@ MACRO_TEMPLATE = \
 {% endmacro -%}
 
 {%- macro colormap(attrs) -%}
-<ColorMapEntry {% if attrs is mapping %}{% for k,v in attrs.items() %} {{k}}="{{v}}"{% endfor %}{% endif %}/>
+<ColorMapEntry
+    {% if attrs is mapping %}
+        {% for k,v in attrs.items() %}
+            {{k}}="{{v}}"
+        {% endfor %}
+    {% endif %}
+/>
 {%- endmacro -%}"""
 
 RASTER_DOCUMENT_TEMPLATE = \
-"""{% import "macros.xml" as macros %}
+    """{% import "macros.xml" as macros %}
 <?xml version="1.0" encoding="utf-8" ?>
 <StyledLayerDescriptor version="1.0.0"
  xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd"
@@ -42,7 +54,7 @@ RASTER_DOCUMENT_TEMPLATE = \
                 <Opacity>{{ opacity|default(1.0) }}</Opacity>
                 <ChannelSelection>
                 {%- for c in channels -%}
-                    {{ macros.channel(c.name, c.band, c.options|default(None)) }}
+            {{ macros.channel(c.name, c.band, c.options|default(None)) }}
                 {%- endfor %}
                 </ChannelSelection>
                 {%- if colormap is defined %}
@@ -68,7 +80,7 @@ SLDTemplates = Environment(loader=DictLoader({
 def get_multiband_raster_sld(
         name, title=None, bands=(1, 2, 3),
         interval=(0, 1), gamma=1.0, opacity=1.0,
-        channelNames=("RedChannel", "GreenChannel", "BlueChannel")):
+        channel_names=("RedChannel", "GreenChannel", "BlueChannel")):
 
     # Make sure interval is a list of intervals - this test
     # is buggy and should be fixed.
@@ -106,13 +118,15 @@ def get_multiband_raster_sld(
 
     # Intervals and bands must be the same length
     assert len(bands) == len(interval), \
-        "Number of bands ({}) must be equal to number of intervals ({})!".format(
+        "Number of bands ({}) must be equal " + \
+        "to number of intervals ({})!".format(
             len(bands), len(interval))
 
     # Make sure gamma is a list the same length as the list of bands
     try:
         assert len(gamma) == len(bands), \
-            "Number of gamma ({}) must be equal to number of bands ({})".format(
+            "Number of gamma ({}) must be equal " + \
+            "to number of bands ({})".format(
                 len(gamma), len(bands))
     except TypeError:
         gamma = [gamma] * len(bands)
@@ -125,7 +139,7 @@ def get_multiband_raster_sld(
         "opacity": opacity,
         "channels": []}
 
-    for n, b, r, g in zip(channelNames, bands, interval, gamma):
+    for n, b, r, g in zip(channel_names, bands, interval, gamma):
         template_params['channels'].append({
             "name": n,
             "band": b,
@@ -140,7 +154,7 @@ def get_multiband_raster_sld(
 
 def get_single_band_raster_sld(
         name, band, title=None, opacity=1.0,
-        channelName="GrayChannel", colormap=None,
+        channel_name="GrayChannel", colormap=None,
         colormap_type="ramp"):
 
     # Set title default if it wasn't passed in
@@ -158,7 +172,7 @@ def get_single_band_raster_sld(
         "name": name,
         "opacity": opacity,
         "channels": [
-            {"name": channelName,
+            {"name": channel_name,
              "band": band}]
     }
 
@@ -182,7 +196,7 @@ def get_single_band_raster_sld(
     return template.render(**template_params)
 
 
-#if __name__ == "__main__":
+# if __name__ == "__main__":
 #     print(get_single_band_raster_sld(
 #         'nVDI', band=9, colormap=[
 #             {"color": "#000000", "quantity": "95", "alpha": 0.1},
@@ -190,4 +204,7 @@ def get_single_band_raster_sld(
 #             {"color": "#00FF00", "quantity": "135"},
 #             {"color": "#FF0000", "quantity": "160"},
 #             {"color": "#FF00FF", "quantity": "185"}]))
-#    print get_multiband_raster_sld('rgb', interval=[(1, 2), (2, 3), (3,4)], gamma=(0.1, 0.2, 0.3), opacity=0.5)
+#    print get_multiband_raster_sld(
+#        'rgb', interval=[(1, 2), (2, 3), (3,4)],
+#        gamma=(0.1, 0.2, 0.3), opacity=0.5
+#    )

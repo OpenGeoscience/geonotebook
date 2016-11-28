@@ -1,5 +1,7 @@
-from geonotebook.kernel import Geonotebook
 import pytest
+
+from geonotebook.kernel import Geonotebook
+
 
 @pytest.fixture
 def nbclass():

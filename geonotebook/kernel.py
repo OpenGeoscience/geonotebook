@@ -1,37 +1,34 @@
-from ipykernel.ipkernel import IPythonKernel
+from inspect import getargspec, getmembers, isfunction, ismethod
 import logging
-import os
-from logging.handlers import SysLogHandler
-
-from inspect import getmembers, ismethod, isfunction, getargspec
-from promise import Promise
 from types import MethodType
 
+from ipykernel.ipkernel import IPythonKernel
+from promise import Promise
+
 from . import jsonrpc
-from .jsonrpc import (json_rpc_request,
-                      json_rpc_notify,
-                      json_rpc_result,
+from .jsonrpc import (is_request,
                       is_response,
-                      is_request)
-from .layers import (BBox,
+                      json_rpc_request,
+                      json_rpc_result)
+
+from .layers import (AnnotationLayer,
                      GeonotebookLayerCollection,
                      NoDataLayer,
-                     AnnotationLayer,
                      SimpleLayer,
                      TimeSeriesLayer)
 
 from .wrappers import RasterData, RasterDataCollection
 
+
 class Remote(object):
     """Provides an object that proxies procedures on a remote object.
 
-    This takes a list of protocol definitions and dynamically generates methods on
-    the object that reflect that protocol.  These methods wrap Promises which
-    manage the reply and error callbacks of a remote proceedure call.
+    This takes a list of protocol definitions and dynamically generates methods
+    on the object that reflect that protocol.  These methods wrap Promises
+    which manage the reply and error callbacks of a remote proceedure call.
     Remote defines a '_promises' variable which is a dict of message id's to
     Promises.
     """
-
 
     def validate(self, protocol, *args, **kwargs):
         """Validate a protocol definition.
@@ -45,21 +42,23 @@ class Remote(object):
             "Protocol {} has an arity of {}. Called with {}".format(
                 protocol['procedure'], len(protocol["required"]), len(args))
 
-        assert len(args) <= len(protocol["required"]) + len(protocol["optional"]), \
+        assert len(args) <= len(protocol["required"]) + \
+            len(protocol["optional"]), \
             "Protocol {} has an arity of {}. Called with {}".format(
                 protocol['procedure'], len(protocol["required"]), len(args))
 
     def _make_protocol_method(self, protocol):
-        """Make a method closure based on a protocol definition
+        """Make a method closure based on a protocol definition.
 
-        This takes a protocol and generates a closure that has the same arity as
-        the protocol. The closure is dynamically set as a method on the Remote object
-        with the same name as protocol. This makes it possible to do:
+        This takes a protocol and generates a closure that has the same arity
+        as the protocol. The closure is dynamically set as a method on the
+        Remote object with the same name as protocol. This makes it possible
+        to do:
 
         Geonotebook._remote.set_center(-74.25, 40.0, 4)
 
-        which will validate the arguments, create a JSONRPC request object, generate a
-        Promise and store it in the _promises dict.
+        which will validate the arguments, create a JSONRPC request object,
+        generate a Promise and store it in the _promises dict.
         e.g:
 
         def handle_error(error):
@@ -78,22 +77,24 @@ class Remote(object):
         :rtype: MethodType
 
         """
-
         assert 'required' in protocol, \
-            "protocol {} must define required arguments".format(protocol['procedure'])
+            "protocol {} must define required arguments".format(
+                protocol['procedure'])
         assert 'optional' in protocol, \
-            "protocol {} must define optional arguments".format(protocol['procedure'])
+            "protocol {} must define optional arguments".format(
+                protocol['procedure'])
 
         for arg in protocol["required"]:
             assert 'key' in arg, \
-                "protocol {} is malformed, argument {} does not have a key".format(
+                "protocol {} is malformed, argument {} " + \
+                "does not have a key".format(
                     protocol['procedure'], arg)
 
         for arg in protocol["optional"]:
             assert 'key' in arg, \
-                "protocol {} is malformed, argument {} does not have a key".format(
+                "protocol {} is malformed, argument {} " + \
+                "does not have a key".format(
                     protocol['procedure'], arg)
-
 
         def _protocol_closure(self, *args, **kwargs):
             try:
@@ -105,10 +106,15 @@ class Remote(object):
             def make_param(key, value, required=True):
                 return {'key': key, 'value': value, 'required': required}
             # Get the parameters
-            params = [make_param(k['key'], v) for k,v in zip(protocol['required'], args)]
+            params = [
+                make_param(k['key'], v) for k, v in zip(
+                    protocol['required'], args)
+            ]
             # Not technically available until ES6
-            params.extend([make_param(k['key'], kwargs[k['key']], required=False)
-                           for k in protocol['optional'] if k['key'] in kwargs])
+            params.extend([
+                make_param(k['key'], kwargs[k['key']], required=False)
+                for k in protocol['optional'] if k['key'] in kwargs
+            ])
 
             # Create the message
             msg = json_rpc_request(protocol['procedure'], params)
@@ -123,10 +129,10 @@ class Remote(object):
         return MethodType(_protocol_closure, self)
 
     def resolve(self, msg):
-        """Resolve an open JSONRPC request
+        """Resolve an open JSONRPC request.
 
-        Takes a JSONRPC result message and passes it to either the on_fulfilled handler
-        or the on_rejected handler of the Promise.
+        Takes a JSONRPC result message and passes it to either the
+        on_fulfilled handler or the on_rejected handler of the Promise.
 
         :param msg: JSONRPC result message
         :returns: Nothing
@@ -145,7 +151,6 @@ class Remote(object):
         else:
             self.log.warn("Could not find promise with id %s" % msg['id'])
 
-
     def __init__(self, transport, protocol):
         """Initialize the Remote object.
 
@@ -155,7 +160,6 @@ class Remote(object):
         :rtype: None
 
         """
-
         self._promises = {}
         self._send_msg = transport
         self.protocol = protocol
@@ -167,8 +171,6 @@ class Remote(object):
             setattr(self, p['procedure'], self._make_protocol_method(p))
 
 
-
-
 class Geonotebook(object):
     msg_types = ['get_protocol', 'set_center', 'add_annotation']
 
@@ -177,7 +179,7 @@ class Geonotebook(object):
 
     @classmethod
     def class_protocol(cls):
-        """Initializes the RPC protocol description.
+        """Initialize the RPC protocol description.
 
         Provides a static, lazy loaded description of the functions that
         are available to be called by the RPC mechanism.
@@ -187,7 +189,6 @@ class Geonotebook(object):
         :rtype: dict
 
         """
-
         if cls._protocol is None:
             def _method_protocol(fn, method):
                 spec = getargspec(method)
@@ -205,18 +206,23 @@ class Geonotebook(object):
                 # If this is just a notification function
                 return {'procedure': fn,
                         'required': [make_param(p) for p in params[:r]],
-                        'optional': [make_param(p, default=d) for p,d
-                                     in zip(params[r:], spec.defaults)] \
+                        'optional': [make_param(p, default=dd) for p, dd
+                                     in zip(params[r:], spec.defaults)]
                         if spec.defaults is not None else []}
 
-            # Note:  for the predicate we do ismethod or isfunction for PY2/PY3 support
+            # Note:  for the predicate we do ismethod or isfunction for
+            # PY2/PY3 support
             # See: https://docs.python.org/3.0/whatsnew/3.0.html
-            # "The concept of "unbound methods" has been removed from the language.
-            # When referencing a method as a class attribute, you now get a plain function object."
-            cls._protocol = {fn:_method_protocol(fn, method) for fn, method in
-                             getmembers(cls, predicate=lambda x: ismethod(x) or isfunction(x)) \
-                             if fn in cls.msg_types}
-
+            # "The concept of "unbound methods" has been removed from the
+            # language.
+            # When referencing a method as a class attribute, you now get a
+            # plain function object."
+            cls._protocol = {
+                fn: _method_protocol(fn, method) for fn, method in
+                getmembers(
+                    cls,
+                    predicate=lambda x: ismethod(x) or isfunction(x)
+                ) if fn in cls.msg_types}
 
         return cls._protocol.values()
 
@@ -233,7 +239,7 @@ class Geonotebook(object):
         self._kernel.comm.send(msg)
 
     def _reconcile_parameters(self, method, params):
-        param_hash = {p['key']:p for p in params}
+        param_hash = {p['key']: p for p in params}
 
         # Loop through protocol reconciling parameters
         # from out of the param_hash.  Note - does not do
@@ -243,16 +249,18 @@ class Geonotebook(object):
             args = [param_hash[p['key']]['value']
                     for p in self._protocol[method]['required']]
         except KeyError:
-            raise jsonrpc.InvalidParams(u"missing required params for method: %s" % method)
+            raise jsonrpc.InvalidParams(
+                u"missing required params for method: %s" % method
+            )
 
-        kwargs = {p['key']:param_hash[p['key']]['value']
+        kwargs = {p['key']: param_hash[p['key']]['value']
                   for p in self._protocol[method]['optional']
                   if p['key'] in param_hash}
 
         return args, kwargs
 
     def _recv_msg(self, msg):
-        """Recieve an RPC message from the client
+        """Recieve an RPC message from the client.
 
         :param msg: An RPC message
         :returns: Nothing
@@ -298,21 +306,21 @@ class Geonotebook(object):
         self._kernel = kernel
 
     def rpc_error(self, error):
-        self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
+        self.log.error(
+            "JSONRPCError (%s): %s" % (error['code'], error['message'])
+        )
 
-
-    ### Remote RPC wrappers ###
+    # Remote RPC wrappers #
 
     def set_center(self, x, y, z):
         def _set_center(result):
             self.x, self.y, self.z = result
 
-        return self._remote.set_center(x, y, z).then(_set_center, self.rpc_error)
+        return self._remote.set_center(x, y, z)\
+            .then(_set_center, self.rpc_error)
 
     def add_layer(self, data, name=None, vis_url=None, layer_type='wms',
                   **kwargs):
-
-
 
         # Create the GeonotebookLayer -  if vis_url is none,  this will take
         # data_path and upload it to the configured vis_server,  this will make
@@ -324,20 +332,28 @@ class Geonotebook(object):
             # TODO verify layer exists in geoserver?
             name = data.name if name is None else name
 
-            layer = SimpleLayer(name, self._remote, data=data, vis_url=vis_url, **kwargs)
+            layer = SimpleLayer(
+                name, self._remote, data=data, vis_url=vis_url, **kwargs
+            )
         elif isinstance(data, RasterDataCollection):
             assert name is not None, \
                 RuntimeError("RasterDataCollection layers require a 'name'")
 
-            layer = TimeSeriesLayer(name, self._remote, data=data, vis_url=vis_url, **kwargs)
+            layer = TimeSeriesLayer(
+                name, self._remote, data=data, vis_url=vis_url, **kwargs
+            )
 
         else:
             assert name is not None, \
                 RuntimeError("Non data layers require a 'name'")
             if layer_type == 'annotation':
-                layer = AnnotationLayer(name, self._remote, self.layers, **kwargs)
+                layer = AnnotationLayer(
+                    name, self._remote, self.layers, **kwargs
+                )
             else:
-                layer = NoDataLayer(name, self._remote, vis_url=vis_url, **kwargs)
+                layer = NoDataLayer(
+                    name, self._remote, vis_url=vis_url, **kwargs
+                )
 
         def _add_layer(layer_name):
             self.layers.append(layer)
@@ -381,41 +397,33 @@ class Geonotebook(object):
 
         return cb
 
-
-    ### RPC endpoints ###
+    # RPC endpoints #
     def get_protocol(self):
         return self.__class__.class_protocol()
-
-
 
     def add_annotation(self, ann_type, coords, meta):
         self.layers.annotation.add_annotation(ann_type, coords, meta)
         return True
 
 
-
-
 class GeonotebookKernel(IPythonKernel):
     def _unwrap(self, msg):
-        """Unwrap a Comm message
+        """Unwrap a Comm message.
 
         Remove the Comm envolpe and return an RPC message
 
         :param msg: the Comm message
         :returns: An RPC message
         :rtype: dict
-
         """
-
         return msg['content']['data']
 
     def handle_comm_msg(self, message):
-        """Handler for incomming comm messages
+        """Handle incomming comm messages.
 
         :param msg: a Comm message
         :returns: Nothing
         :rtype: None
-
         """
         msg = self._unwrap(message)
 
@@ -423,23 +431,22 @@ class GeonotebookKernel(IPythonKernel):
             self.geonotebook._recv_msg(msg)
 
         except jsonrpc.JSONRPCError as e:
-            self.geonotebook._send_msg(json_rpc_result(None, e.toJson(), msg['id']))
+            self.geonotebook._send_msg(
+                json_rpc_result(None, e.tojson(), msg['id'])
+            )
             self.log.error(u"JSONRPCError (%s): %s" % (e.code, e.message))
 
         except Exception as e:
             self.log.error(u"Error processing msg: {}".format(str(e)))
 
-
     def handle_comm_open(self, comm, msg):
-        """Handler for opening a comm
+        """Handle opening a comm.
 
         :param comm: The comm to open
         :param msg: The initial comm_open message
         :returns: Nothing
         :rtype: None
-
         """
-
         self.comm = comm
         self.comm.on_msg(self.handle_comm_msg)
 
@@ -464,9 +471,8 @@ class GeonotebookKernel(IPythonKernel):
             layer_type="annotation", vis_url=None,
             system_layer=True, expose_as="annotation")
 
-
     def do_shutdown(self, restart):
-        self.geonotebook = None;
+        self.geonotebook = None
 
         super(GeonotebookKernel, self).do_shutdown(restart)
 
@@ -474,12 +480,10 @@ class GeonotebookKernel(IPythonKernel):
             self.geonotebook = Geonotebook(self)
             self.shell.user_ns.update({'M': self.geonotebook})
 
-
     def start(self):
         self.geonotebook = Geonotebook(self)
         self.shell.user_ns.update({'M': self.geonotebook})
         super(GeonotebookKernel, self).start()
-
 
     def __init__(self, **kwargs):
         kwargs['log'].setLevel(logging.DEBUG)

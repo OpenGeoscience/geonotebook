@@ -1,10 +1,10 @@
-from .config import Config
 from collections import namedtuple
-from . import annotations
 from collections import OrderedDict
-import rasterio
-import numpy as np
+
 import six
+
+from . import annotations
+from .config import Config
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -77,9 +77,13 @@ class AnnotationLayer(GeonotebookLayer):
             self._annotations = []
 
         def rpc_error(error):
-            self.log.error("JSONRPCError (%s): %s" % (error['code'], error['message']))
+            self.log.error(
+                "JSONRPCError (%s): %s" % (error['code'], error['message'])
+            )
 
-        return self._remote.clear_annotations().then(_clear_annotations, rpc_error)
+        return self._remote.clear_annotations().then(
+            _clear_annotations, rpc_error
+        )
 
     @property
     def points(self):
@@ -115,7 +119,9 @@ class DataLayer(GeonotebookLayer):
 
 class SimpleLayer(DataLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
-        super(SimpleLayer, self).__init__(name, remote, data, vis_url=vis_url, **kwargs)
+        super(SimpleLayer, self).__init__(
+            name, remote, data, vis_url=vis_url, **kwargs
+        )
         self.vis_url = vis_url
 
         if self.vis_url is None:
@@ -128,12 +134,16 @@ class SimpleLayer(DataLayer):
 
 class TimeSeriesLayer(DataLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
-        super(TimeSeriesLayer, self).__init__(name, remote, data, vis_url=None, **kwargs)
+        super(TimeSeriesLayer, self).__init__(
+            name, remote, data, vis_url=None, **kwargs
+        )
         self.__cur = 0
         self._remote = remote
 
         # TODO: check vis_url is valid length etc
-        self._vis_url = vis_url if vis_url is not None else [None] * len(self.data)
+        self._vis_url = vis_url \
+            if vis_url is not None \
+            else [None] * len(self.data)
         self._params = [None] * len(self.data)
 
         if self.vis_url is None:
@@ -141,8 +151,6 @@ class TimeSeriesLayer(DataLayer):
                 self.current, name=self.current.name)
 
         self.vis_server_kwargs = kwargs
-
-
 
     @property
     def params(self):
@@ -216,12 +224,16 @@ class GeonotebookLayerCollection(object):
                 if value.name not in self._system_layers:
                     self._system_layers[value.name] = value
                 else:
-                    raise Exception("There is already a layer named %s" % value.name)
+                    raise Exception(
+                        "There is already a layer named %s" % value.name
+                    )
             else:
                 if value.name not in self._layers:
                     self._layers[value.name] = value
                 else:
-                    raise Exception("There is already a layer named %s" % value.name)
+                    raise Exception(
+                        "There is already a layer named %s" % value.name
+                    )
 
             if value._expose_as is not None:
                 self._expose_layer(value)
@@ -236,9 +248,11 @@ class GeonotebookLayerCollection(object):
             del self._layers[value.name]
 
     def find(self, predicate):
-        """Find first GeonotebookLayer that matches predicate. If predicate
-        is not callable it will check predicate against each layer name."""
+        """Find first GeonotebookLayer that matches predicate.
 
+        If predicate is not callable, it will check predicate against each
+        layer name.
+        """
         if not hasattr(predicate, '__call__'):
             try:
                 return self._layers[predicate]
@@ -253,7 +267,9 @@ class GeonotebookLayerCollection(object):
 
     def __getitem__(self, value):
         if isinstance(value, six.integer_types):
-            return [layer for name, layer in six.iteritems(self._layers)][value]
+            return [
+                layer for name, layer in six.iteritems(self._layers)
+            ][value]
         else:
             return self._layers.__getitem__(value)
 
@@ -264,7 +280,9 @@ class GeonotebookLayerCollection(object):
 
             if isinstance(index, six.integer_types):
                 self.__setitem__(
-                    [name for name, layer in six.iteritems(self._layers)][index],
+                    [
+                        name for name, layer in six.iteritems(self._layers)
+                    ][index],
                     value)
             else:
                 self._layers.__setitem__(index, value)

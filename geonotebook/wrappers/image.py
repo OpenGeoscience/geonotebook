@@ -1,10 +1,11 @@
-import gdal
-import rasterio as rio
-import numpy as np
 from collections import namedtuple
 from functools import wraps
 
+import numpy as np
+import rasterio as rio
+
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
+
 
 class BandStats(object):
     MIN = u'STATISTICS_MINIMUM'
@@ -24,7 +25,6 @@ def validate_index(func):
 
         return func(self, index, *args, **kwargs)
     return _validate_index
-
 
 
 class GeoTiffImage(object):
@@ -65,7 +65,6 @@ class GeoTiffImage(object):
     def _get_band_tag(self, index, prop, convert=float):
         return convert(self.dataset.tags(index)[prop])
 
-
     def get_band_ix(self, indexes, x, y):
         return list(self.dataset.sample([(x, y)], indexes=indexes))[0]
 
@@ -83,6 +82,7 @@ class GeoTiffImage(object):
             return self._get_band_tag(index, BandStats.MAX)
         except KeyError:
             return self.get_band_data(index, masked=True).max()
+
     @validate_index
     def get_band_mean(self, index, **kwargs):
         try:
@@ -123,6 +123,8 @@ class GeoTiffImage(object):
             return self.dataset.read(index, window=((ulx, lrx), (uly, lry)))
 
         if masked:
-            return np.ma.masked_values(_get_band_data(), self.get_band_nodata(index))
+            return np.ma.masked_values(
+                _get_band_data(), self.get_band_nodata(index)
+            )
         else:
             return _get_band_data()

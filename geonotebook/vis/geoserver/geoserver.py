@@ -1,10 +1,9 @@
-from geonotebook.wrappers import RasterData
-from .sld import get_single_band_raster_sld, get_multiband_raster_sld
 import requests
-import struct
-import os
-
 from six.moves import range
+
+from geonotebook.wrappers import RasterData
+from .sld import (get_multiband_raster_sld,
+                  get_single_band_raster_sld)
 
 
 class Client(object):
@@ -48,7 +47,9 @@ class Geoserver(object):
 
     @property
     def coverage_stores(self):
-        r = self.c.get("/workspaces/{}/coveragestores.json".format(self.workspace))
+        r = self.c.get(
+            "/workspaces/{}/coveragestores.json".format(self.workspace)
+        )
 
         if r.status_code == 200:
             try:
@@ -81,23 +82,21 @@ class Geoserver(object):
 
     @staticmethod
     def generate_colormap(colormap, minimum, maximum):
-        """ colormap can be a list of dicts
-        or a matplotlib colormap. Either case
-        the returned object will be a list of dicts.
-        """
+        # A colormap can be a list of dicts
+        # or a matplotlib colormap. Either case
+        # the returned object will be a list of dicts.
 
         def range_count(start, stop, count):
-            """ Generates a list with given start
-            stop and count with linear spacing
+            """Generate a list.
+
+            Use the given start stop and count with linear spacing
             e.g. range_count(1, 3, 5) = [1., 1.5, 2., 2.5, 3.]
             """
-
-            step = (stop - start) / float(count-1)
+            step = (stop - start) / float(count - 1)
             return [start + i * step for i in range(count)]
 
         def rgba2hex(rgba):
-            """ Converts rgba values to hex """
-
+            """Convert rgba values to hex."""
             # Slice the tuple so that
             # we don't get alpha and
             # convert values to 8 bit ints
@@ -118,10 +117,12 @@ class Geoserver(object):
                 quan_list = range_count(minimum, maximum, colormap.N)
                 col_list = [rgba2hex(colormap(i)) for i in range(colormap.N)]
 
-            colormap = [{'color': c, 'quantity': q} for c, q in zip(col_list, quan_list)]
+            colormap = [
+                {'color': c, 'quantity': q}
+                for c, q in zip(col_list, quan_list)
+            ]
 
             return colormap
-
 
     # get_params should take a generic list of parameters e.g. 'bands',
     # 'range', 'gamma' and convert these into a list of vis_server specific
@@ -146,7 +147,9 @@ class Geoserver(object):
                 sld_body = get_single_band_raster_sld(name, **options)
             else:
                 options['bands'] = data.band_indexes
-                options['interval'] = [vals for vals in zip(data.min, data.max)]
+                options['interval'] = [
+                    vals for vals in zip(data.min, data.max)
+                ]
 
                 options.update(kwargs)
 
@@ -155,7 +158,6 @@ class Geoserver(object):
             return {"SLD_BODY": sld_body}
         else:
             return kwargs
-
 
     def _process_raster(self, name, data):
         # Note: coverage stores and coverages currently

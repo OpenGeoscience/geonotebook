@@ -1,45 +1,49 @@
 import pytest
+
 from geonotebook import layers
 
 
 def test_geonotebooklayercollection_instantiated_with_geonotebooklayers():
-    """ Instantiate GeonotebookLayerCollection with list of
-    non GeonotebookLayers should throw Exception """
+    # Instantiate GeonotebookLayerCollection with list of
+    # non GeonotebookLayers should throw Exception
 
     with pytest.raises(Exception):
         layers.GeonotebookLayerCollection([1, 2, 3])
+
 
 def test_layer_collection_length(glc):
     assert len(glc) == 3
 
 
 def test_geonotebooklayercollection_has_geonotebooklayer_items(glc):
-    """ GeonotebookLayerCollection.find('foo') should return GeonotebookLayer """
+    # GeonotebookLayerCollection.find('foo') should return GeonotebookLayer
 
     assert isinstance(glc.find('foo'), layers.GeonotebookLayer)
 
-def test_nonexistent_layer_returns_None(glc):
-    """ GeonotebookLayerCollection.find('derp') should return None """
+
+def test_nonexistent_layer_returns_none(glc):
+    # GeonotebookLayerCollection.find('derp') should return None
     assert glc.find('derp') is None
 
 
 def test_lambda_expressions_with_find(glc):
-    """ GeonotebookLayerCollection.find(lambda g: g.name == 'foo')
-    should return GeonotebookLayer """
+    # GeonotebookLayerCollection.find(lambda g: g.name == 'foo')
+    # should return GeonotebookLayer
 
     assert isinstance(glc.find(lambda g: g.name == 'foo'),
                       layers.GeonotebookLayer)
 
+
 def test_lamba_find_with_non_existent_layer(glc):
-    """ GeonotebookLayerCollection.find(lambda g: g.name == 'derp')
-    should return None """
+    # GeonotebookLayerCollection.find(lambda g: g.name == 'derp')
+    # should return None
 
     assert glc.find(lambda g: g.name == 'derp') is None
 
+
 def test_list_indexing_on_layercollection(glc):
-    """ GeonotebookLayerCollection[0] should return GeonotebookLayer
-    and name should equal 'foo'
-    """
+    # GeonotebookLayerCollection[0] should return GeonotebookLayer
+    # and name should equal 'foo'
     assert isinstance(glc[0], layers.GeonotebookLayer)
     assert glc[0].name == 'foo'
 
@@ -49,16 +53,17 @@ def test_list_indexing_on_layercollection(glc):
     assert isinstance(glc[2], layers.GeonotebookLayer)
     assert glc[2].name == 'baz'
 
+
 def test_list_indexing_index_error(glc):
-    """ GeonotebookLayerCollection[0] should return GeonotebookLayer
-    and name should equal 'foo'
-    """
+    # GeonotebookLayerCollection[0] should return GeonotebookLayer
+    # and name should equal 'foo'
     with pytest.raises(IndexError):
         glc[4]
 
+
 def test_dictionary_key_access_on_layercollection(glc):
-    """ GeonotebookLayerCollection['foo'] should return
-    GeonotebookLayer and name should equal 'foo' """
+    # GeonotebookLayerCollection['foo'] should return
+    # GeonotebookLayer and name should equal 'foo'
 
     assert isinstance(glc['foo'], layers.GeonotebookLayer)
     assert glc['foo'].name == 'foo'
@@ -69,10 +74,10 @@ def test_dictionary_key_access_on_layercollection(glc):
     assert isinstance(glc['baz'], layers.GeonotebookLayer)
     assert glc['baz'].name == 'baz'
 
+
 def test_dictionary_key_access_key_error(glc):
-    """ GeonotebookLayerCollection[0] should return GeonotebookLayer
-    and name should equal 'foo'
-    """
+    # GeonotebookLayerCollection[0] should return GeonotebookLayer
+    # and name should equal 'foo'
     with pytest.raises(KeyError):
         glc['derp']
 
@@ -84,12 +89,14 @@ def test_layer_collection_append_layer(glc):
     assert glc['test_layer'] == l
     assert glc[-1] == l
 
+
 def test_layer_collection_append_same_layer(glc):
     l = layers.GeonotebookLayer('test_layer', None)
     glc.append(l)
 
     with pytest.raises(Exception):
         glc.append(l)
+
 
 def test_layer_collection_append_system_layer(glc):
     pre_length = len(glc)
@@ -102,6 +109,7 @@ def test_layer_collection_append_system_layer(glc):
     # System layers are not accessible via key index
     with pytest.raises(KeyError):
         glc['test_layer']
+
 
 def test_layer_collection_append_same_system_layer(glc):
     l = layers.GeonotebookLayer('test_layer', None, system_layer=True)
@@ -152,6 +160,7 @@ def test_layer_collection_remove_layer_by_name(glc):
     with pytest.raises(KeyError):
         glc['foo']
 
+
 def test_layer_collection_remove_layer_by_layer(glc):
     l = glc.find('foo')
     glc.remove(l)
@@ -160,11 +169,13 @@ def test_layer_collection_remove_layer_by_layer(glc):
     with pytest.raises(KeyError):
         glc['foo']
 
+
 def test_layer_collection_setitem(glc):
     l = layers.GeonotebookLayer('test_layer', None)
     glc['foo'] = l
     assert glc.find("foo") == l
     assert glc[0] == l
+
 
 def test_layer_collection_setitem_with_int(glc):
     l = layers.GeonotebookLayer('test_layer', None)
@@ -176,6 +187,7 @@ def test_layer_collection_setitem_with_int(glc):
 def test_layer_collection_setitem_with_bad_value(glc):
     with pytest.raises(Exception):
         glc['foo'] = 'bar'
+
 
 def test_layer_collection_setitem_with_system_layer(glc):
     l = layers.GeonotebookLayer('test_layer', None, system_layer=True)
