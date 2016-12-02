@@ -1,4 +1,7 @@
 from jinja2 import ChoiceLoader, PackageLoader, PrefixLoader
+from notebook.utils import url_path_join as ujoin
+from .vis.ktile import KtileHandler
+from .vis.ktile.handler import GeoJSTestHandler
 
 
 def _jupyter_server_extension_paths():
@@ -57,6 +60,19 @@ def load_jupyter_server_extension(nbapp):
     nbapp.log.info("geonotebook module enabled!")
     nbapp.web_app.settings['jinja2_env'].loader = \
         get_notebook_jinja2_loader(nbapp)
+
+    webapp = nbapp.web_app
+    base_url = webapp.settings['base_url']
+
+    webapp.add_handlers('.*$', [
+        (ujoin(base_url,
+               r'/ktile/([^/]*)/([^/]*)/([^/]*)/([^/]*)/([^/\.]*)\.(.*)'),
+         KtileHandler)
+    ])
+
+    webapp.add_handlers(".*$", [
+        (ujoin(base_url, r"/test/([^/]*)/([^/]*)"), GeoJSTestHandler)
+    ])
 
 # Note:  How to add custom web handlers
 #     webapp = nbapp.web_app
