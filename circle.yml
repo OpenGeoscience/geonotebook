@@ -21,3 +21,5 @@ test:
     - tox --result-json $CIRCLE_ARTIFACTS/tox-result.json -- --cov-report html:$CIRCLE_ARTIFACTS/coverage --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
     - npm run lint --prefix js
     - npm run test --prefix js -- --browsers=Firefox,Chrome && mv js/coverage $CIRCLE_ARTIFACTS/js_coverage
+  post:
+    - bash <(curl -s https://codecov.io/bash)
