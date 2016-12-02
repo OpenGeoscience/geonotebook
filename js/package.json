@@ -10,7 +10,7 @@
     "build:ci": "webpack -d",
     "test": "npm run test:cov -- --single-run",
     "test:cov": "karma start karma-cov.conf.js",
-    "test:debug": "karma start karma.conf.js",
+    "test:debug": "karma start --no-auto-watch karma.conf.js",
     "test:run": "karma run",
     "lint": "eslint --cache ."
   },
