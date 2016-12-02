@@ -1,5 +1,8 @@
 {
   "env": {
     "mocha": true
+  },
+  "rules": {
+    "underscore/prefer-noop": 0
   }
 }

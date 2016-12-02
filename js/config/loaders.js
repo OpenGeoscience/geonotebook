@@ -5,7 +5,8 @@ module.exports = [
     loader: 'babel-loader',
     exclude: /node_modules/,
     query: {
-      presets: ['es2015']
+      presets: [],
+      plugins: ['transform-es2015-modules-commonjs']
     }
   }, {
     test: /\.css$/,

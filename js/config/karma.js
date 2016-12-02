@@ -3,12 +3,9 @@ var resolve = require('./resolve');
 var plugins = require('./plugins');
 
 module.exports = {
-  autoWatch: false,
-  browsers: [
-    'PhantomJS'
-  ],
-  frameworks: ['mocha', 'detectBrowsers'],
-  reporters: ['progress', 'mocha'],
+  browsers: ['Firefox', 'Chrome'],
+  frameworks: ['mocha'],
+  reporters: ['mocha'],
   files: [
     'test/all.js',
     {pattern: 'test/data/**/*', included: false},

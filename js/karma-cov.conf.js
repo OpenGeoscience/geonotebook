@@ -9,7 +9,7 @@ function browser (b) {
   return b.toLowerCase().split(/[ /-]/)[0];
 }
 
-karma_config.reporters = ['progress', 'coverage'];
+karma_config.reporters.push('coverage');
 karma_config.coverageReporter = {
   reporters: [
     {type: 'html', dir: 'coverage/', subdir: browser},
@@ -19,13 +19,13 @@ karma_config.coverageReporter = {
 };
 
 var babel_loader = _.findWhere(karma_config.webpack.module.loaders, {loader: 'babel-loader'});
-babel_loader.query.plugins = [[
+babel_loader.query.plugins.push([
   'istanbul', {
     exclude: [
       'test/**', 'node_modules/**'
     ]
   }
-]];
+]);
 
 module.exports = function (config) {
   config.set(karma_config);
