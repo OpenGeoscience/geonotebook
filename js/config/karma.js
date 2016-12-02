@@ -7,7 +7,7 @@ module.exports = {
   browsers: [
     'PhantomJS'
   ],
-  frameworks: ['mocha'],
+  frameworks: ['mocha', 'detectBrowsers'],
   reporters: ['progress', 'mocha'],
   files: [
     'test/all.js',
@@ -15,7 +15,7 @@ module.exports = {
     {pattern: 'test/cases/**/*.js', included: false, served: false, watched: true}
   ],
   proxies: {
-    '/data/': '/base/test/data'
+    '/data/': '/base/test/data/'
   },
   preprocessors: {
     'test/all.js': ['webpack', 'sourcemap']
@@ -24,7 +24,8 @@ module.exports = {
     cache: true,
     devtool: 'inline-source-map',
     module: {
-      loaders: loaders
+      loaders: loaders,
+      preLoaders: []
     },
     resolve: resolve,
     plugins: plugins

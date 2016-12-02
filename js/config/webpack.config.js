@@ -11,7 +11,8 @@ module.exports = [
       libraryTarget: 'amd'
     },
     module: {
-      loaders: loaders
+      loaders: loaders,
+      preLoaders: []
     },
     resolve: resolve,
     plugins: plugins
