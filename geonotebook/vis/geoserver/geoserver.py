@@ -36,7 +36,7 @@ class Client(object):
 
 class Geoserver(object):
 
-    def __init__(self, url=None, username="admin",
+    def __init__(self, config, url=None, username="admin",
                  password="geoserver", workspace="test"):
         assert url is not None, \
             "Must pass in a URL to Geoserver instance!"
@@ -46,7 +46,7 @@ class Geoserver(object):
                         password=password)
 
     # Used for any setup nessisary on the NotebookWebApp object
-    def initialize_webapp(self, webapp):
+    def initialize_webapp(self, config, webapp):
         pass
 
     @property

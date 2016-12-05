@@ -38,6 +38,18 @@ def get_config():
 
 
 class KtileHandler(IPythonHandler):
+    def initialize(self, ktile_config_manager):
+        self.ktile_config_manager = ktile_config_manager
+
+    def get(self, kernel_name, layer_name, **kwargs):
+        self.ktile_config_manager.test += 1
+        self.write(u'{}'.format(self.ktile_config_manager.test))
+
+
+class KtileTileServerHandler(IPythonHandler):
+
+    def initialize(self, ktile_config_manager):
+        self.ktile_config_manager = ktile_config_manager
 
     def get(self, kernel_name, layer_name, x, y, z, extension, **kwargs):
         # from pudb.remote import set_trace; set_trace(term_size=(319,87))

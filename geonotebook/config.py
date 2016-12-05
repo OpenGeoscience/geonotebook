@@ -40,7 +40,8 @@ def get_config(path=None):
 
 class Config(object):
     _valid_vis_hash = {
-        "geoserver": vis.Geoserver
+        "geoserver": vis.Geoserver,
+        "ktile": vis.Ktile
     }
 
     def __init__(self, path=None):
@@ -55,4 +56,4 @@ class Config(object):
             raise NotImplemented("{} is not a valid vis_server".format(
                 vis_server_section))
 
-        return cls(**dict(self.config.items(vis_server_section)))
+        return cls(self.config, **dict(self.config.items(vis_server_section)))

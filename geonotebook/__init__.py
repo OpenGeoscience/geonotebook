@@ -62,7 +62,7 @@ def load_jupyter_server_extension(nbapp):
     webapp = nbapp.web_app
     conf = Config()
 
-    conf.vis_server.initialize_webapp(webapp)
+    conf.vis_server.initialize_webapp(conf, webapp)
 
 # Note:  How to add custom web handlers
 #     webapp = nbapp.web_app
