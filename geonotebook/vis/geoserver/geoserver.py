@@ -45,6 +45,10 @@ class Geoserver(object):
         self.c = Client(self.base_url + "/rest", username=username,
                         password=password)
 
+    # Used for any setup nessisary on the NotebookWebApp object
+    def initialize_webapp(self, webapp):
+        pass
+
     @property
     def coverage_stores(self):
         r = self.c.get(
