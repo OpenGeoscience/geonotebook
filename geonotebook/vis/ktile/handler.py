@@ -1,8 +1,10 @@
+from tornado import web
 from notebook.base.handlers import IPythonHandler
 from datetime import datetime, timedelta
 import TileStache as ts
 from ModestMaps.Core import Coordinate
 from jinja2 import Template
+from .config import KtileConfig
 
 
 def get_config():
@@ -41,12 +43,32 @@ class KtileHandler(IPythonHandler):
     def initialize(self, ktile_config_manager):
         self.ktile_config_manager = ktile_config_manager
 
+    def post(self, kernel_id):
+        self.ktile_config_manager[kernel_id] = KtileConfig()
+
+    def delete(self, kernel_id):
+        try:
+            del self.ktile_config_manager[kernel_id]
+        except KeyError:
+            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
+
+    def get(self, kernel_id, **kwargs):
+        try:
+            self.finish(self.ktile_config_manager[kernel_id].config)
+        except KeyError:
+            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
+
+
+class KtileLayerHandler(IPythonHandler):
+    def initialize(self, ktile_config_manager):
+        self.ktile_config_manager = ktile_config_manager
+
     def get(self, kernel_name, layer_name, **kwargs):
         self.ktile_config_manager.test += 1
-        self.write(u'{}'.format(self.ktile_config_manager.test))
+        self.finish(self.ktile_config_manager.test)
 
 
-class KtileTileServerHandler(IPythonHandler):
+class KtileTileHandler(IPythonHandler):
 
     def initialize(self, ktile_config_manager):
         self.ktile_config_manager = ktile_config_manager

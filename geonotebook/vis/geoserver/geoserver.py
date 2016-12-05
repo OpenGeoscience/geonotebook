@@ -45,6 +45,14 @@ class Geoserver(object):
         self.c = Client(self.base_url + "/rest", username=username,
                         password=password)
 
+    # Used for setup when kernel starts
+    def start_kernel(self, kernel):
+        pass
+
+    # Used for cleanup with kernel ends
+    def shutdown_kernel(self, kernel):
+        pass
+
     # Used for any setup nessisary on the NotebookWebApp object
     def initialize_webapp(self, config, webapp):
         pass

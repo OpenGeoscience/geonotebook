@@ -1,5 +1,9 @@
+import requests
 from notebook.utils import url_path_join as ujoin
-from .handler import KtileHandler, KtileTileServerHandler, GeoJSTestHandler
+from .handler import (KtileHandler,
+                      KtileLayerHandler,
+                      KtileTileHandler,
+                      GeoJSTestHandler)
 from .config import KtileConfig, KtileLayerConfig
 from collections import MutableMapping
 
@@ -41,16 +45,29 @@ class KtileConfigManager(MutableMapping):
 # to the KtileConfigManager through the Tornado webserver's
 # REST API vi ingest/get_params. It is instantiated once inside
 # the tornado app in order to call initialize_webapp.  This sets
-# up the REST API that ingest/get_params communicate with.
+# up the REST API that ingest/get_params communicate with. It also
+# provides access points to start_kernel and shutdown_kernel for
+# various initialization. NB: State CANNOT be shared across these
+# different contexts!
+
 class Ktile(object):
     def __init__(self, config, url=None, default_cache=None):
         self.config = config
-        self.url = url
+        self.base_url = url
         self.default_cache_section = default_cache
 
     @property
     def default_cache(self):
         return dict(self.config.items(self.default_cache_section))
+
+
+    def start_kernel(self, kernel):
+        requests.post("{}/{}".format(self.base_url, kernel.ident))
+        # Error checking on response!
+
+    def shutdown_kernel(self, kernel):
+        requests.delete("{}/{}".format(self.base_url, kernel.ident))
+        pass
 
     # This function is caleld inside the tornado web app
     # from jupyter_load_server_extensions
@@ -62,16 +79,20 @@ class Ktile(object):
             self.default_cache)
 
         webapp.add_handlers('.*$', [
-            #
-            # kernel_name, layer_name
-            (ujoin(base_url, r'/ktile/([^/]*)/([^/]*)'),
+            # kernel_name
+            (ujoin(base_url, r'/ktile/([^/]*)'),
              KtileHandler,
              dict(ktile_config_manager=webapp.ktile_config_manager)),
-            #
+
+            # kernel_name, layer_name
+            (ujoin(base_url, r'/ktile/([^/]*)/([^/]*)'),
+             KtileLayerHandler,
+             dict(ktile_config_manager=webapp.ktile_config_manager)),
+
+            # kernel_name, layer_name, x, y, z, extension
             (ujoin(base_url,
-                   # kernel_name, layer_name, x, y, z, extension
                    r'/ktile/([^/]*)/([^/]*)/([^/]*)/([^/]*)/([^/\.]*)\.(.*)'),
-             KtileTileServerHandler,
+             KtileTileHandler,
              dict(ktile_config_manager=webapp.ktile_config_manager)),
 
             # Debug

@@ -19,6 +19,7 @@ from .layers import (AnnotationLayer,
 
 from .wrappers import RasterData, RasterDataCollection
 
+from .config import Config
 
 class Remote(object):
     """Provides an object that proxies procedures on a remote object.
@@ -476,14 +477,22 @@ class GeonotebookKernel(IPythonKernel):
 
         super(GeonotebookKernel, self).do_shutdown(restart)
 
+        config = Config()
+        config.vis_server.shutdown_kernel(self)
+
         if restart:
             self.geonotebook = Geonotebook(self)
             self.shell.user_ns.update({'M': self.geonotebook})
+
 
     def start(self):
         self.geonotebook = Geonotebook(self)
         self.shell.user_ns.update({'M': self.geonotebook})
         super(GeonotebookKernel, self).start()
+
+        config = Config()
+        config.vis_server.start_kernel(self)
+
 
     def __init__(self, **kwargs):
         kwargs['log'].setLevel(logging.DEBUG)
