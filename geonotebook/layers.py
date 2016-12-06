@@ -126,7 +126,7 @@ class SimpleLayer(DataLayer):
 
         if self.vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
-                self.data, name=self.name)
+                self.data, name=self.name, **kwargs)
 
         self.params = self.config.vis_server.get_params(
             self.name, self.data, **kwargs)
@@ -148,7 +148,7 @@ class TimeSeriesLayer(DataLayer):
 
         if self.vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
-                self.current, name=self.current.name)
+                self.current, name=self.current.name, **kwargs)
 
         self.vis_server_kwargs = kwargs
 
@@ -188,7 +188,7 @@ class TimeSeriesLayer(DataLayer):
     def _replace_layer(self):
         if self.vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
-                self.current, name=self.current.name)
+                self.current, name=self.current.name, **self.vis_server_kwargs)
 
         # TODO: Need better handlers here for post-replace callbacks
         self._remote.replace_wms_layer(self.name, self.vis_url, self.params)\

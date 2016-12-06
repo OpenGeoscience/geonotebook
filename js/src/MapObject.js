@@ -53,6 +53,7 @@ MapObject.prototype.msg_types = [
   'get_protocol',
   'set_center',
   '_debug',
+  'add_layer',
   'add_wms_layer',
   'replace_wms_layer',
   'add_osm_layer',
@@ -250,6 +251,39 @@ MapObject.prototype.replace_wms_layer = function (layer_name, base_url, params) 
     return true;
   }
 };
+
+
+MapObject.prototype.add_layer = function (layer_name, base_url, params) {
+    // If a layer with this name already exists,  replace it
+  if (this.get_layer(layer_name) !== undefined) {
+    this.geojsmap.deleteLayer(this.get_layer(layer_name));
+  }
+
+  var projection = 'EPSG:3857';
+
+  var wms = this.geojsmap.createLayer('osm', {
+    keepLower: false,
+    attribution: null
+  });
+
+    // make sure zindex is explicitly set
+  this._set_layer_zindex(wms, params['zIndex']);
+
+  wms.name(layer_name);
+
+  wms.url(function (x, y, zoom) {
+    var params = '';
+
+    if ($.param(params)){
+        params = '?' + $.param(params);
+    }
+
+    return base_url + '/' + x + '/' + y + '/' + zoom + '.png' + params;
+  });
+
+  return layer_name;
+};
+
 
 MapObject.prototype.add_wms_layer = function (layer_name, base_url, params) {
     // If a layer with this name already exists,  replace it

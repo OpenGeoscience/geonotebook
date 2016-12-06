@@ -306,6 +306,10 @@ class Geonotebook(object):
 
         self._kernel = kernel
 
+    @property
+    def kernel_id(self):
+        return self._kernel.ident
+
     def rpc_error(self, error):
         self.log.error(
             "JSONRPCError (%s): %s" % (error['code'], error['message'])
@@ -320,13 +324,17 @@ class Geonotebook(object):
         return self._remote.set_center(x, y, z)\
             .then(_set_center, self.rpc_error)
 
-    def add_layer(self, data, name=None, vis_url=None, layer_type='wms',
+    def add_layer(self, data, name=None, vis_url=None, layer_type=None,
                   **kwargs):
 
         # Create the GeonotebookLayer -  if vis_url is none,  this will take
         # data_path and upload it to the configured vis_server,  this will make
         # the visualization url available through the 'vis_url' attribute
         # on the layer object.
+
+        # Make sure we pass in kernel_id to the layer,  then to the vis_server
+        # Otherwise we cant generate the coorect vis_url.
+        kwargs['kernel_id'] = self.kernel_id
 
         # HACK:  figure out a way to do this without so many conditionals
         if isinstance(data, RasterData):
@@ -361,7 +369,14 @@ class Geonotebook(object):
 
         # These should be managed by some kind of handler to allow for
         # additional types to be added more easily
-        if layer_type == 'wms':
+        if layer_type is None:
+            params = layer.params
+            params['zIndex'] = len(self.layers)
+
+            cb = self._remote.add_layer(layer.name, layer.vis_url, params)\
+                .then(_add_layer, self.rpc_error)
+
+        elif layer_type == 'wms':
             params = layer.params
             params['zIndex'] = len(self.layers)
 

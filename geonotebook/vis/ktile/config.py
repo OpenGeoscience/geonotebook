@@ -1,4 +1,6 @@
-from collections import OrderedDict
+import TileStache as ts
+from collections import OrderedDict, MutableMapping
+
 # class KtileLayerConfig
 # Eventually will need to support configuration of the following sections:
 #
@@ -66,27 +68,106 @@ from collections import OrderedDict
 #               blackwhite, greyscale, desaturate, pixelate, halftone, or blur.
 
 class KtileLayerConfig(object):
-    def __init__(self, *args, **kwargs):
-        pass
+    def __init__(self, name, **kwargs):
+        self.name = name
+        self.config = kwargs
 
+
+class MutDict(MutableMapping):
+    def __init__(self, **kwargs):
+        self._dict = OrderedDict(kwargs)
+        self.dirty = True
+
+    def __getitem__(self, *args, **kwargs):
+        return self._dict.__getitem__(*args, **kwargs)
+
+    def __setitem__(self, _id, value):
+        self._dict.__setitem__(_id, value)
+        self.dirty = True
+
+    def __delitem__(self, *args, **kwargs):
+        self._dict.__delitem__(*args, **kwargs)
+        self.dirty = True
+
+    def __iter__(self, *args, **kwargs):
+        return self._dict.__iter__(*args, **kwargs)
+
+    def __len__(self, *args, **kwargs):
+        return self._dict.__len__(*args, **kwargs)
 
 
 # Manages the KtileConfig object for a particular Kernel.  This includes the
 # actual configuration dictionary as well as styling paramaters that are made
 # available from The users.
-
-class KtileConfig(object):
+class KtileConfig(MutableMapping):
     def __init__(self, *args, **kwargs):
 
-        self.cache = kwargs.pop("cache", None)
-        self._layers = OrderedDict()
+        self._config = None
+        self._cache = None
+        self._layers = None
+
+        if "cache" in kwargs:
+            self.cache = kwargs["cache"]
+
+        self.layers = {}
+
+    def __getitem__(self, *args, **kwargs):
+        return self._layers.__getitem__(*args, **kwargs)
+
+    def __setitem__(self, _id, value):
+        if not isinstance(value, KtileLayerConfig):
+            raise RuntimeError(
+                "{} only accepts objects of type {}".format(
+                    self.__class__.__name__, KtileLayerConfig.__class__.__name__))
+
+        self._layers.__setitem__(_id, value)
+
+    def __delitem__(self, *args, **kwargs):
+        return self._layers.__delitem__(*args, **kwargs)
+
+    def __iter__(self, *args, **kwargs):
+        return self._layers.__iter__(*args, **kwargs)
+
+    def __len__(self, *args, **kwargs):
+        return self._layers.__len__(*args, **kwargs)
+
+    @property
+    def dirty(self):
+        return self._cache.dirty or self._layers.dirty
+
+    @dirty.setter
+    def dirty(self, val):
+        self._cache.dirty = val
+        self._layers.dirty = val
+
+    @property
+    def cache(self):
+        return self._cache
+
+    @cache.setter
+    def cache(self, val):
+        if not isinstance(val, MutDict):
+            val = MutDict(**val)
+        self._cache = val
 
     @property
     def layers(self):
-        return [l for l in self._layers.values()]
+        return {k : l.config for k, l in self._layers.items()}
 
+    @layers.setter
+    def layers(self, val):
+        if not isinstance(val, MutDict):
+            val = MutDict(**val)
+        self._layers = val
+
+    def as_dict(self):
+        return {"cache": dict(self.cache),
+                "layers": dict(self.layers)}
 
     @property
     def config(self):
-        return {"cache": self.cache,
-                "layers": self.layers}
+        if self.dirty:
+            self._config = ts.parseConfig(self.as_dict())
+            self.dirty = False
+
+        return self._config

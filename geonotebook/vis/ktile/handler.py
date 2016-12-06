@@ -1,11 +1,11 @@
 from tornado import web
-
+import json
 from notebook.base.handlers import IPythonHandler
 from datetime import datetime, timedelta
-import TileStache as ts
+
 from ModestMaps.Core import Coordinate
 from jinja2 import Template
-from .config import KtileConfig
+from .config import KtileConfig, KtileLayerConfig
 
 
 def get_config():
@@ -79,6 +79,7 @@ def get_config():
 class KtileHandler(IPythonHandler):
     def initialize(self, ktile_config_manager):
         self.ktile_config_manager = ktile_config_manager
+        self.ktile_config_manager.foo = id(ktile_config_manager)
 
     def post(self, kernel_id):
         self.ktile_config_manager[kernel_id] = KtileConfig()
@@ -90,8 +91,9 @@ class KtileHandler(IPythonHandler):
             raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
 
     def get(self, kernel_id, **kwargs):
+        config = self.ktile_config_manager[kernel_id].as_dict()
         try:
-            self.finish(self.ktile_config_manager[kernel_id].config)
+            self.finish(config)
         except KeyError:
             raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
 
@@ -100,9 +102,41 @@ class KtileLayerHandler(IPythonHandler):
     def initialize(self, ktile_config_manager):
         self.ktile_config_manager = ktile_config_manager
 
-    def get(self, kernel_name, layer_name, **kwargs):
-        self.ktile_config_manager.test += 1
-        self.finish(self.ktile_config_manager.test)
+    def prepare(self):
+        try:
+            if self.request.headers["Content-Type"].startswith("application/json"):
+                self.request.json = json.loads(self.request.body)
+        except Exception:
+            self.request.json = None
+
+    def post(self, kernel_id, layer_name, **kwargs):
+        try:
+            filepath = self.request.json['path']
+        except KeyError:
+            raise web.HTTPError(500, '"path" not passed')
+
+        try:
+            self.ktile_config_manager[kernel_id][layer_name] = \
+                KtileLayerConfig(
+                    layer_name,
+                    provider={
+                        "class": "geonotebook.vis.ktile.provider:MapnikPythonProvider",
+                        "kwargs": {"path": filepath }
+                    })
+
+        except KeyError:
+            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
+
+        self.finish()
+
+    def get(self, kernel_id, layer_name, **kwargs):
+        config = self.ktile_config_manager[kernel_id].as_dict()
+        try:
+            self.finish(config)
+        except KeyError:
+            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
+
+
 
 
 class KtileTileHandler(IPythonHandler):
@@ -110,9 +144,10 @@ class KtileTileHandler(IPythonHandler):
     def initialize(self, ktile_config_manager):
         self.ktile_config_manager = ktile_config_manager
 
-    def get(self, kernel_name, layer_name, x, y, z, extension, **kwargs):
-        #from pudb.remote import set_trace; set_trace(term_size=(319,87))
-        config = ts.parseConfig(get_config())
+    def get(self, kernel_id, layer_name, x, y, z, extension, **kwargs):
+        # from pudb.remote import set_trace; set_trace(term_size=(283,87))
+        config = self.ktile_config_manager[kernel_id].config
+
 
         layer = config.layers[layer_name]
         coord = Coordinate(int(y), int(x), int(z))

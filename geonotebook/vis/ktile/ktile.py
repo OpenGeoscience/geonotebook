@@ -1,3 +1,4 @@
+import os
 import requests
 from notebook.utils import url_path_join as ujoin
 from .handler import (KtileHandler,
@@ -108,7 +109,9 @@ class Ktile(object):
     # parameters and subsetting operations. select bands, set ranges
     # on a particular dataset etc.
     def get_params(self, name, data, **kwargs):
-        pass
+        kernel_id = kwargs.pop("kernel_id")
+
+        return kwargs
 
     # The purpose of the 'ingest' endpoint is to get a file (e.g. as
     # represented by a RasterData object) and move it into whatever
@@ -118,5 +121,20 @@ class Ktile(object):
     # transfering bytes from a source location (data.path) to a destination
     # Defined as apart of the vis_server config along with any metadata
     # Needed to geospatially reference the data on the remote system
-    def ingest(self, data, name=None):
-        pass
+    def ingest(self, data, name=None, **kwargs):
+        # from pudb.remote import set_trace; set_trace(term_size=(283,87))
+        name = data.name if name is None else name
+
+        kernel_id = kwargs.pop('kernel_id', None)
+
+        if kernel_id is None:
+            raise Exception("Must pass in kernel_id as kwarg to ingest!")
+
+        base_url = '{}/{}/{}'.format(self.base_url, kernel_id, name)
+
+        r = requests.post(
+            base_url, json={"name": name,
+                            "path": os.path.abspath(data.path),
+                            "bands": data.band_indexes})
+
+        return base_url

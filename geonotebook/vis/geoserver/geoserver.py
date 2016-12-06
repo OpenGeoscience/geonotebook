@@ -211,7 +211,7 @@ class Geoserver(object):
     # transfering bytes from a source location (data.path) to a destination
     # Defined as apart of the vis_server config along with any metadata
     # Needed to geospatially reference the data on the remote system
-    def ingest(self, data, name=None):
+    def ingest(self, data, name=None, **kwargs):
 
         name = data.name if name is None else name
 
