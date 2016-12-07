@@ -256,7 +256,8 @@ setup(
     install_requires=[
         "ipykernel",
         "jupyter_client",
-        "notebook"
+        "notebook",
+        "geopandas"
     ],
     cmdclass={
         'install': CustomInstall,
