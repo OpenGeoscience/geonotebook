@@ -32,7 +32,6 @@ class MapnikPythonProvider(object):
         self.map_srs = kwargs.pop("map_srs", DEFAULT_MAP_SRS)
         self.scale_factor = None
         self._layer_srs = None
-        self.Map = None
 
     @property
     def layer_srs(self):
@@ -45,7 +44,7 @@ class MapnikPythonProvider(object):
         return self._layer_srs
 
 
-    def style_map(self):
+    def style_map(self, Map):
         #<Map font-directory="./fonts" srs="{{map_srs}}">
         #  <Layer name="raster-layer" srs="{{layer_srs}}" status="on">
         #    <StyleName>raster-style</StyleName>
@@ -89,7 +88,7 @@ class MapnikPythonProvider(object):
         rule.symbols.append(sym)
         style.rules.append(rule)
 
-        self.Map.append_style('Raster Style', style)
+        Map.append_style('Raster Style', style)
 
         lyr = mapnik.Layer('GDAL Layer from TIFF', self.layer_srs)
 
@@ -99,37 +98,29 @@ class MapnikPythonProvider(object):
                                      band=4)
         lyr.styles.append("Raster Style")
 
-        self.Map.layers.append(lyr)
+        Map.layers.append(lyr)
+
+        return Map
 
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         """
         """
-        #
-        # Mapnik can behave strangely when run in threads, so place a lock on the instance.
-        #
 
-        if global_mapnik_lock.acquire():
-            try:
-                if self.Map is None:
-                    self.Map = mapnik.Map(width, height, self.map_srs)
+        # NB: To be thread-safe Map object cannot be stored as apart
+        #     of the class, see: https://groups.google.com/forum/#!topic/mapnik/USDlVfSk328
 
-                self.Map.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
+        Map = mapnik.Map(width, height, self.map_srs)
+        Map.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
 
-                self.style_map()
+        Map = self.style_map(Map)
 
-                img = mapnik.Image(width, height)
-                # Don't even call render with scale factor if it's not
-                # defined. Plays safe with older versions.
-                if self.scale_factor is None:
-                    mapnik.render(self.Map, img)
-                else:
-                    mapnik.render(self.Map, img, self.scale_factor)
-            except:
-                self.Map = None
-                raise
-            finally:
-                # always release the lock
-                global_mapnik_lock.release()
+        img = mapnik.Image(width, height)
+        # Don't even call render with scale factor if it's not
+        # defined. Plays safe with older versions.
+        if self.scale_factor is None:
+            mapnik.render(Map, img)
+        else:
+            mapnik.render(Map, img, self.scale_factor)
 
         img = Image.frombytes('RGBA', (width, height), img.tostring())
 
