@@ -122,7 +122,6 @@ class Ktile(object):
     # Defined as apart of the vis_server config along with any metadata
     # Needed to geospatially reference the data on the remote system
     def ingest(self, data, name=None, **kwargs):
-        # from pudb.remote import set_trace; set_trace(term_size=(283,87))
         name = data.name if name is None else name
 
         kernel_id = kwargs.pop('kernel_id', None)

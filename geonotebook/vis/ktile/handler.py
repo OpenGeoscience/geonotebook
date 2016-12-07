@@ -1,4 +1,4 @@
-from tornado import web
+from tornado import web, gen
 import json
 from notebook.base.handlers import IPythonHandler
 from datetime import datetime, timedelta
@@ -31,7 +31,6 @@ def get_config():
 
 
 
-    #from pudb.remote import set_trace; set_trace(term_size=(319,87))
     config = {
         "cache":
         {
@@ -137,22 +136,43 @@ class KtileLayerHandler(IPythonHandler):
             raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
 
 
+from concurrent.futures import ThreadPoolExecutor
+from tornado import concurrent, ioloop
 
+class KTileAsyncClient(object):
+    __instance = None
+
+    def __new__(cls, *args, **kwargs):
+        if cls.__instance is None:
+            cls.__instance = super(
+                KTileAsyncClient, cls).__new__(cls, *args, **kwargs)
+        return cls.__instance
+
+    def __init__(self):
+        self.executor = ThreadPoolExecutor(max_workers=4)
+        self.io_loop = ioloop.IOLoop.current()
+
+    @concurrent.run_on_executor
+    def getTileResponse(self, layer, coord, extension):
+        return layer.getTileResponse(coord, extension)
 
 class KtileTileHandler(IPythonHandler):
 
     def initialize(self, ktile_config_manager):
+        self.client = KTileAsyncClient()
         self.ktile_config_manager = ktile_config_manager
 
+    @gen.coroutine
     def get(self, kernel_id, layer_name, x, y, z, extension, **kwargs):
-        # from pudb.remote import set_trace; set_trace(term_size=(283,87))
         config = self.ktile_config_manager[kernel_id].config
 
 
         layer = config.layers[layer_name]
         coord = Coordinate(int(y), int(x), int(z))
 
-        status_code, headers, content = layer.getTileResponse(coord, extension)
+        status_code, headers, content = yield self.client.getTileResponse(
+            layer, coord, extension)
+
 
         if layer.max_cache_age is not None:
             expires = datetime.utcnow() + timedelta(
