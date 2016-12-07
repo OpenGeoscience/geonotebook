@@ -42,16 +42,16 @@ class Annotation(object):
 
 
 class Point(Annotation, sPoint):
-    def __init__(self, x, y, **kwargs):
-        super(Point, self).__init__(x, y, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(Point, self).__init__(*args, **kwargs)
 
     def subset(self, raster_data, **kwargs):
         return raster_data.ix(self.x, self.y)
 
 
 class Rectangle(Annotation, sPolygon):
-    def __init__(self, coordinates, holes, **kwargs):
-        super(Rectangle, self).__init__(coordinates, holes, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(Rectangle, self).__init__(*args, **kwargs)
 
     def subset(self, raster_data, **kwargs):
         ul = raster_data.index(self.bounds[0], self.bounds[1])
@@ -64,8 +64,8 @@ class Rectangle(Annotation, sPolygon):
 
 
 class Polygon(Annotation, sPolygon):
-    def __init__(self, coordinates, holes, **kwargs):
-        super(Polygon, self).__init__(coordinates, holes, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(Polygon, self).__init__(*args, **kwargs)
 
     def subset(self, raster_data, **kwargs):
         # It is possible our user has drawn a polygon where part of the
