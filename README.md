@@ -52,7 +52,10 @@ jupyter notebook
 ```bash
 # From the source root
 pip install -r requirements-dev.txt
-python setup.py test
+tox
+
+# Optionally only run tests on python 2.7
+# tox -e py27
 ```
 
 
