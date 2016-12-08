@@ -175,7 +175,8 @@ class Remote(object):
 
 
 class Geonotebook(object):
-    msg_types = ['get_protocol', 'set_center', 'add_annotation']
+    msg_types = ['get_protocol', 'set_center', 'add_annotation',
+                 'get_map_state']
 
     _protocol = None
     _remote = None
@@ -308,6 +309,16 @@ class Geonotebook(object):
 
         self._kernel = kernel
 
+    def serialize(self):
+        ret = {}
+
+        if self.x and self.y and self.z:
+            ret['center'] = [self.x, self.y, self.z]
+
+        ret['layers'] = self.layers.serialize()
+
+        return ret
+
     def rpc_error(self, error):
         self.log.error(
             "JSONRPCError (%s): %s" % (error['code'], error['message'])
@@ -324,6 +335,9 @@ class Geonotebook(object):
 
         return self._remote.set_center(x, y, z)\
             .then(_set_center, self.rpc_error).catch(self.callback_error)
+
+    def get_map_state(self):
+        return self.serialize()
 
     def add_layer(self, data, name=None, vis_url=None, layer_type='wms',
                   **kwargs):
@@ -365,12 +379,14 @@ class Geonotebook(object):
             self.layers.append(layer)
 
         layer._type = layer_type
-        layer.params['zIndex'] = len(self.layers)
+
+        if layer._type in ('wms', 'osm'):
+            layer.kwargs['zIndex'] = len(self.layers)
 
         if hasattr(layer, 'vis_url'):
-            layer.params['vis_url'] = layer.vis_url
+            layer.kwargs['vis_url'] = layer.vis_url
 
-        return self._remote.add_layer(layer_type, layer.name, layer.params) \
+        return self._remote.add_layer(layer_type, layer.name, layer.kwargs) \
                            .then(_add_layer, self.rpc_error) \
                            .catch(self.callback_error)
 
