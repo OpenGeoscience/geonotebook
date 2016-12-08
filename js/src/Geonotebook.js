@@ -1,3 +1,5 @@
+import _ from 'underscore';
+
 import MapObject from './MapObject';
 import {
   is_response,
@@ -88,6 +90,16 @@ Geonotebook.prototype.recv_msg = function (message) {
     // Once protocol negotiation is complete create the geojs map
     // and add the base OSM layer
     this.map.init_map();
+
+    this.map.notebook._remote.get_map_state().then((state) => {
+      _.each(_.union(state.layers.system_layers, state.layers.layers), (layer) => {
+        this.map.add_layer(layer.type, layer.name, layer.kwargs);
+      });
+
+      if (_.has(state, 'center')) {
+        this.map.set_center.apply(this.map, state.center);
+      }
+    });
   } else if (this.protocol_negotiation_complete) {
     // Pass response messages on to remote to be resolved
     if (is_response(msg)) {

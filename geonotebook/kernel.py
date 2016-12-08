@@ -469,15 +469,18 @@ class GeonotebookKernel(IPythonKernel):
 
         # THis should be handled in a callback that is fired off
         # When set protocol etc is complete.
-        self.geonotebook.add_layer(
-            None, name="osm_base", layer_type="osm",
-            vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            system_layer=True)
+        if self.initializing:
+            self.geonotebook.add_layer(
+                None, name="osm_base", layer_type="osm",
+                vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                system_layer=True)
 
-        self.geonotebook.add_layer(
-            None, name="annotation",
-            layer_type="annotation", vis_url=None,
-            system_layer=True, expose_as="annotation")
+            self.geonotebook.add_layer(
+                None, name="annotation",
+                layer_type="annotation", vis_url=None,
+                system_layer=True, expose_as="annotation")
+
+            self.initializing = False
 
     def do_shutdown(self, restart):
         self.geonotebook = None
@@ -496,6 +499,7 @@ class GeonotebookKernel(IPythonKernel):
     def __init__(self, **kwargs):
         kwargs['log'].setLevel(logging.DEBUG)
         self.log = kwargs['log']
+        self.initializing = True
 
         super(GeonotebookKernel, self).__init__(**kwargs)
 
