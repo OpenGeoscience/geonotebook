@@ -25,6 +25,7 @@ class GeonotebookLayer(object):
         self.config = Config()
         self.remote = remote
         self.name = name
+        self.params = kwargs
 
         self._system_layer = kwargs.get("system_layer", False)
         self._expose_as = kwargs.get("expose_as", None)

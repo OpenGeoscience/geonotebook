@@ -364,29 +364,15 @@ class Geonotebook(object):
         def _add_layer(layer_name):
             self.layers.append(layer)
 
-        # These should be managed by some kind of handler to allow for
-        # additional types to be added more easily
-        if layer_type == 'wms':
-            params = layer.params
-            params['zIndex'] = len(self.layers)
+        layer._type = layer_type
+        layer.params['zIndex'] = len(self.layers)
 
-            cb = self._remote.add_wms_layer(layer.name, layer.vis_url, params)\
-                .then(_add_layer, self.rpc_error).catch(self.callback_error)
-        elif layer_type == 'osm':
-            params = {'zIndex': len(self.layers)}
+        if hasattr(layer, 'vis_url'):
+            layer.params['vis_url'] = layer.vis_url
 
-            cb = self._remote.add_osm_layer(layer.name, layer.vis_url, params)\
-                .then(_add_layer, self.rpc_error).catch(self.callback_error)
-        elif layer_type == 'annotation':
-            params = layer.params
-
-            cb = self._remote.add_annotation_layer(layer.name, params)\
-                .then(_add_layer, self.rpc_error).catch(self.callback_error)
-        else:
-            # Exception?
-            pass
-
-        return cb
+        return self._remote.add_layer(layer_type, layer.name, layer.params) \
+                           .then(_add_layer, self.rpc_error) \
+                           .catch(self.callback_error)
 
     def remove_layer(self, layer_name):
         # If layer_name is an object with a 'name' attribute we assume

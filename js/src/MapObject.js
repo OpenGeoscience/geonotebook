@@ -53,10 +53,8 @@ MapObject.prototype.msg_types = [
   'get_protocol',
   'set_center',
   '_debug',
-  'add_wms_layer',
   'replace_wms_layer',
-  'add_osm_layer',
-  'add_annotation_layer',
+  'add_layer',
   'clear_annotations',
   'remove_layer'
 ];
@@ -170,6 +168,19 @@ MapObject.prototype._set_layer_zindex = function (layer, index) {
       var max = _.max(_.invoke(this.geojsmap.layers(), 'zIndex'));
       annotation_layer.zIndex(max + 1);
     }
+  }
+};
+
+MapObject.prototype.add_layer = function (layer_type, layer_name, params) {
+  if (layer_type === 'annotation') {
+    return this.add_annotation_layer(layer_name, params);
+  } else if (layer_type === 'wms') {
+    return this.add_wms_layer(layer_name, params.vis_url, params);
+  } else if (layer_type === 'osm') {
+    return this.add_osm_layer(layer_name, params.vis_url, params);
+  } else {
+    console.error('Attempting to add layer of type ' + layer_type);
+    return false;
   }
 };
 
