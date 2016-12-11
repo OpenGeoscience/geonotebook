@@ -1,17 +1,18 @@
-from setuptools import setup, find_packages, Command
-from setuptools.command.install import install
-from setuptools.command.develop import develop
-from setuptools.command.sdist import sdist
-from setuptools.command.build_py import build_py
-from setuptools.command.egg_info import egg_info
 from distutils import log
+import glob
+import json
+import os
+import shutil
 from subprocess import check_call
 import sys
 import tempfile
-import os
-import json
-import shutil
-import glob
+
+from setuptools import Command, find_packages, setup
+from setuptools.command.build_py import build_py
+from setuptools.command.develop import develop
+from setuptools.command.egg_info import egg_info
+from setuptools.command.install import install
+from setuptools.command.sdist import sdist
 
 
 def post_install(func):
@@ -35,9 +36,9 @@ def install_kernel(cmd):
     from ipykernel import kernelspec
     from jupyter_client.kernelspec import KernelSpecManager
 
-    KERNEL_NAME = 'geonotebook%i' % sys.version_info[0]
+    kernel_name = 'geonotebook%i' % sys.version_info[0]
 
-    path = os.path.join(tempfile.mkdtemp(suffix='_kernels'), KERNEL_NAME)
+    path = os.path.join(tempfile.mkdtemp(suffix='_kernels'), kernel_name)
     try:
         os.makedirs(path)
     except OSError:
@@ -54,7 +55,7 @@ def install_kernel(cmd):
 
     ksm = KernelSpecManager()
     ksm.install_kernel_spec(
-        path, kernel_name=KERNEL_NAME, user=False, prefix=sys.prefix)
+        path, kernel_name=kernel_name, user=False, prefix=sys.prefix)
 
     shutil.rmtree(path)
 
@@ -75,7 +76,7 @@ log.info('$PATH=%s' % os.environ['PATH'])
 
 
 def js_prerelease(command, strict=False):
-    """decorator for building minified js/css prior to another command"""
+    """Decorator for building minified js/css prior to another command."""
     class DecoratedCommand(command):
         def run(self):
             jsdeps = self.distribution.get_command_obj('jsdeps')
@@ -102,7 +103,7 @@ def js_prerelease(command, strict=False):
 
 
 def update_package_data(distribution):
-    """update package_data to catch changes during setup"""
+    """Update package_data to catch changes during setup."""
     build_py = distribution.get_command_obj('build_py')
     # distribution.package_data = find_package_data()
     # re-init build_py options which load package_data
@@ -182,9 +183,9 @@ def install_geonotebook_ini(cmd):
     # cmd.dist is a pkg_resources.Distribution class, See:
     # http://setuptools.readthedocs.io/en/latest/pkg_resources.html#distribution-objects
 
-    # pkg_resources.Distribution.location can be a lot of things,  but in the case of
-    # a develop install it will be the path to the source tree. This will not work
-    # if applied to more exotic install targets
+    # pkg_resources.Distribution.location can be a lot of things,  but in the
+    # case of a develop install it will be the path to the source tree. This
+    # will not work if applied to more exotic install targets
     # (e.g. pip install -e git@github.com:OpenGeoscience/geonotebook.git)
     base_dir = cmd.dist.location
     # cmd.distribution is a setuptools.dist.Distribution class, See:
@@ -200,8 +201,8 @@ def install_geonotebook_ini(cmd):
                 src = os.path.join(base_dir, l)
 
                 dest = os.path.join(sys_path, os.path.basename(src))\
-                       if sys_path.startswith("/") else \
-                          os.path.join(sys.prefix, sys_path, os.path.basename(src))
+                    if sys_path.startswith("/") else \
+                    os.path.join(sys.prefix, sys_path, os.path.basename(src))
 
                 log.info("copying {} to {}".format(src, dest))
 
