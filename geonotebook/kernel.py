@@ -15,9 +15,10 @@ from .layers import (AnnotationLayer,
                      GeonotebookLayerCollection,
                      NoDataLayer,
                      SimpleLayer,
-                     TimeSeriesLayer)
+                     TimeSeriesLayer,
+                     VectorLayer)
 
-from .wrappers import RasterData, RasterDataCollection
+from .wrappers import RasterData, RasterDataCollection, VectorData
 
 
 class Remote(object):
@@ -342,7 +343,11 @@ class Geonotebook(object):
             layer = TimeSeriesLayer(
                 name, self._remote, data=data, vis_url=vis_url, **kwargs
             )
-
+        elif isinstance(data, VectorData):
+            layer_type = 'vector'
+            layer = VectorLayer(
+                name, self._remote, data=data, **kwargs
+            )
         else:
             assert name is not None, \
                 RuntimeError("Non data layers require a 'name'")
@@ -375,6 +380,10 @@ class Geonotebook(object):
             params = layer.params
 
             cb = self._remote.add_annotation_layer(layer.name, params)\
+                .then(_add_layer, self.rpc_error)
+        elif layer_type == 'vector':
+            geojson = data.geojson
+            cb = self._remote.add_vector_layer(layer.name, geojson)\
                 .then(_add_layer, self.rpc_error)
         else:
             # Exception?

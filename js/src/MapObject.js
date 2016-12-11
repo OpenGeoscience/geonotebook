@@ -58,7 +58,8 @@ MapObject.prototype.msg_types = [
   'add_osm_layer',
   'add_annotation_layer',
   'clear_annotations',
-  'remove_layer'
+  'remove_layer',
+  'add_vector_layer'
 ];
 
 MapObject.prototype._debug = function (msg) {
@@ -294,6 +295,12 @@ MapObject.prototype.add_wms_layer = function (layer_name, base_url, params) {
   });
 
   return layer_name;
+};
+
+MapObject.prototype.add_vector_layer = function (name, data) {
+  console.log(name);
+  console.log(data);
+  return name;
 };
 
 export default MapObject;

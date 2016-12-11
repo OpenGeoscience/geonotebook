@@ -117,6 +117,10 @@ class DataLayer(GeonotebookLayer):
                 self.__class__.__name__)
 
 
+class VectorLayer(DataLayer):
+    pass
+
+
 class SimpleLayer(DataLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
         super(SimpleLayer, self).__init__(
