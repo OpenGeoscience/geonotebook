@@ -15,7 +15,7 @@ from setuptools.command.install import install
 from setuptools.command.sdist import sdist
 
 
-def post_install(func):
+def post_install(func, **kwargs):
     def command_wrapper(command_subclass):
         # Keep a reference to the command subclasses 'run' function
         _run = command_subclass.run
@@ -23,7 +23,7 @@ def post_install(func):
         def run(self):
             _run(self)
             log.info("running post install function {}".format(func.__name__))
-            func(self)
+            func(self, **kwargs)
 
         command_subclass.run = run
         return command_subclass
@@ -178,7 +178,7 @@ class NPM(Command):
         update_package_data(self.distribution)
 
 
-def install_geonotebook_ini(cmd):
+def install_geonotebook_ini(cmd, link=False):
 
     # cmd.dist is a pkg_resources.Distribution class, See:
     # http://setuptools.readthedocs.io/en/latest/pkg_resources.html#distribution-objects
@@ -204,16 +204,23 @@ def install_geonotebook_ini(cmd):
                     if sys_path.startswith("/") else \
                     os.path.join(sys.prefix, sys_path, os.path.basename(src))
 
-                log.info("copying {} to {}".format(src, dest))
+                if os.path.lexists(dest):
+                    os.remove(dest)
 
-                shutil.copyfile(src, dest)
+                if link:
+                    log.info("linking {} to {}".format(src, dest))
+                    os.symlink(src, dest)
+                else:
+                    log.info("copying {} to {}".format(src, dest))
+                    shutil.copyfile(src, dest)
 
 
-def install_nbextension(cmd):
+def install_nbextension(cmd, link=False):
     from notebook.nbextensions import (install_nbextension_python,
                                        enable_nbextension)
 
-    install_nbextension_python("geonotebook", overwrite=True, sys_prefix=True)
+    install_nbextension_python("geonotebook",
+                               overwrite=True, sys_prefix=True, symlink=link)
     enable_nbextension("notebook", "geonotebook/index", sys_prefix=True)
 
 
@@ -230,8 +237,8 @@ class CustomInstall(install):
 
 
 @post_install(install_serverextension)
-@post_install(install_nbextension)
-@post_install(install_geonotebook_ini)
+@post_install(install_nbextension, link=True)
+@post_install(install_geonotebook_ini, link=True)
 @post_install(install_kernel)
 class CustomDevelop(develop):
     pass
