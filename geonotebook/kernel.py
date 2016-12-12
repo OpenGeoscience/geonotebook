@@ -555,7 +555,6 @@ class GeonotebookKernel(IPythonKernel):
         config.vis_server.start_kernel(self)
 
     def __init__(self, **kwargs):
-        kwargs['log'].setLevel(logging.DEBUG)
         self.log = kwargs['log']
         self.initializing = True
 
