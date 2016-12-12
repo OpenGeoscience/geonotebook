@@ -2,6 +2,7 @@ import _ from 'underscore';
 import 'geojs';
 
 import GeoMap from 'geojs/map';
+import JsonReader from 'geojs/jsonReader';
 import event from 'geojs/event';
 import annotate from './jsonrpc/annotate';
 import constants from './jsonrpc/constants';
@@ -298,8 +299,11 @@ MapObject.prototype.add_wms_layer = function (layer_name, base_url, params) {
 };
 
 MapObject.prototype.add_vector_layer = function (name, data) {
-  console.log(name);
-  console.log(data);
+  var layer = this.geojsmap.createLayer('feature');
+  JsonReader({layer: layer}).read(data, function (features) {
+    console.log(features);
+  });
+  layer.name(name);
   return name;
 };
 

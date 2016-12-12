@@ -1,4 +1,5 @@
 from inspect import getargspec, getmembers, isfunction, ismethod
+import json
 import logging
 from types import MethodType
 
@@ -382,7 +383,7 @@ class Geonotebook(object):
             cb = self._remote.add_annotation_layer(layer.name, params)\
                 .then(_add_layer, self.rpc_error)
         elif layer_type == 'vector':
-            geojson = data.geojson
+            geojson = json.loads(data.geojson)
             cb = self._remote.add_vector_layer(layer.name, geojson)\
                 .then(_add_layer, self.rpc_error)
         else:
