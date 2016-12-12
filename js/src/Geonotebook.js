@@ -94,6 +94,12 @@ Geonotebook.prototype.recv_msg = function (message) {
     this.map.notebook._remote.get_map_state().then((state) => {
       _.each(_.union(state.layers.system_layers, state.layers.layers), (layer) => {
         this.map.add_layer(layer.type, layer.name, layer.kwargs);
+
+        if (layer.type === 'annotation' && _.size(layer.annotations)) {
+          _.each(layer.annotations, (annotation) => {
+            this.map.add_annotation(annotation.type, annotation.args, annotation.kwargs);
+          });
+        }
       });
 
       if (_.has(state, 'center')) {
