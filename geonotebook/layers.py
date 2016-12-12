@@ -49,6 +49,15 @@ class AnnotationLayer(GeonotebookLayer):
         "polygon": annotations.Polygon
     }
 
+    def serialize(self):
+        ret = super(AnnotationLayer, self).serialize()
+
+        ret.update({
+            'annotations': [annot.serialize() for annot in self._annotations]
+        })
+
+        return ret
+
     def __init__(self, name, remote, layer_collection, **kwargs):
         super(AnnotationLayer, self).__init__(name, remote, **kwargs)
         self.layer_collection = layer_collection

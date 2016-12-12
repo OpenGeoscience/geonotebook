@@ -7,6 +7,7 @@ from shapely.geometry import Polygon as sPolygon
 class Annotation(object):
     def __init__(self, *args, **kwargs):
         self.layer = kwargs.pop('layer', None)
+        self._args = args
         self._metadata = kwargs
         for k, v in kwargs.items():
             setattr(Annotation, k, property(self._get_metadata(k),
@@ -14,6 +15,11 @@ class Annotation(object):
                                             None))
 
         super(Annotation, self).__init__(*args)
+
+    def serialize(self):
+        return {'type': self.__class__.__name__.lower(),
+                'args': self._args,
+                'kwargs': self._metadata}
 
     def _get_metadata(self, k):
         def _get_metadata(self):
