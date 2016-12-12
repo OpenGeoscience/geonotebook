@@ -1,20 +1,21 @@
-from setuptools import setup, find_packages, Command
-from setuptools.command.install import install
-from setuptools.command.develop import develop
-from setuptools.command.sdist import sdist
-from setuptools.command.build_py import build_py
-from setuptools.command.egg_info import egg_info
 from distutils import log
+import glob
+import json
+import os
+import shutil
 from subprocess import check_call
 import sys
 import tempfile
-import os
-import json
-import shutil
-import glob
+
+from setuptools import Command, find_packages, setup
+from setuptools.command.build_py import build_py
+from setuptools.command.develop import develop
+from setuptools.command.egg_info import egg_info
+from setuptools.command.install import install
+from setuptools.command.sdist import sdist
 
 
-def post_install(func):
+def post_install(func, **kwargs):
     def command_wrapper(command_subclass):
         # Keep a reference to the command subclasses 'run' function
         _run = command_subclass.run
@@ -22,7 +23,7 @@ def post_install(func):
         def run(self):
             _run(self)
             log.info("running post install function {}".format(func.__name__))
-            func(self)
+            func(self, **kwargs)
 
         command_subclass.run = run
         return command_subclass
@@ -35,9 +36,9 @@ def install_kernel(cmd):
     from ipykernel import kernelspec
     from jupyter_client.kernelspec import KernelSpecManager
 
-    KERNEL_NAME = 'geonotebook%i' % sys.version_info[0]
+    kernel_name = 'geonotebook%i' % sys.version_info[0]
 
-    path = os.path.join(tempfile.mkdtemp(suffix='_kernels'), KERNEL_NAME)
+    path = os.path.join(tempfile.mkdtemp(suffix='_kernels'), kernel_name)
     try:
         os.makedirs(path)
     except OSError:
@@ -54,7 +55,7 @@ def install_kernel(cmd):
 
     ksm = KernelSpecManager()
     ksm.install_kernel_spec(
-        path, kernel_name=KERNEL_NAME, user=False, prefix=sys.prefix)
+        path, kernel_name=kernel_name, user=False, prefix=sys.prefix)
 
     shutil.rmtree(path)
 
@@ -75,7 +76,7 @@ log.info('$PATH=%s' % os.environ['PATH'])
 
 
 def js_prerelease(command, strict=False):
-    """decorator for building minified js/css prior to another command"""
+    """Decorator for building minified js/css prior to another command."""
     class DecoratedCommand(command):
         def run(self):
             jsdeps = self.distribution.get_command_obj('jsdeps')
@@ -102,7 +103,7 @@ def js_prerelease(command, strict=False):
 
 
 def update_package_data(distribution):
-    """update package_data to catch changes during setup"""
+    """Update package_data to catch changes during setup."""
     build_py = distribution.get_command_obj('build_py')
     # distribution.package_data = find_package_data()
     # re-init build_py options which load package_data
@@ -177,14 +178,14 @@ class NPM(Command):
         update_package_data(self.distribution)
 
 
-def install_geonotebook_ini(cmd):
+def install_geonotebook_ini(cmd, link=False):
 
     # cmd.dist is a pkg_resources.Distribution class, See:
     # http://setuptools.readthedocs.io/en/latest/pkg_resources.html#distribution-objects
 
-    # pkg_resources.Distribution.location can be a lot of things,  but in the case of
-    # a develop install it will be the path to the source tree. This will not work
-    # if applied to more exotic install targets
+    # pkg_resources.Distribution.location can be a lot of things,  but in the
+    # case of a develop install it will be the path to the source tree. This
+    # will not work if applied to more exotic install targets
     # (e.g. pip install -e git@github.com:OpenGeoscience/geonotebook.git)
     base_dir = cmd.dist.location
     # cmd.distribution is a setuptools.dist.Distribution class, See:
@@ -200,19 +201,26 @@ def install_geonotebook_ini(cmd):
                 src = os.path.join(base_dir, l)
 
                 dest = os.path.join(sys_path, os.path.basename(src))\
-                       if sys_path.startswith("/") else \
-                          os.path.join(sys.prefix, sys_path, os.path.basename(src))
+                    if sys_path.startswith("/") else \
+                    os.path.join(sys.prefix, sys_path, os.path.basename(src))
 
-                log.info("copying {} to {}".format(src, dest))
+                if os.path.lexists(dest):
+                    os.remove(dest)
 
-                shutil.copyfile(src, dest)
+                if link:
+                    log.info("linking {} to {}".format(src, dest))
+                    os.symlink(src, dest)
+                else:
+                    log.info("copying {} to {}".format(src, dest))
+                    shutil.copyfile(src, dest)
 
 
-def install_nbextension(cmd):
+def install_nbextension(cmd, link=False):
     from notebook.nbextensions import (install_nbextension_python,
                                        enable_nbextension)
 
-    install_nbextension_python("geonotebook", overwrite=True, sys_prefix=True)
+    install_nbextension_python("geonotebook",
+                               overwrite=True, sys_prefix=True, symlink=link)
     enable_nbextension("notebook", "geonotebook/index", sys_prefix=True)
 
 
@@ -229,8 +237,8 @@ class CustomInstall(install):
 
 
 @post_install(install_serverextension)
-@post_install(install_nbextension)
-@post_install(install_geonotebook_ini)
+@post_install(install_nbextension, link=True)
+@post_install(install_geonotebook_ini, link=True)
 @post_install(install_kernel)
 class CustomDevelop(develop):
     pass

@@ -8,6 +8,7 @@
     "build:dev": "webpack -d --progress --cache",
     "build:prod": "webpack -p --progress",
     "build:ci": "webpack -d",
+    "watch": "npm run build:dev -- --watch",
     "test": "npm run test:cov -- --single-run",
     "test:cov": "karma start karma-cov.conf.js",
     "test:debug": "karma start --no-auto-watch karma.conf.js",
