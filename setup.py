@@ -273,7 +273,6 @@ setup(
     package_data={'geonotebook': ['static/*.js',
                                   'static/*.css',
                                   'templates/*.html']},
-    test_suite="tests",
     entry_points={
         'geonotebook.wrappers.raster': [
             'geotiff = geonotebook.wrappers.image:GeoTiffImage',
