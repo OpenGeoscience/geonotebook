@@ -131,18 +131,9 @@ MapObject.prototype.add_annotation = function (annotation) {
         this.rpc_error.bind(this));
 };
 
-// Note: point/polygon's fire 'state' when they are added to
-//       the map,  while rectangle's fire 'add'
-// See:  https://github.com/OpenGeoscience/geojs/issues/623
-MapObject.prototype.add_annotation_handler = function (evt) {
-  var annotation = evt.annotation;
-  if (annotation.type() === 'rectangle') {
-    this.add_annotation(annotation);
-  }
-};
 MapObject.prototype.state_annotation_handler = function (evt) {
   var annotation = evt.annotation;
-  if (annotation.type() === 'point' || annotation.type() === 'polygon') {
+  if (_.contains(['point', 'polygon', 'rectangle'], annotation.type())) {
     this.add_annotation(annotation);
   }
 };
@@ -153,7 +144,6 @@ MapObject.prototype.add_annotation_layer = function (layer_name, params) {
   });
   layer.name(layer_name);
 
-  layer.geoOn(geo_event.annotation.add, this.add_annotation_handler.bind(this));
 //            layer.geoOn(geo_event.annotation.remove, handleAnnotationChange);
   layer.geoOn(geo_event.annotation.state, this.state_annotation_handler.bind(this));
 

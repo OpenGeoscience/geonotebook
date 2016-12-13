@@ -8,6 +8,11 @@
     "build:dev": "webpack -d --progress --cache",
     "build:prod": "webpack -p --progress",
     "build:ci": "webpack -d",
+    "watch": "npm run build:dev -- --watch",
+    "test": "npm run test:cov -- --single-run",
+    "test:cov": "karma start karma-cov.conf.js",
+    "test:debug": "karma start --no-auto-watch karma.conf.js",
+    "test:run": "karma run",
     "lint": "eslint --cache ."
   },
   "repository": {
@@ -22,6 +27,7 @@
   "dependencies": {
     "babel-core": "^6.18.2",
     "babel-loader": "^6.2.7",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.18.0",
     "babel-preset-es2015": "^6.18.0",
     "css-loader": "^0.25.0",
     "d3": "^3.5",
@@ -43,11 +49,27 @@
     "webpack": "^1.13.3"
   },
   "devDependencies": {
+    "babel-plugin-istanbul": "^3.0.0",
     "eslint": "^3.9.1",
     "eslint-config-semistandard": "^7.0.0",
     "eslint-config-standard": "^6.2.1",
     "eslint-plugin-promise": "^3.3.1",
     "eslint-plugin-standard": "^2.0.1",
-    "eslint-plugin-underscore": "0.0.10"
+    "eslint-plugin-underscore": "0.0.10",
+    "expect.js": "^0.3.1",
+    "karma": "^1.3.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-coverage": "^1.1.1",
+    "karma-edge-launcher": "^0.1.1",
+    "karma-firefox-launcher": "^1.0.0",
+    "karma-ie-launcher": "^1.0.0",
+    "karma-mocha": "^1.3.0",
+    "karma-mocha-reporter": "^2.2.1",
+    "karma-opera-launcher": "^1.0.0",
+    "karma-safari-launcher": "^1.0.0",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-webpack": "^1.8.0",
+    "mocha": "^3.2.0",
+    "sinon": "^1.17.6"
   }
 }
