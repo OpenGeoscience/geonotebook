@@ -271,14 +271,13 @@ MapObject.prototype.add_layer = function (layer_name, base_url, params) {
 
   wms.name(layer_name);
 
+  var param_string = '';
+  if ($.param(params)){
+    param_string = '?' + $.param(params);
+  }
+
   wms.url(function (x, y, zoom) {
-    var params = '';
-
-    if ($.param(params)){
-        params = '?' + $.param(params);
-    }
-
-    return base_url + '/' + x + '/' + y + '/' + zoom + '.png' + params;
+    return base_url + '/' + x + '/' + y + '/' + zoom + '.png' + param_string;
   });
 
   return layer_name;

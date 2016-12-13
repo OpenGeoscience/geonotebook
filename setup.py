@@ -270,7 +270,8 @@ setup(
         'geonotebook.wrappers.raster': [
             'geotiff = geonotebook.wrappers.image:GeoTiffImage',
             'tiff = geonotebook.wrappers.image:GeoTiffImage',
-            'tif = geonotebook.wrappers.image:GeoTiffImage'
+            'tif = geonotebook.wrappers.image:GeoTiffImage',
+            'vrt = geonotebook.wrappers.image:GeoTiffImage'
         ]
 
     }
