@@ -10,4 +10,5 @@ six==1.10.0
 matplotlib
 pyproj
 pandas
+mapnik
 https://github.com/OpenGeoscience/KTile/archive/master.zip
