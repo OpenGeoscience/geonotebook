@@ -28,9 +28,17 @@ DEFAULT_MAP_SRS = "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 " + \
 class MapnikPythonProvider(object):
     def __init__(self, layer, **kwargs):
         self.layer = layer
+
         self.filepath = kwargs.pop("path", None)
         self.map_srs = kwargs.pop("map_srs", DEFAULT_MAP_SRS)
-        self.kwargs = kwargs
+
+        self.name = kwargs.get("name", None)
+        self.band = kwargs.get("band", -1)
+        self.opacity = kwargs.get("opacity", 1)
+        self.gamma = kwargs.get("gamma", 1)
+
+        self.colormap = kwargs.get('colormap', None)
+
         self.scale_factor = None
         self._layer_srs = None
 
@@ -70,41 +78,23 @@ class MapnikPythonProvider(object):
         #    </Rule>
         #  </Style>
         #</Map>
-        # from pudb.remote import set_trace; set_trace(term_size=(283, 87))
+
         style = mapnik.Style()
         rule = mapnik.Rule()
+
         sym = mapnik.RasterSymbolizer()
-        sym.opacity = 0.5
+        sym.opacity = self.opacity
 
         colorizer = mapnik.RasterColorizer(
-            mapnik.COLORIZER_LINEAR,
+            mapnik.COLORIZER_DISCRETE,
             mapnik.Color("white")
         )
         # colorizer.epsilon = 0.001
 
-        colorizer.add_stop(300, mapnik.Color("blue"))
-        colorizer.add_stop(320, mapnik.Color("red"))
+        for stop in self.colormap:
+            colorizer.add_stop(stop['quantity'], mapnik.Color(
+                stop['color'].encode('ascii')))
 
-        #colorizer.add_stop(11, mapnik.Color("#476BA0"))
-        #colorizer.add_stop(12, mapnik.Color("#D1DDF9"))
-        #colorizer.add_stop(21, mapnik.Color("#DDC9C9"))
-        #colorizer.add_stop(22, mapnik.Color("#D89382"))
-        #colorizer.add_stop(23, mapnik.Color("#ED0000"))
-        #colorizer.add_stop(24, mapnik.Color("#AA0000"))
-        #colorizer.add_stop(31, mapnik.Color("#B2ADA3"))
-        #colorizer.add_stop(41, mapnik.Color("#68AA63"))
-        #colorizer.add_stop(42, mapnik.Color("#1C6330"))
-        #colorizer.add_stop(43, mapnik.Color("#B5C98E"))
-        #colorizer.add_stop(51, mapnik.Color("#A58C30"))
-        #colorizer.add_stop(52, mapnik.Color("#CCBA7C"))
-        #colorizer.add_stop(71, mapnik.Color("#E2E2C1"))
-        #colorizer.add_stop(72, mapnik.Color("#C9C977"))
-        #colorizer.add_stop(73, mapnik.Color("#99C147"))
-        #colorizer.add_stop(74, mapnik.Color("#77AD93"))
-        #colorizer.add_stop(81, mapnik.Color("#DBD83D"))
-        #colorizer.add_stop(82, mapnik.Color("#AA7028"))
-        #colorizer.add_stop(90, mapnik.Color("#BAD8EA"))
-        #colorizer.add_stop(95, mapnik.Color("#70A3BA"))
 
         sym.colorizer = colorizer
         rule.symbols.append(sym)
@@ -116,7 +106,8 @@ class MapnikPythonProvider(object):
 
         lyr.datasource = mapnik.Gdal(base=os.path.dirname(self.filepath),
                                      file=os.path.basename(self.filepath),\
-                                     format="tiff")
+                                     format="tiff", band=self.band)
+
         lyr.styles.append("Raster Style")
 
         Map.layers.append(lyr)

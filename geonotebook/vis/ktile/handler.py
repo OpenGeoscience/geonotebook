@@ -5,69 +5,6 @@ from datetime import datetime, timedelta
 
 from ModestMaps.Core import Coordinate
 from jinja2 import Template
-from .config import KtileConfig, KtileLayerConfig
-
-
-
-class KtileHandler(IPythonHandler):
-    def initialize(self, ktile_config_manager):
-        self.ktile_config_manager = ktile_config_manager
-        self.ktile_config_manager.foo = id(ktile_config_manager)
-
-    def post(self, kernel_id):
-        self.ktile_config_manager[kernel_id] = KtileConfig()
-
-    def delete(self, kernel_id):
-        try:
-            del self.ktile_config_manager[kernel_id]
-        except KeyError:
-            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
-
-    def get(self, kernel_id, **kwargs):
-        config = self.ktile_config_manager[kernel_id].as_dict()
-        try:
-            self.finish(config)
-        except KeyError:
-            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
-
-
-class KtileLayerHandler(IPythonHandler):
-    def initialize(self, ktile_config_manager):
-        self.ktile_config_manager = ktile_config_manager
-
-    def prepare(self):
-        try:
-            if self.request.headers["Content-Type"].startswith("application/json"):
-                self.request.json = json.loads(self.request.body)
-        except Exception:
-            self.request.json = None
-
-    def post(self, kernel_id, layer_name, **kwargs):
-        try:
-            filepath = self.request.json['path']
-        except KeyError:
-            raise web.HTTPError(500, '"path" not passed')
-
-        try:
-            self.ktile_config_manager[kernel_id][layer_name] = \
-                KtileLayerConfig(
-                    layer_name,
-                    provider={
-                        "class": "geonotebook.vis.ktile.provider:MapnikPythonProvider",
-                        "kwargs": self.request.json
-                    })
-
-        except KeyError:
-            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
-
-        self.finish()
-
-    def get(self, kernel_id, layer_name, **kwargs):
-        config = self.ktile_config_manager[kernel_id][layer_name]
-        try:
-            self.finish(config)
-        except KeyError:
-            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
 
 
 from concurrent.futures import ThreadPoolExecutor
@@ -90,6 +27,64 @@ class KTileAsyncClient(object):
     def getTileResponse(self, layer, coord, extension):
         return layer.getTileResponse(coord, extension)
 
+
+
+class KtileHandler(IPythonHandler):
+    def initialize(self, ktile_config_manager):
+        self.ktile_config_manager = ktile_config_manager
+
+        try:
+            if self.request.headers["Content-Type"].startswith("application/json"):
+                self.request.json = json.loads(self.request.body)
+        except Exception:
+            self.request.json = None
+
+
+    def post(self, kernel_id):
+        # Note:  needs paramater validatio
+        kwargs = {} if self.request.json is None else self.request.json
+
+        self.ktile_config_manager.add_config(kernel_id, **kwargs)
+        self.finish()
+
+    def delete(self, kernel_id):
+        try:
+            del self.ktile_config_manager[kernel_id]
+        except KeyError:
+            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
+
+    def get(self, kernel_id, **kwargs):
+        config = self.ktile_config_manager[kernel_id]
+        try:
+            self.finish(config)
+        except KeyError:
+            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
+
+
+class KtileLayerHandler(IPythonHandler):
+    def initialize(self, ktile_config_manager):
+        self.ktile_config_manager = ktile_config_manager
+
+    def prepare(self):
+        try:
+            if self.request.headers["Content-Type"].startswith("application/json"):
+                self.request.json = json.loads(self.request.body)
+        except Exception:
+            self.request.json = None
+
+    def post(self, kernel_id, layer_name):
+        # Note: needs paramater validation
+        self.ktile_config_manager.add_layer(
+            kernel_id, layer_name, self.request.json)
+        self.finish()
+
+    def get(self, kernel_id, layer_name, **kwargs):
+        config = self.ktile_config_manager[kernel_id][layer_name]
+        try:
+            self.finish(config)
+        except KeyError:
+            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
+
 class KtileTileHandler(IPythonHandler):
 
     def initialize(self, ktile_config_manager):
@@ -100,9 +95,9 @@ class KtileTileHandler(IPythonHandler):
     def get(self, kernel_id, layer_name, x, y, z, extension, **kwargs):
 
         if self.get_query_argument("debug", default=False):
-            from pudb.remote import set_trace; set_trace(term_size=(283, 87))
+            import pudb; pu.db
 
-        config = self.ktile_config_manager[kernel_id].config
+        config = self.ktile_config_manager[kernel_id]
 
 
         layer = config.layers[layer_name]

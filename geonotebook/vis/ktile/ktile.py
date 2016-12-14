@@ -4,9 +4,12 @@ from notebook.utils import url_path_join as ujoin
 from .handler import (KtileHandler,
                       KtileLayerHandler,
                       KtileTileHandler)
-from .config import KtileConfig, KtileLayerConfig
 from collections import MutableMapping
 from ..utils import generate_colormap
+
+import TileStache as ts
+# NB:  this uses a 'private' API for parsing the Config layer dictionary
+from TileStache.Config import _parseConfigLayer as parseConfigLayer
 
 # Manage kernel_id => layer configuration section
 # Note - when instantiated this is a notebook-wide class,
@@ -21,14 +24,6 @@ class KtileConfigManager(MutableMapping):
         return self._configs.__getitem__(*args, **kwargs)
 
     def __setitem__(self, _id, value):
-        if not isinstance(value, KtileConfig):
-            raise RuntimeError(
-                "{} only accepts objects of type {}".format(
-                    self.__class__.__name__, KtileConfig.__class__.__name__))
-
-        if value.cache is None:
-            value.cache = self.default_cache
-
         self._configs.__setitem__(_id, value)
 
     def __delitem__(self, *args, **kwargs):
@@ -39,6 +34,23 @@ class KtileConfigManager(MutableMapping):
 
     def __len__(self, *args, **kwargs):
         return self._configs.__len__(*args, **kwargs)
+
+    def add_config(self, kernel_id, **kwargs):
+        cache = kwargs.get("cache", self.default_cache)
+
+        self._configs[kernel_id] = ts.parseConfig({
+            "cache": cache,
+            "layers": {}
+        })
+
+    def add_layer(self, kernel_id, layer_name, layer_dict, dirpath=''):
+        # NB: dirpath is actually not used in _parseConfigLayer So dirpath
+        # should have no effect regardless of its value.
+
+        # Note: Needs error checking
+        self._configs[kernel_id].layers[layer_name] = \
+            parseConfigLayer(layer_dict, self._configs[kernel_id], dirpath)
+
 
 # Ktile vis_server,  this is not a persistent object
 # It is brought into existence as a client to provide access
@@ -140,6 +152,13 @@ class Ktile(object):
 
         base_url = '{}/{}/{}'.format(self.base_url, kernel_id, name)
 
-        r = requests.post(base_url, json=options)
+        r = requests.post(base_url, json={
+            "provider": {
+                "class": "geonotebook.vis.ktile.provider:MapnikPythonProvider",
+                "kwargs": options
+            }
+            # NB: Other KTile layer options could go here
+            #     See: http://tilestache.org/doc/#layers
+        })
 
         return base_url
