@@ -141,6 +141,10 @@ Geonotebook.prototype.register_events = function (Jupyter, events) {
 };
 
 Geonotebook.prototype.init_html_and_css = function () {
+  $('#ipython-main-app').addClass('geonotebook');
+  $('#notebook-container').addClass('geonotebook');
+  $('.container').addClass('geonotebook');
+  $('#maintoolbar-container').addClass('geonotebook');
   $('#ipython-main-app').after('<div id="geonotebook-panel"><div id="geonotebook-map" /></div>');
 };
 
