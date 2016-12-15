@@ -1,10 +1,10 @@
-#ipython-main-app {
+.geonotebook#ipython-main-app {
     float: left;
     width: 40%;
     overflow-y: scroll;
 }
 
-#notebook-container {
+.geonotebook#notebook-container {
     width: calc(100% - 15px);
     margin-left: 15px;
     padding: 0px;
@@ -23,10 +23,10 @@
     width: 100%;
 }
 
-.container {
+.geonotebook.container {
     margin-left: 20px;
 }
 
-#maintoolbar-container {
+.geonotebook#maintoolbar-container {
     margin-left: 0px;
 }
