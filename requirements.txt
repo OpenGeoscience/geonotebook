@@ -12,3 +12,4 @@ pyproj
 pandas
 mapnik
 https://github.com/OpenGeoscience/KTile/archive/master.zip
+lxml
