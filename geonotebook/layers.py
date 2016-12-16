@@ -1,12 +1,9 @@
-from collections import namedtuple
 from collections import OrderedDict
 
 import six
 
 from . import annotations
 from .config import Config
-
-BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
 
 class GeonotebookLayer(object):

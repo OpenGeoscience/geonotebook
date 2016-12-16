@@ -1,9 +1,10 @@
+from collections import namedtuple
 from functools import wraps
 
 import numpy as np
 import rasterio as rio
 
-from .bbox import BBox
+BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
 
 class BandStats(object):
