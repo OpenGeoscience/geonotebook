@@ -161,4 +161,8 @@ class Ktile(object):
             #     See: http://tilestache.org/doc/#layers
         })
 
+        if r.json()['status'] == 0:
+            raise RuntimeError("Ingest returned error:\n\n{}".format(
+                ''.join(r.json()['error'])))
+
         return base_url

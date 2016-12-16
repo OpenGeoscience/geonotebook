@@ -74,9 +74,20 @@ class KtileLayerHandler(IPythonHandler):
 
     def post(self, kernel_id, layer_name):
         # Note: needs paramater validation
-        self.ktile_config_manager.add_layer(
-            kernel_id, layer_name, self.request.json)
-        self.finish()
+        try:
+            self.ktile_config_manager.add_layer(
+                kernel_id, layer_name, self.request.json)
+
+            self.write({'status': 1})
+
+        except Exception as e:
+            import sys, traceback
+            t, v, tb = sys.exc_info()
+
+            self.log.error(''.join(traceback.format_exception(t, v, tb)))
+
+            self.write({'status': 0,
+                        'error': traceback.format_exception(t, v, tb)})
 
     def get(self, kernel_id, layer_name, **kwargs):
         config = self.ktile_config_manager[kernel_id][layer_name]
