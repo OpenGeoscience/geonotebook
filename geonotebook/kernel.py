@@ -510,7 +510,7 @@ class GeonotebookKernel(IPythonKernel):
 
 
     def __init__(self, **kwargs):
-        kwargs['log'].setLevel(logging.DEBUG)
+        kwargs['log'].setLevel(logging.INFO)
         self.log = kwargs['log']
 
         super(GeonotebookKernel, self).__init__(**kwargs)

@@ -11,6 +11,7 @@ import TileStache as ts
 # NB:  this uses a 'private' API for parsing the Config layer dictionary
 from TileStache.Config import _parseConfigLayer as parseConfigLayer
 
+
 # Manage kernel_id => layer configuration section
 # Note - when instantiated this is a notebook-wide class,
 # it manages the configuration for all running geonotebook
@@ -140,7 +141,7 @@ class Ktile(object):
 
         options['name'] = name
         options['path'] = os.path.abspath(data.path)
-        options['band'] = data.band_indexes[0]
+        options['bands'] = data.band_indexes
         options['opacity'] = kwargs.get("opacity", 1)
         options['gamma'] = kwargs.get("gamma", 1)
 
@@ -162,7 +163,7 @@ class Ktile(object):
         })
 
         if r.json()['status'] == 0:
-            raise RuntimeError("Ingest returned error:\n\n{}".format(
+            raise RuntimeError("KTile.ingest() returned error:\n\n{}".format(
                 ''.join(r.json()['error'])))
 
         return base_url
