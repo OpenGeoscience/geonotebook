@@ -20,33 +20,45 @@ if 'mapnik' in locals():
     else:
         Box2d = mapnik.Envelope
 
-global_mapnik_lock = allocate_lock()
 
-
-DEFAULT_MAP_SRS = '+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 ' + \
-    '+lon_0=0.0 +x_0=0.0 +y_0=0.0 +k=1.0 +units=m ' +\
-    '+nadgrids=@null +wktext +no_defs +over'
-
+DEFAULT_MAP_SRS = 'EPSG:4326'
 
 class MapnikPythonProvider(object):
+    numpy_to_vrt_type = {
+        'uint8': 'Byte'
+    }
+
     def __init__(self, layer, **kwargs):
         # List of bands to display,  should be len == 1 or len == 3
         self._bands = kwargs.get('bands', -1)
         self._last_hash = None
 
-        self._vrt_path = os.path.join(
-            tempfile.mkdtemp(), '{}.vrt'.format(kwargs.get('name', 'no_name')))
+        self._static_vrt = kwargs.get("vrt_path", None)
+
+        if self._static_vrt is None:
+            #self._vrt_path = os.path.join(
+            #    tempfile.mkdtemp(), '{}.vrt'.format(kwargs.get('name', 'no_name')))
+            self._vrt_path = "/tmp/geonotebook/{}.vrt".format(kwargs.get('name', 'no_name'))
 
         self._filepath = None
 
-
         self.layer = layer
 
-        self.filepath = kwargs.pop('path', None)
-        self.map_srs = kwargs.pop('map_srs', DEFAULT_MAP_SRS)
+        self.filepath = kwargs.get('path', None)
+        self.map_srs = kwargs.get('map_srs', DEFAULT_MAP_SRS)
 
         self.name = kwargs.get('name', None)
 
+
+        self.raster_x_size = kwargs.get('raster_x_size', None)
+        self.raster_y_size = kwargs.get('raster_y_size', None)
+
+
+        self.transform = kwargs.get('transform', None)
+
+        self.nodata = float(kwargs.get('nodata', None))
+
+        self.dtype = self.numpy_to_vrt_type[kwargs['dtype']]
 
         # The band value mapnik expects
         self.band = -1 if len(self._bands) == 3 else self._bands[0]
@@ -69,38 +81,47 @@ class MapnikPythonProvider(object):
             tuple(self._bands),
             self.opacity,
             self.gamma,
+            self.nodata,
             tuple(tuple(cm.items()) for cm in self.colormap),
             self.scale_factor))
 
 
     def _generate_vrt(self):
-        # Hard coded hack for now
-        vrt = parseString('''
-<VRTDataset rasterXSize='7243' rasterYSize='1900'>
-  <SRS>GEOGCS['WGS 84',DATUM['WGS_1984',SPHEROID['WGS 84',6378137,298.257223563,AUTHORITY['EPSG','7030']],AUTHORITY['EPSG','6326']],PRIMEM['Greenwich',0,AUTHORITY['EPSG','8901']],UNIT['degree',0.0174532925199433,AUTHORITY['EPSG','9122']],AUTHORITY['EPSG','4326']]</SRS>
-  <GeoTransform> -1.2306229313641593e+02,  7.5176108435883674e-04,  0.0000000000000000e+00,  4.8571429239198785e+01,  0.0000000000000000e+00, -7.5176108435883674e-04</GeoTransform>
-  <VRTRasterBand dataType='Float32' band='1'>
-    <NoDataValue>-9999</NoDataValue>
-    <ColorInterp>Gray</ColorInterp>
-    <ComplexSource>
-      <SourceFilename relativeToVRT='1'>{}</SourceFilename>
-      <SourceBand>1</SourceBand>
-      <SourceProperties RasterXSize='7243' RasterYSize='1900' DataType='Float32' BlockXSize='7243' BlockYSize='1' />
-      <SrcRect xOff='0' yOff='0' xSize='7243' ySize='1900' />
-      <DstRect xOff='0' yOff='0' xSize='7243' ySize='1900' />
-      <NODATA>-9999</NODATA>
-    </ComplexSource>
-  </VRTRasterBand>
-</VRTDataset>
-        '''.format(self.filepath), silence=True)
+        if self._static_vrt is not None:
+            return
+
+        vrt = VRTDataset(rasterXSize = self.raster_x_size,
+                         rasterYSize = self.raster_y_size)
+        vrt.SRS = [self.map_srs]
+        vrt.GeoTransform = [", ".join([str(f) for f in self.transform])]
+
+        for b in self._bands:
+            vrt_band = VRTRasterBandType(dataType=self.dtype,
+                                         NoDataValue=[self.nodata],
+                                         ComplexSource=[
+                                             ComplexSourceType(
+                                                 NODATA=self.nodata,
+                                                 SourceFilename=[
+                                                     SourceFilenameType(
+                                                         relativeToVRT=0,
+                                                         valueOf_=self.filepath)],
+                                                 SourceBand=[b])
+                                         ])
+
+            vrt.VRTRasterBand.append(vrt_band)
+
 
         with open(self._vrt_path, 'w') as fh:
             vrt.export(fh, 0)
 
 
 
+
     @property
     def vrt_path(self):
+        if self._static_vrt is not None:
+            return self._static_vrt
+
         if self._last_hash != hash(self):
             self._generate_vrt()
             self._last_hash = hash(self)
@@ -123,10 +144,8 @@ class MapnikPythonProvider(object):
     @property
     def layer_srs(self):
         if self._layer_srs is None:
-            raster = gdal.Open(self.filepath)
-            srs = osr.SpatialReference()
-            srs.ImportFromWkt(raster.GetProjectionRef())
-            self._layer_srs = srs.ExportToProj4()
+            # TODO: Hard-coded
+            self._layer_srs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs "
 
         return self._layer_srs
 
@@ -164,7 +183,7 @@ class MapnikPythonProvider(object):
         sym.opacity = self.opacity
 
         colorizer = mapnik.RasterColorizer(
-            mapnik.COLORIZER_DISCRETE,
+            mapnik.COLORIZER_LINEAR,
             mapnik.Color('white')
         )
         # colorizer.epsilon = 0.001
@@ -199,7 +218,7 @@ class MapnikPythonProvider(object):
         # NB: To be thread-safe Map object cannot be stored as apart
         #     of the class, see: https://groups.google.com/forum/#!topic/mapnik/USDlVfSk328
 
-        Map = mapnik.Map(width, height, self.map_srs)
+        Map = mapnik.Map(width, height, srs)
         Map.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
 
         Map = self.style_map(Map)

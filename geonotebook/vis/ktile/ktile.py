@@ -53,6 +53,9 @@ class KtileConfigManager(MutableMapping):
             parseConfigLayer(layer_dict, self._configs[kernel_id], dirpath)
 
 
+        self._configs[kernel_id].layers[layer_name].provider._generate_vrt()
+
+
 # Ktile vis_server,  this is not a persistent object
 # It is brought into existence as a client to provide access
 # to the KtileConfigManager through the Tornado webserver's
@@ -137,19 +140,60 @@ class Ktile(object):
 
         name = data.name if name is None else name
 
+
         options = {}
 
+        # Metadata
+
         options['name'] = name
+
+        # VRT options
+
         options['path'] = os.path.abspath(data.path)
         options['bands'] = data.band_indexes
+
+        options['nodata'] = data.nodata
+
+        # TODO:  Needs to be moved into RasterData level API
+        options['raster_x_size'] = data.reader.width
+        options['raster_y_size'] = data.reader.height
+
+        # TODO:  Needs to be moved into RasterData level API
+        options['transform'] = data.reader.dataset.profile['transform']
+        options['dtype'] = data.reader.dataset.profile['dtype']
+
+        if 'vrt_path' in kwargs:
+            options['vrt_path'] = kwargs['vrt_path']
+
+
+
+        # Style Options
+
         options['opacity'] = kwargs.get("opacity", 1)
         options['gamma'] = kwargs.get("gamma", 1)
 
+
+
         if len(data.band_indexes) == 1:
-            #options['colormap'] = generate_colormap(kwargs.get('colormap', None),
-            #                                        data.min, data.max)
-            options['colormap'] = generate_colormap(kwargs.get('colormap', None),
-                                                    0, 1)
+            try:
+                # If we have the colormap in the form
+                # of a list of dicts with color/quantity then
+                # set options['colormap'] equal to this
+                for d in kwargs.get("colormap", None):
+                    assert 'color' in d
+                    assert 'quantity' in d
+                options['colormap'] = kwargs.get('colormap')
+
+            except:
+                # Otherwise try to figure out the correct colormap
+                # using data min/max
+                _min = kwargs.get('min', data.min)
+                _max = kwargs.get('max', data.max)
+
+                options['colormap'] = generate_colormap(
+                    kwargs.get('colormap', None), _min, _max)
+
+        # Make the Request
 
         base_url = '{}/{}/{}'.format(self.base_url, kernel_id, name)
 
