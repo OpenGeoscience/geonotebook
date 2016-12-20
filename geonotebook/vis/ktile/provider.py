@@ -117,10 +117,11 @@ class MapnikPythonProvider(object):
 
         for b in self._bands:
             vrt_band = VRTRasterBandType(dataType=self.dtype,
-                                         NoDataValue=[self.nodata],
+                                         band=b,
+                                         NoDataValue=[str(self.nodata)],
                                          ComplexSource=[
                                              ComplexSourceType(
-                                                 NODATA=self.nodata,
+                                                 NODATA=str(self.nodata),
                                                  SourceFilename=[
                                                      SourceFilenameType(
                                                          relativeToVRT=0,
