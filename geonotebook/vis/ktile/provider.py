@@ -74,6 +74,23 @@ class MapnikPythonProvider(object):
         self.scale_factor = None
 
 
+    def serialize(self):
+        return {
+            "filepath": self.filepath,
+            "map_srs": self.map_srs,
+            "vrt_path": self.vrt_path,
+            "name": self.name,
+            "opacity": self.opacity,
+            "gamma": self.gamma,
+            "nodata": self.nodata,
+            "colormap": self.colormap,
+            "is_static": True if self._static_vrt else False,
+            "raster_x_size": self.raster_x_size,
+            "raster_y_size": self.raster_y_size,
+            "transform": self.transform,
+            "nodata": self.nodata,
+            "layer_srs": self.layer_srs
+        }
 
 
     def __hash__(self):
@@ -154,31 +171,6 @@ class MapnikPythonProvider(object):
 
 
     def style_map(self, Map):
-        #<Map font-directory='./fonts' srs='{{map_srs}}'>
-        #  <Layer name='raster-layer' srs='{{layer_srs}}' status='on'>
-        #    <StyleName>raster-style</StyleName>
-        #    <Datasource>
-        #      <Parameter name='type'>gdal</Parameter>
-        #      <Parameter name='file'>{{ filepath }}</Parameter>
-        #      <Parameter name='format'>tiff</Parameter>
-        #      <Parameter name='band'>4</Parameter>
-        #    </Datasource>
-        #  </Layer>
-        #  <Style name='raster-style'>
-        #    <Rule>
-        #      <RasterSymbolizer
-        #         opacity='0.8'>
-        #      <RasterColorizer default-mode='linear' default-color='white' epsilon='0.001'>
-        #        <stop color='blue'        value = '-1'   />
-        #        <stop color='beige'       value = '0'    />
-        #        <stop color='green'       value = '1'    />
-        #      </RasterColorizer>
-        #       <!-- optinal <RasterColorizer/> goes here -->
-        #      </RasterSymbolizer>
-        #    </Rule>
-        #  </Style>
-        #</Map>
-
         style = mapnik.Style()
         rule = mapnik.Rule()
 
