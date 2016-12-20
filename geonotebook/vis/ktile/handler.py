@@ -10,6 +10,10 @@ from jinja2 import Template
 from concurrent.futures import ThreadPoolExecutor
 from tornado import concurrent, ioloop
 
+from geonotebook.utils import get_kernel_id
+from .utils import serialize_layer, serialize_config
+
+
 class KTileAsyncClient(object):
     __instance = None
 
@@ -41,10 +45,11 @@ class KtileHandler(IPythonHandler):
 
 
     def post(self, kernel_id):
-        # Note:  needs paramater validatio
+        # Note:  needs paramater validation
         kwargs = {} if self.request.json is None else self.request.json
 
         self.ktile_config_manager.add_config(kernel_id, **kwargs)
+        self.log.info("Created config for {}".format(kernel_id))
         self.finish()
 
     def delete(self, kernel_id):
@@ -54,11 +59,12 @@ class KtileHandler(IPythonHandler):
             raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
 
     def get(self, kernel_id, **kwargs):
-        config = self.ktile_config_manager[kernel_id]
         try:
-            self.finish(config)
+            config = self.ktile_config_manager[kernel_id]
         except KeyError:
             raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
+
+        self.finish(serialize_config(config))
 
 
 class KtileLayerHandler(IPythonHandler):
@@ -90,11 +96,12 @@ class KtileLayerHandler(IPythonHandler):
                         'error': traceback.format_exception(t, v, tb)})
 
     def get(self, kernel_id, layer_name, **kwargs):
-        config = self.ktile_config_manager[kernel_id][layer_name]
         try:
-            self.finish(config)
+            layer = self.ktile_config_manager[kernel_id].layers[layer_name]
         except KeyError:
             raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
+
+        self.finish(serialize_layer(layer))
 
 class KtileTileHandler(IPythonHandler):
 
