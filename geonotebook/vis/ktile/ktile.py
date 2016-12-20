@@ -168,7 +168,8 @@ class Ktile(object):
         if 'vrt_path' in kwargs:
             options['vrt_path'] = kwargs['vrt_path']
 
-
+        if 'map_srs' in kwargs:
+            options['map_srs'] = kwargs['map_srs']
 
         # Style Options
 

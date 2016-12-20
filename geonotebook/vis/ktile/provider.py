@@ -25,7 +25,8 @@ DEFAULT_MAP_SRS = 'EPSG:4326'
 
 class MapnikPythonProvider(object):
     numpy_to_vrt_type = {
-        'uint8': 'Byte'
+        'uint8': 'Byte',
+        'float32': 'Float32'
     }
 
     def __init__(self, layer, **kwargs):
@@ -63,13 +64,17 @@ class MapnikPythonProvider(object):
         except KeyError:
             self.dtype = None
 
-        # The band value mapnik expects
-        self.band = -1 if len(self._bands) == 3 else self._bands[0]
+        # Note: The band value mapnik expects. If we are rendering
+        #       an RGB and we have 3 _bands,  then we set bands to
+        #       -1.  Mapnik will use the ColorInterp from the VRT
+        #       to figure out the bands.  Otherwise the VRT will have
+        #       a single VRTRasterBand so we set the band to 1
+        self.band = -1 if len(self._bands) == 3 else 1
 
         self.opacity = kwargs.get('opacity', 1)
         self.gamma = kwargs.get('gamma', 1)
 
-        self.colormap = kwargs.get('colormap', None)
+        self.colormap = kwargs.get('colormap', {})
 
         self.scale_factor = None
 
@@ -115,19 +120,30 @@ class MapnikPythonProvider(object):
         vrt.SRS = [self.map_srs]
         vrt.GeoTransform = [", ".join([str(f) for f in self.transform])]
 
-        for b in self._bands:
+        colors = ["Red", "Green", "Blue"]
+
+        for i, b in enumerate(self._bands):
             vrt_band = VRTRasterBandType(dataType=self.dtype,
-                                         band=b,
-                                         NoDataValue=[str(self.nodata)],
-                                         ComplexSource=[
-                                             ComplexSourceType(
-                                                 NODATA=str(self.nodata),
-                                                 SourceFilename=[
-                                                     SourceFilenameType(
-                                                         relativeToVRT=0,
-                                                         valueOf_=self.filepath)],
-                                                 SourceBand=[b])
-                                         ])
+                                         band=i+1,
+                                         NoDataValue=[str(self.nodata)])
+            source = ComplexSourceType(
+                NODATA=str(self.nodata),
+                SourceFilename=[
+                    SourceFilenameType(
+                        relativeToVRT=0,
+                        valueOf_=self.filepath)],
+                SourceBand=[b])
+
+
+
+
+            if len(self._bands) == 3:
+                vrt_band.ColorInterp = [colors[i]]
+
+                if self.dtype == "Float32":
+                    source.ScaleRatio = int(255)
+
+            vrt_band.ComplexSource.append(source)
 
             vrt.VRTRasterBand.append(vrt_band)
 
@@ -172,24 +188,28 @@ class MapnikPythonProvider(object):
 
 
     def style_map(self, Map):
+        #from pudb.remote import set_trace; set_trace(term_size=(283, 87))
+
         style = mapnik.Style()
         rule = mapnik.Rule()
 
         sym = mapnik.RasterSymbolizer()
         sym.opacity = self.opacity
 
+
         colorizer = mapnik.RasterColorizer(
-            mapnik.COLORIZER_LINEAR,
+            mapnik.COLORIZER_DISCRETE,
             mapnik.Color('white')
         )
-        # colorizer.epsilon = 0.001
-
-        for stop in self.colormap:
-            colorizer.add_stop(stop['quantity'], mapnik.Color(
-                stop['color'].encode('ascii')))
+            # colorizer.epsilon = 0.001
+        if self.colormap:
+            for stop in self.colormap:
+                colorizer.add_stop(stop['quantity'], mapnik.Color(
+                    stop['color'].encode('ascii')))
 
 
         sym.colorizer = colorizer
+
         rule.symbols.append(sym)
         style.rules.append(rule)
 
