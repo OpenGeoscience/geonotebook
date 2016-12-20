@@ -205,9 +205,16 @@ class Ktile(object):
             # NB: Other KTile layer options could go here
             #     See: http://tilestache.org/doc/#layers
         })
+        response = r.json()
 
-        if r.json()['status'] == 0:
-            raise RuntimeError("KTile.ingest() returned error:\n\n{}".format(
-                ''.join(r.json()['error'])))
+        try:
+            if response['status'] == 0:
+                raise RuntimeError("KTile.ingest() returned error:\n\n{}".format(
+                    ''.join(response['error'])))
+        except KeyError:
+            raise RuntimeError("Malformed reponse from {}: {}".format(
+                base_url, response ))
+
+
 
         return base_url
