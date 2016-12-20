@@ -20,6 +20,7 @@ from .layers import (AnnotationLayer,
 from .wrappers import RasterData, RasterDataCollection
 
 from .config import Config
+from .utils import get_kernel_id
 
 class Remote(object):
     """Provides an object that proxies procedures on a remote object.
@@ -308,7 +309,7 @@ class Geonotebook(object):
 
     @property
     def kernel_id(self):
-        return self._kernel.ident
+        return get_kernel_id(self._kernel)
 
     def rpc_error(self, error):
         self.log.error(

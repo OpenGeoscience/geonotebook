@@ -11,6 +11,7 @@ import TileStache as ts
 # NB:  this uses a 'private' API for parsing the Config layer dictionary
 from TileStache.Config import _parseConfigLayer as parseConfigLayer
 
+from geonotebook.utils import get_kernel_id
 
 # Manage kernel_id => layer configuration section
 # Note - when instantiated this is a notebook-wide class,
@@ -78,12 +79,14 @@ class Ktile(object):
 
 
     def start_kernel(self, kernel):
-        requests.post("{}/{}".format(self.base_url, kernel.ident))
+        kernel_id = get_kernel_id(kernel)
+        requests.post("{}/{}".format(self.base_url, kernel_id))
         # Error checking on response!
 
     def shutdown_kernel(self, kernel):
-        requests.delete("{}/{}".format(self.base_url, kernel.ident))
-        pass
+        kernel_id = get_kernel_id(kernel)
+        requests.delete("{}/{}".format(self.base_url, kernel_id))
+
 
     # This function is caleld inside the tornado web app
     # from jupyter_load_server_extensions
