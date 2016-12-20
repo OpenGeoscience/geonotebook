@@ -1,6 +1,6 @@
 import collections
 
-import geopandas
+import fiona
 import six
 
 from ..annotations import Point, Polygon
@@ -10,24 +10,22 @@ class VectorData(collections.Sequence):
 
     def __init__(self, path, **kwargs):
         if isinstance(path, six.string_types):
-            self.reader = geopandas.read_file(path)
-        elif isinstance(path, geopandas.GeoDataFrame):
-            self.reader = path
+            self.reader = fiona.open(path)
         else:
-            raise Exception('Unknown input type')
+            self.reader = path
 
     def __len__(self):
         return len(self.reader)
 
-    def __getitem__(self, keys):
-        return self.reader.iloc[keys]
+    def __getitem__(self, key):
+        return self.reader[key]
 
     @property
     def annotations(self):
         """Return an iterator the generates annotations from geometries."""
-        for index, row in self.reader.iterrows():
-            props = row.to_dict()
-            geometry = props.pop('geometry')
+        for index, feature in enumerate(self.reader):
+            props = feature['properties']
+            geometry = feature['geometry']
             if geometry.geom_type == 'Point':
                 yield Point(geometry, **props)
             elif geometry.geom_type == 'Polygon':
@@ -41,5 +39,8 @@ class VectorData(collections.Sequence):
 
     @property
     def geojson(self):
-        """Return a serialized (geojson) representation."""
-        return self.reader.to_json()
+        """Return an object (geojson) representation."""
+        return {
+            'type': 'FeatureCollection',
+            'features': list(self.reader)
+        }
