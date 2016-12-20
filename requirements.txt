@@ -6,9 +6,9 @@ futures==3.0.5
 requests==2.11.1
 promise==0.4.2
 Shapely==1.5.17
+fiona==1.7.1
 six==1.10.0
 ipykernel==4.5.2
-geopandas==0.2.1
 matplotlib
 pyproj
 pandas
