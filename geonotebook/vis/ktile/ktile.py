@@ -49,11 +49,11 @@ class KtileConfigManager(MutableMapping):
         # should have no effect regardless of its value.
 
         # Note: Needs error checking
-        self._configs[kernel_id].layers[layer_name] = \
-            parseConfigLayer(layer_dict, self._configs[kernel_id], dirpath)
+        layer = parseConfigLayer(layer_dict, self._configs[kernel_id], dirpath)
 
+        self._configs[kernel_id].layers[layer_name] = layer
 
-        self._configs[kernel_id].layers[layer_name].provider._generate_vrt()
+        return layer.provider.generate_vrt()
 
 
 # Ktile vis_server,  this is not a persistent object

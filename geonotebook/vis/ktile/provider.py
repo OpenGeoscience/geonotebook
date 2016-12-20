@@ -58,7 +58,10 @@ class MapnikPythonProvider(object):
 
         self.nodata = float(kwargs.get('nodata', None))
 
-        self.dtype = self.numpy_to_vrt_type[kwargs['dtype']]
+        try:
+            self.dtype = self.numpy_to_vrt_type[kwargs['dtype']]
+        except KeyError:
+            self.dtype = None
 
         # The band value mapnik expects
         self.band = -1 if len(self._bands) == 3 else self._bands[0]
@@ -86,7 +89,7 @@ class MapnikPythonProvider(object):
             self.scale_factor))
 
 
-    def _generate_vrt(self):
+    def generate_vrt(self):
         if self._static_vrt is not None:
             return
 
@@ -114,7 +117,7 @@ class MapnikPythonProvider(object):
         with open(self._vrt_path, 'w') as fh:
             vrt.export(fh, 0)
 
-
+        return self._vrt_path
 
 
     @property
@@ -123,7 +126,7 @@ class MapnikPythonProvider(object):
             return self._static_vrt
 
         if self._last_hash != hash(self):
-            self._generate_vrt()
+            self.generate_vrt()
             self._last_hash = hash(self)
 
         return self._vrt_path
