@@ -41,16 +41,20 @@ def test_point_data(glc_annotation):
 
     for i, (layer, data) in enumerate(a.data):
         assert layer == glc_annotation[i]
-        assert data == expected[layer.name]
+        assert (data == expected[layer.name]).all()
 
 
 def test_rect_data(glc_annotation):
-    a = annotations.Rectangle([(0, 0), (2, 0), (2, 2), (0, 2), (0, 0)], None,
-                              layer=glc_annotation.annotation)
+    a = annotations.Rectangle(
+        [(0, 0), (1.9, 0), (1.9, 1.9), (0, 1.9), (0, 0)],
+        None, layer=glc_annotation.annotation
+    )
     expected = annotations_data.rect
 
     for i, (layer, data) in enumerate(a.data):
         assert layer == glc_annotation[i]
+        print(data)
+        print(expected[layer.name])
         assert (data == expected[layer.name]).all()
 
 

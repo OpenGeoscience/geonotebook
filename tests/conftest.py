@@ -4,6 +4,7 @@ mpl.use('Agg')  # noqa
 from contextlib import contextmanager
 import os
 
+from affine import Affine
 import numpy as np
 import pytest
 
@@ -34,6 +35,10 @@ class MockReader(object):
     @property
     def width(self):
         return self.bands.shape[1]
+
+    @property
+    def transform(self):
+        return Affine.identity()
 
     @property
     def bounds(self):
@@ -70,18 +75,21 @@ class MockReader(object):
 
     @validate_index
     def get_band_data(self, index, window=None, masked=True, **kwargs):
+        return self.read()[index - 1, ...]
+
+    def read(self, window=None, masked=True, **kwargs):
         def _get_band_data():
             if window is None:
-                return self.bands[index - 1]
+                return self.bands[:]
 
             (left, right), (top, bottom) = window
 
-            return self.bands[index - 1][left:right, top:bottom]
+            return self.bands[:, left:right, top:bottom]
 
         if masked:
             return np.ma.masked_values(
                 _get_band_data(),
-                self.get_band_nodata(index)
+                self.get_band_nodata(1)
             )
         else:
             return _get_band_data()
