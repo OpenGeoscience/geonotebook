@@ -59,7 +59,7 @@ class Shape(object):
     @classmethod
     def generate_mask(cls, raster, polygons, window):
         """Generate a mask of the given polygons in a specific window."""
-        transform = raster.transform * raster.tranform.translate(
+        transform = raster.transform * raster.transform.translation(
             window[0][0], window[1][0])
         shape = (window[0][1] - window[0][0]), (window[1][1] - window[1][0])
         return geometry_mask(polygons, shape, transform, all_touched=True)
