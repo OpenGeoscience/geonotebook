@@ -62,6 +62,14 @@ class GeoTiffImage(object):
                     self.dataset.bounds.right,
                     self.dataset.bounds.bottom)
 
+    @property
+    def transform(self):
+        return self.dataset.affine
+
+    @property
+    def crs(self):
+        return self.dataset.crs.wkt
+
     def _get_band_tag(self, index, prop, convert=float):
         return convert(self.dataset.tags(index)[prop])
 
