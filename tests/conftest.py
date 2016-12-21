@@ -74,9 +74,9 @@ class MockReader(object):
             if window is None:
                 return self.bands[index - 1]
 
-            (ulx, uly), (lrx, lry) = window
+            (left, right), (top, bottom) = window
 
-            return self.bands[index - 1][uly:lry, ulx:lrx]
+            return self.bands[index - 1][left:right, top:bottom]
 
         if masked:
             return np.ma.masked_values(

@@ -139,13 +139,13 @@ class RasterData(collections.Sequence):
 
     @property
     def shape(self):
-        ulx, uly, lrx, lry = self.reader.bounds
+        left, bottom, right, top = self.reader.bounds
         return Polygon([
-            (ulx, uly),
-            (lrx, uly),
-            (lrx, lry),
-            (ulx, lry),
-            (ulx, uly)])
+            (left, top),
+            (right, top),
+            (right, bottom),
+            (left, bottom),
+            (left, top)])
 
     @property
     def count(self):

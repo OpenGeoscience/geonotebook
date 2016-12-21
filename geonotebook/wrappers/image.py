@@ -4,7 +4,7 @@ from functools import wraps
 import numpy as np
 import rasterio as rio
 
-BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
+BBox = namedtuple('BBox', ['left', 'bottom', 'right', 'top'])
 
 
 class BandStats(object):
@@ -57,10 +57,7 @@ class GeoTiffImage(object):
 
     @property
     def bounds(self):
-        return BBox(self.dataset.bounds.left,
-                    self.dataset.bounds.top,
-                    self.dataset.bounds.right,
-                    self.dataset.bounds.bottom)
+        return BBox(*self.dataset.bounds),
 
     @property
     def transform(self):
@@ -126,9 +123,7 @@ class GeoTiffImage(object):
             if window is None:
                 return self.dataset.read(index)
 
-            (ulx, uly), (lrx, lry) = window
-
-            return self.dataset.read(index, window=((ulx, lrx), (uly, lry)))
+            return self.dataset.read(index, window=window)
 
         if masked:
             return np.ma.masked_values(
