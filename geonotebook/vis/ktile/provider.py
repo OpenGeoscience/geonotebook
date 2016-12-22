@@ -140,8 +140,12 @@ class MapnikPythonProvider(object):
             if len(self._bands) == 3:
                 vrt_band.ColorInterp = [colors[i]]
 
+                # Scale floats to 0-255 and set the band type to Byte
+                #   Note: this ensures mapnik will use the nodata value
+                #   for the alpha channel.
                 if self.dtype == "Float32":
                     source.ScaleRatio = int(255)
+                    vrt_band.dataType = 'Byte'
 
             vrt_band.ComplexSource.append(source)
 
