@@ -196,7 +196,6 @@ class MapnikPythonProvider(object):
         sym = mapnik.RasterSymbolizer()
         sym.opacity = self.opacity
 
-
         colorizer = mapnik.RasterColorizer(
             mapnik.COLORIZER_DISCRETE,
             mapnik.Color('white')
@@ -227,6 +226,7 @@ class MapnikPythonProvider(object):
 
         return Map
 
+
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         '''
         '''
@@ -247,6 +247,19 @@ class MapnikPythonProvider(object):
         else:
             mapnik.render(Map, img, self.scale_factor)
 
+        def gamma_correct(im):
+            """Fast gamma correction with PIL's image.point() method"""
+            if self.gamma != 1.0:
+                table = [pow(x/255., 1.0 / self.gamma) * 255 for x in range(256)]
+                # Expand table to number of bands
+                table = table * len(im.mode)
+                return im.point(table)
+            else:
+                return im
+
+        # b = BytesIO(img.tostring())
         img = Image.frombytes('RGBA', (width, height), img.tostring())
+
+        img = gamma_correct(img)
 
         return img
