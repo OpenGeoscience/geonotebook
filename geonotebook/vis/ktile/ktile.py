@@ -188,7 +188,8 @@ class Ktile(object):
         options['opacity'] = kwargs.get("opacity", 1)
         options['gamma'] = kwargs.get("gamma", 1)
 
-
+        if 'interval' in kwargs:
+            options['interval'] = kwargs['interval']
 
         if len(data.band_indexes) == 1:
             try:
@@ -203,11 +204,15 @@ class Ktile(object):
             except:
                 # Otherwise try to figure out the correct colormap
                 # using data min/max
-                _min = kwargs.get('min', None)
+                try:
+                    _min, _max = kwargs.get('interval', (None, None))
+                except ValueError:
+                    # Log warning here
+                    _min, _max = None, None
+
                 if _min is None:
                     _min = data.min
 
-                _max = kwargs.get('max', None)
                 if _max is None:
                     _max = data.max
 
