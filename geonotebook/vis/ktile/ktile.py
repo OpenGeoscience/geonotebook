@@ -137,6 +137,8 @@ class Ktile(object):
     # Needed to geospatially reference the data on the remote system
     def ingest(self, data, name=None, **kwargs):
 
+        #from pudb.remote import set_trace; set_trace(term_size=(283, 87))
+
         kernel_id = kwargs.pop('kernel_id', None)
         if kernel_id is None:
             raise Exception("KTile vis server requires kernel_id as kwarg to ingest!")
@@ -155,18 +157,21 @@ class Ktile(object):
         options['path'] = os.path.abspath(data.path)
         options['bands'] = data.band_indexes
 
-        options['nodata'] = data.nodata
-
-        # TODO:  Needs to be moved into RasterData level API
-        options['raster_x_size'] = data.reader.width
-        options['raster_y_size'] = data.reader.height
-
-        # TODO:  Needs to be moved into RasterData level API
-        options['transform'] = data.reader.dataset.profile['transform']
-        options['dtype'] = data.reader.dataset.profile['dtype']
-
         if 'vrt_path' in kwargs:
             options['vrt_path'] = kwargs['vrt_path']
+
+        else:
+
+            options['nodata'] = data.nodata
+
+            # TODO:  Needs to be moved into RasterData level API
+            options['raster_x_size'] = data.reader.width
+            options['raster_y_size'] = data.reader.height
+
+            # TODO:  Needs to be moved into RasterData level API
+            options['transform'] = data.reader.dataset.profile['transform']
+            options['dtype'] = data.reader.dataset.profile['dtype']
+
 
         if 'map_srs' in kwargs:
             options['map_srs'] = kwargs['map_srs']
@@ -191,8 +196,13 @@ class Ktile(object):
             except:
                 # Otherwise try to figure out the correct colormap
                 # using data min/max
-                _min = kwargs.get('min', data.min)
-                _max = kwargs.get('max', data.max)
+                _min = kwargs.get('min', None)
+                if _min is None:
+                    _min = data.min
+
+                _max = kwargs.get('max', None)
+                if _max is None:
+                    _max = data.max
 
                 options['colormap'] = generate_colormap(
                     kwargs.get('colormap', None), _min, _max)

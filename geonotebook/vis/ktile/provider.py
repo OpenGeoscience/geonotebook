@@ -57,7 +57,7 @@ class MapnikPythonProvider(object):
 
         self.transform = kwargs.get('transform', None)
 
-        self.nodata = float(kwargs.get('nodata', None))
+        self.nodata = kwargs.get('nodata', None)
 
         try:
             self.dtype = self.numpy_to_vrt_type[kwargs['dtype']]
