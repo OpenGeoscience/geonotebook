@@ -141,10 +141,12 @@ class KtileTileHandler(IPythonHandler):
         if layer.max_cache_age is not None:
             expires = datetime.utcnow() + timedelta(
                 seconds=layer.max_cache_age)
-            headers.setdefault(
-                'Expires', expires.strftime('%a %d %b %Y %H:%M:%S GMT'))
-            headers.setdefault(
-                'Cache-Control', 'public, max-age=%d' % layer.max_cache_age)
+            headers['Expires'] = expires.strftime('%a %d %b %Y %H:%M:%S GMT')
+            headers['Cache-Control'] = 'public, max-age=%d' % layer.max_cache_age
+        else:
+            headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            headers['Pragma'] = 'no-cache'
+            headers['Expires'] = '0'
 
         # Force allow cross origin access
         headers["Access-Control-Allow-Origin"] = "*"
