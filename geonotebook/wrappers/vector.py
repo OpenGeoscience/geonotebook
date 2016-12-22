@@ -3,7 +3,7 @@ import collections
 import fiona
 import six
 
-from ..annotations import Point, Polygon
+from ..shapes import shape
 
 
 class VectorData(collections.Sequence):
@@ -21,21 +21,10 @@ class VectorData(collections.Sequence):
         return self.reader[key]
 
     @property
-    def annotations(self):
-        """Return an iterator the generates annotations from geometries."""
-        for index, feature in enumerate(self.reader):
-            props = feature['properties']
-            geometry = feature['geometry']
-            if geometry.geom_type == 'Point':
-                yield Point(geometry, **props)
-            elif geometry.geom_type == 'Polygon':
-                yield Polygon(geometry, **props)
-            elif geometry.geom_type == 'MultiPoint':
-                for point in geometry.geoms:
-                    yield Point(point, **props)
-            elif geometry.geom_type == 'MultiPolygon':
-                for polygon in geometry.geoms:
-                    yield Polygon(polygon, **props)
+    def shapes(self):
+        """Return an iterator the generates shapes from geometries."""
+        for feature in self.reader:
+            yield shape(feature)
 
     @property
     def geojson(self):
