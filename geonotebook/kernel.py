@@ -67,8 +67,11 @@ class Remote(object):
         def handle_reply(result):
             print(result)
 
+        def handle_callback_error(error):
+            print "Callback Error: %s" % error[0]
+
         Geonotebook._remote.set_center(-74.25, 40.0, 4).then(
-            handle_reply, handle_error)
+            handle_reply, handle_error).catch(handle_callback_error)
 
 
 
@@ -310,6 +313,9 @@ class Geonotebook(object):
             "JSONRPCError (%s): %s" % (error['code'], error['message'])
         )
 
+    def callback_error(self, exception):
+        self.log.error('Callback Error: %s' % exception[0])
+
     # Remote RPC wrappers #
 
     def set_center(self, x, y, z):
@@ -317,7 +323,7 @@ class Geonotebook(object):
             self.x, self.y, self.z = result
 
         return self._remote.set_center(x, y, z)\
-            .then(_set_center, self.rpc_error)
+            .then(_set_center, self.rpc_error).catch(self.callback_error)
 
     def add_layer(self, data, name=None, vis_url=None, layer_type='wms',
                   **kwargs):
@@ -365,17 +371,17 @@ class Geonotebook(object):
             params['zIndex'] = len(self.layers)
 
             cb = self._remote.add_wms_layer(layer.name, layer.vis_url, params)\
-                .then(_add_layer, self.rpc_error)
+                .then(_add_layer, self.rpc_error).catch(self.callback_error)
         elif layer_type == 'osm':
             params = {'zIndex': len(self.layers)}
 
             cb = self._remote.add_osm_layer(layer.name, layer.vis_url, params)\
-                .then(_add_layer, self.rpc_error)
+                .then(_add_layer, self.rpc_error).catch(self.callback_error)
         elif layer_type == 'annotation':
             params = layer.params
 
             cb = self._remote.add_annotation_layer(layer.name, params)\
-                .then(_add_layer, self.rpc_error)
+                .then(_add_layer, self.rpc_error).catch(self.callback_error)
         else:
             # Exception?
             pass
@@ -393,7 +399,7 @@ class Geonotebook(object):
             self.layers.remove(layer_name)
 
         cb = self._remote.remove_layer(layer_name).then(
-            _remove_layer, self.rpc_error)
+            _remove_layer, self.rpc_error).catch(self.callback_error)
 
         return cb
 
