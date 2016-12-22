@@ -125,7 +125,14 @@ class Ktile(object):
     # on a particular dataset etc.
     def get_params(self, name, data, **kwargs):
         # All paramater setup is handled on ingest
-        return {}
+        params = {}
+        if 'debug' in kwargs:
+            params['debug'] = kwargs['debug']
+
+        if 'profile' in kwargs:
+            params['profile'] = kwargs['profile']
+
+        return params
 
     # The purpose of the 'ingest' endpoint is to get a file (e.g. as
     # represented by a RasterData object) and move it into whatever
