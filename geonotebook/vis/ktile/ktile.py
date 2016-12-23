@@ -142,55 +142,43 @@ class Ktile(object):
     # transfering bytes from a source location (data.path) to a destination
     # Defined as apart of the vis_server config along with any metadata
     # Needed to geospatially reference the data on the remote system
-    def ingest(self, data, name=None, **kwargs):
-
-        #from pudb.remote import set_trace; set_trace(term_size=(283, 87))
-
-        kernel_id = kwargs.pop('kernel_id', None)
-        if kernel_id is None:
-            raise Exception("KTile vis server requires kernel_id as kwarg to ingest!")
-
-        name = data.name if name is None else name
 
 
-        options = {}
+    def _static_vrt_options(self, data, kwargs):
+        options = {
+            'vrt_path': kwargs['vrt_path']
+        }
 
-        # Metadata
+        return options
 
-        options['name'] = name
+    def _dynamic_vrt_options(self, data, kwargs):
+        options = {
+            'path': os.path.abspath(data.path),
+            'bands': data.band_indexes,
 
-        # VRT options
-
-        options['path'] = os.path.abspath(data.path)
-        options['bands'] = data.band_indexes
-
-        if 'vrt_path' in kwargs:
-            options['vrt_path'] = kwargs['vrt_path']
-
-        else:
-
-            options['nodata'] = data.nodata
-
+            'nodata': data.nodata,
             # TODO:  Needs to be moved into RasterData level API
-            options['raster_x_size'] = data.reader.width
-            options['raster_y_size'] = data.reader.height
-
-            # TODO:  Needs to be moved into RasterData level API
-            options['transform'] = data.reader.dataset.profile['transform']
-            options['dtype'] = data.reader.dataset.profile['dtype']
-
-
+            'raster_x_size': data.reader.width,
+            'raster_y_size': data.reader.height,
+            'transform': data.reader.dataset.profile['transform'],
+            'dtype': data.reader.dataset.profile['dtype']
+        }
         if 'map_srs' in kwargs:
             options['map_srs'] = kwargs['map_srs']
 
-        # Style Options
+        return options
 
-        options['opacity'] = kwargs.get("opacity", 1.0)
-        options['gamma'] = kwargs.get("gamma", 1.0)
+    def _style_options(self, data, kwargs):
+        # Style Options
+        options = {
+            'opacity': kwargs.get("opacity", 1.0),
+            'gamma':  kwargs.get("gamma", 1.0)
+        }
 
         if 'interval' in kwargs:
             options['interval'] = kwargs['interval']
 
+        # Colormap only applies to singleband datasets
         if len(data.band_indexes) == 1:
             try:
                 # If we have the colormap in the form
@@ -219,6 +207,25 @@ class Ktile(object):
                 options['colormap'] = generate_colormap(
                     kwargs.get('colormap', None), _min, _max)
 
+        return options
+
+    def ingest(self, data, name=None, **kwargs):
+
+
+        kernel_id = kwargs.pop('kernel_id', None)
+        if kernel_id is None:
+            raise Exception("KTile vis server requires kernel_id as kwarg to ingest!")
+
+        options = {
+            'name': data.name if name is None else name
+        }
+
+        if 'vrt_path' in kwargs:
+            options.update(self._static_vrt_options(data, kwargs))
+        else:
+            options.update(self._dynamic_vrt_options(data, kwargs))
+
+        options.update(self._style_options(data, kwargs))
         # Make the Request
 
         base_url = '{}/{}/{}'.format(self.base_url, kernel_id, name)

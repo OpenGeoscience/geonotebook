@@ -69,7 +69,7 @@ class MapnikPythonProvider(object):
         #       -1.  Mapnik will use the ColorInterp from the VRT
         #       to figure out the bands.  Otherwise the VRT will have
         #       a single VRTRasterBand so we set the band to 1
-        self.band = -1 if len(self._bands) == 3 else 1
+        self.mapnik_band = -1 if len(self._bands) == 3 else 1
 
         self.opacity = kwargs.get('opacity', 1)
         self.gamma = kwargs.get('gamma', 1)
@@ -222,7 +222,7 @@ class MapnikPythonProvider(object):
 
         lyr.datasource = mapnik.Gdal(base=os.path.dirname(self.vrt_path),
                                      file=os.path.basename(self.vrt_path),\
-                                     band=self.band)
+                                     band=self.mapnik_band)
 
         lyr.styles.append('Raster Style')
 
