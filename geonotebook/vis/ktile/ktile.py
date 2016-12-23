@@ -185,8 +185,8 @@ class Ktile(object):
 
         # Style Options
 
-        options['opacity'] = kwargs.get("opacity", 1)
-        options['gamma'] = kwargs.get("gamma", 1)
+        options['opacity'] = kwargs.get("opacity", 1.0)
+        options['gamma'] = kwargs.get("gamma", 1.0)
 
         if 'interval' in kwargs:
             options['interval'] = kwargs['interval']
