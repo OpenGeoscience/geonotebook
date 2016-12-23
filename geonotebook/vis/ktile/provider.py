@@ -33,7 +33,7 @@ class MapnikPythonProvider(object):
         # List of bands to display,  should be len == 1 or len == 3
         self._bands = kwargs.get('bands', -1)
         self._last_hash = None
-
+        self._layer_srs = None
         self._static_vrt = kwargs.get("vrt_path", None)
 
         if self._static_vrt is None:
@@ -69,7 +69,11 @@ class MapnikPythonProvider(object):
         #       -1.  Mapnik will use the ColorInterp from the VRT
         #       to figure out the bands.  Otherwise the VRT will have
         #       a single VRTRasterBand so we set the band to 1
-        self.mapnik_band = -1 if len(self._bands) == 3 else 1
+        if self._static_vrt is None:
+            self.mapnik_band = -1 if len(self._bands) == 3 else 1
+        else:
+            # Static VRT's may specify different bands
+            self.mapnik_band = -1 if len(self._bands) == 3 else self._bands[0]
 
         self.opacity = kwargs.get('opacity', 1)
         self.gamma = kwargs.get('gamma', 1)

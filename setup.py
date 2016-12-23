@@ -275,11 +275,12 @@ setup(
                                   'templates/*.html']},
     entry_points={
         'geonotebook.wrappers.raster': [
-            'geotiff = geonotebook.wrappers.image:GeoTiffImage',
-            'tiff = geonotebook.wrappers.image:GeoTiffImage',
-            'tif = geonotebook.wrappers.image:GeoTiffImage',
-            'vrt = geonotebook.wrappers.image:GeoTiffImage',
-            'nc = geonotebook.wrappers.image:GeoTiffImage',
+            'geotiff = geonotebook.wrappers.image:RasterIOReader',
+            'tiff = geonotebook.wrappers.image:RasterIOReader',
+            'tif = geonotebook.wrappers.image:RasterIOReader',
+            'nc = geonotebook.wrappers.image:RasterIOReader',
+            'vrt = geonotebook.wrappers.image:VRTReader',
+
         ]
 
     }

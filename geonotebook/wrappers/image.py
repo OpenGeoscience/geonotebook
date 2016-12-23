@@ -27,7 +27,7 @@ def validate_index(func):
     return _validate_index
 
 
-class GeoTiffImage(object):
+class RasterIOReader(object):
     def __init__(self, path, band_names=None):
         self.path = path
         self.band_names = []
@@ -99,7 +99,7 @@ class GeoTiffImage(object):
 
     @validate_index
     def get_band_nodata(self, index):
-        return self.dataset.nodata
+        return self.dataset.nodatavals
 
     @validate_index
     def get_band_name(self, index, default=None):
@@ -128,3 +128,9 @@ class GeoTiffImage(object):
             )
         else:
             return _get_band_data()
+
+
+class VRTReader(RasterIOReader):
+    def __init__(self, path, band_names=None):
+        super(VRTReader, self).__init__(path, band_names=band_names)
+        self.vrt_path = self.path

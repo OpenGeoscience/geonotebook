@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 from notebook.utils import url_path_join as ujoin
 from .handler import (KtileHandler,
@@ -146,7 +147,8 @@ class Ktile(object):
 
     def _static_vrt_options(self, data, kwargs):
         options = {
-            'vrt_path': kwargs['vrt_path']
+            'vrt_path': kwargs['vrt_path'],
+            'bands': data.band_indexes,
         }
 
         return options
@@ -211,23 +213,48 @@ class Ktile(object):
 
     def ingest(self, data, name=None, **kwargs):
 
-
+        # Verify that a kernel_id is present otherwise we can't
+        # post to the server extension to add the layer
         kernel_id = kwargs.pop('kernel_id', None)
         if kernel_id is None:
-            raise Exception("KTile vis server requires kernel_id as kwarg to ingest!")
+            raise Exception(
+                "KTile vis server requires kernel_id as kwarg to ingest!")
+
 
         options = {
             'name': data.name if name is None else name
         }
 
-        if 'vrt_path' in kwargs:
+        # Note:
+        # Check if the reader has defined a vrt_path
+        #
+        # This is mostly intended for the VRTReader so that it can communicate
+        # that the VRT for reading data is also the VRT that should be used for
+        # visualisation. Otherwise we wouild have to explicitly add a vrt_path
+        # kwarg to the add_layer() call.
+        #
+        # A /different/ VRT can still be used for visualisation by passing
+        # a path via vrt_path to add_layer.
+        #
+        # Finally, A dynamic VRT will ALWAYS be generated if vrt_path is
+        # explicitly set to None via add_layer.
+        if hasattr(data.reader, 'vrt_path'):
+            if 'vrt_path' in kwargs and kwargs['vrt_path'] is None:
+                # Explicitly set to None
+                pass
+            else:
+                kwargs['vrt_path'] = data.reader.vrt_path
+
+
+        # If we have a static VRT
+        if 'vrt_path' in kwargs and kwargs['vrt_path'] is not None:
             options.update(self._static_vrt_options(data, kwargs))
         else:
+            # We don't have a static VRT, set options for a dynamic VRT
             options.update(self._dynamic_vrt_options(data, kwargs))
 
         options.update(self._style_options(data, kwargs))
         # Make the Request
-
         base_url = '{}/{}/{}'.format(self.base_url, kernel_id, name)
 
         r = requests.post(base_url, json={
@@ -238,7 +265,14 @@ class Ktile(object):
             # NB: Other KTile layer options could go here
             #     See: http://tilestache.org/doc/#layers
         })
-        response = r.json()
+
+        try:
+            response = r.json()
+        except Exception:
+            response = {
+                'status': 0,
+                'error': str(r)
+            }
 
         try:
             if response['status'] == 0:

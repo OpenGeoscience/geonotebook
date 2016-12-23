@@ -43,6 +43,12 @@ class KTileAsyncClient(object):
 
 
 class KtileHandler(IPythonHandler):
+
+    def check_xsrf_cookie(self):
+        # TODO: Find a way to correctly communicate XSRF secret to
+        #       the kernel so ingest requests can be property authenticated
+        pass
+
     def initialize(self, ktile_config_manager):
         self.ktile_config_manager = ktile_config_manager
 
@@ -77,6 +83,11 @@ class KtileHandler(IPythonHandler):
 
 
 class KtileLayerHandler(IPythonHandler):
+    def check_xsrf_cookie(self):
+        # TODO: Find a way to correctly communicate XSRF secret to
+        #       the kernel so ingest requests can be property authenticated
+        pass
+
     def initialize(self, ktile_config_manager):
         self.ktile_config_manager = ktile_config_manager
 
