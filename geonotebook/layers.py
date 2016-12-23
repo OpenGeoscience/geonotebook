@@ -191,14 +191,17 @@ class TimeSeriesLayer(DataLayer):
                 self.current, name=self.current.name, **self.vis_server_kwargs)
 
         # TODO: Need better handlers here for post-replace callbacks
-        self._remote.replace_wms_layer(self.name, self.vis_url, self.params)\
+        self._remote.replace_layer(self.name, self.vis_url, self.params)\
             .then(lambda resp: True, lambda: True)
 
         return self.current
 
-    def idx(self, idx):
-        self._cur = idx
-        return self._replace_layer()
+    def idx(self, idx=None):
+        if idx is None:
+            return self._cur
+        else:
+            self._cur = idx
+            return self._replace_layer()
 
     def backward(self):
         self._cur -= 1

@@ -54,6 +54,7 @@ MapObject.prototype.msg_types = [
   'set_center',
   '_debug',
   'add_layer',
+  'replace_layer',
   'add_wms_layer',
   'replace_wms_layer',
   'add_osm_layer',
@@ -239,6 +240,18 @@ MapObject.prototype.replace_wms_layer = function (layer_name, base_url, params) 
     this.geojsmap.deleteLayer(old_layer);
 
     return true;
+  }
+};
+
+MapObject.prototype.replace_layer = function (layer_name, base_url, params) {
+  var old_layer = _.find(this.geojsmap.layers(), function (e) { return e.name() === layer_name; });
+
+  if (old_layer === undefined) {
+    console.log('Could not find ' + layer_name + ' layer'); // eslint-disable-line no-console
+    return false;
+  } else {
+    params['zIndex'] = old_layer.zIndex();
+    return this.add_layer(layer_name, base_url, params);
   }
 };
 

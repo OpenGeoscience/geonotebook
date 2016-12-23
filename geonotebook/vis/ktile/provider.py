@@ -37,9 +37,9 @@ class MapnikPythonProvider(object):
         self._static_vrt = kwargs.get("vrt_path", None)
 
         if self._static_vrt is None:
-            #self._vrt_path = os.path.join(
-            #    tempfile.mkdtemp(), '{}.vrt'.format(kwargs.get('name', 'no_name')))
-            self._vrt_path = "/tmp/geonotebook/{}.vrt".format(kwargs.get('name', 'no_name'))
+            self._vrt_path = os.path.join(
+                tempfile.mkdtemp(prefix="geonb"),
+                '{}.vrt'.format(kwargs.get('name', 'no_name')))
 
         self._filepath = None
 
