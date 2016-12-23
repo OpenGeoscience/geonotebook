@@ -1,4 +1,7 @@
-from . import shapes
+from shapely.geometry import Point as sPoint
+from shapely.geometry import Polygon as sPolygon
+
+from .shapes import wrap_shapely
 
 
 class Annotation(object):
@@ -11,6 +14,7 @@ class Annotation(object):
                                             None))
 
         super(Annotation, self).__init__(*args)
+        wrap_shapely(self)
 
     def _get_metadata(self, k):
         def _get_metadata(self):
@@ -38,13 +42,13 @@ class Annotation(object):
                 yield layer, self.subset(layer.data, **self._metadata)
 
 
-class Point(Annotation, shapes.Point):
+class Point(Annotation, sPoint):
     pass
 
 
-class Rectangle(Annotation, shapes.Rectangle):
+class Rectangle(Annotation, sPolygon):
     pass
 
 
-class Polygon(Annotation, shapes.Polygon):
+class Polygon(Annotation, sPolygon):
     pass
