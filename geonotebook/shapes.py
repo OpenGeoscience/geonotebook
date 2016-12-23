@@ -43,10 +43,20 @@ def feature_window(raster, feature):
 
 
 def bounds_window(raster, bounds):
-    """Generate a window from the given bounds."""
+    """Generate a window from the given bounds.
+
+    The bounds argument is expected to be (left, bottom, right, top)
+    as returned by ``fiona.bounds``.
+    """
     index1 = raster.index(bounds[0], bounds[3])
     index2 = raster.index(bounds[2], bounds[1])
-    return ((index1[0], index2[0] + 1), (index1[1], index2[1] + 1))
+
+    # handle transforms that flip axes
+    left = min(index1[0], index2[0])
+    right = max(index1[0], index2[0]) + 1
+    top = min(index1[1], index2[1])
+    bottom = max(index1[1], index2[1]) + 1
+    return ((left, right), (top, bottom))
 
 
 def read_window(raster, window):
@@ -81,7 +91,9 @@ def subset_polygon(polygon, raster, **kwargs):
     data, window = polygon.crop(raster, **kwargs)
     geom = to_geojson(polygon)
     mask = generate_mask(raster.reader, [geom], window)
-    return mask_data(data, mask)
+
+    # order the data (y, x, band) as passed to ``imshow``
+    return mask_data(data, mask).transpose(1, 2, 0)
 
 
 def crop_mask(array, mask=None):
@@ -102,7 +114,7 @@ def crop_mask(array, mask=None):
 
 def wrap_shapely(shape):
     """Wrap a shapely geometry appending subsetting and masking methods."""
-    gtype = shape.geom_type
+    gtype = getattr(shape, 'geom_type', None)
 
     if gtype == 'Point':
         shape.crop = MethodType(crop_point, shape)
@@ -110,8 +122,6 @@ def wrap_shapely(shape):
     elif gtype == 'Polygon' or gtype == 'MultiPolygon':
         shape.crop = MethodType(crop_polygon, shape)
         shape.subset = MethodType(subset_polygon, shape)
-    else:
-        raise Exception('Unhandled geometry type "%s"' % gtype)
 
     return shape
 
