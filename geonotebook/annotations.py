@@ -7,25 +7,31 @@ from shapely.geometry import Polygon as sPolygon
 class Annotation(object):
     def __init__(self, *args, **kwargs):
         self.layer = kwargs.pop('layer', None)
-        self._metadata = kwargs
+        self._args = args
+        self._kwargs = kwargs
         for k, v in kwargs.items():
-            setattr(Annotation, k, property(self._get_metadata(k),
-                                            self._set_metadata(k),
+            setattr(Annotation, k, property(self._get_kwargs(k),
+                                            self._set_kwargs(k),
                                             None))
 
         super(Annotation, self).__init__(*args)
 
-    def _get_metadata(self, k):
-        def _get_metadata(self):
-            return self._metadata[k]
-        return _get_metadata
+    def serialize(self):
+        return {'type': self.__class__.__name__.lower(),
+                'args': self._args,
+                'kwargs': self._kwargs}
 
-    def _set_metadata(self, k):
-        def _set_metadata(self, v):
+    def _get_kwargs(self, k):
+        def _get_kwargs(self):
+            return self._kwargs[k]
+        return _get_kwargs
+
+    def _set_kwargs(self, k):
+        def _set_kwargs(self, v):
             # TODO: these will have to communicate
             # updates to the clientside via self.layer._remote
-            self._metadata[k] = v
-        return _set_metadata
+            self._kwargs[k] = v
+        return _set_kwargs
 
     def _get_layer_collection(self):
         return self.layer.layer_collection if self.layer is not None else []
@@ -38,7 +44,7 @@ class Annotation(object):
     def data(self):
         for layer in self._get_layer_collection():
             if hasattr(layer, "data") and layer.data is not None:
-                yield layer, self.subset(layer.data, **self._metadata)
+                yield layer, self.subset(layer.data, **self._kwargs)
 
 
 class Point(Annotation, sPoint):

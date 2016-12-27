@@ -21,10 +21,13 @@ class GeonotebookLayer(object):
     # some kind of functionality (e.g. the annotatoin layer).
     _expose_as = None
 
+    _type = None
+
     def __init__(self, name, remote, **kwargs):
         self.config = Config()
         self.remote = remote
         self.name = name
+        self.kwargs = kwargs
 
         self._system_layer = kwargs.get("system_layer", False)
         self._expose_as = kwargs.get("expose_as", None)
@@ -32,6 +35,11 @@ class GeonotebookLayer(object):
     def __repr__(self):
         return "<{}('{}')>".format(
             self.__class__.__name__, self.name)
+
+    def serialize(self):
+        return {'name': self.name,
+                'type': self._type,
+                'kwargs': self.kwargs}
 
 
 class AnnotationLayer(GeonotebookLayer):
@@ -41,10 +49,18 @@ class AnnotationLayer(GeonotebookLayer):
         "polygon": annotations.Polygon
     }
 
+    def serialize(self):
+        ret = super(AnnotationLayer, self).serialize()
+
+        ret.update({
+            'annotations': [annot.serialize() for annot in self._annotations]
+        })
+
+        return ret
+
     def __init__(self, name, remote, layer_collection, **kwargs):
         super(AnnotationLayer, self).__init__(name, remote, **kwargs)
         self.layer_collection = layer_collection
-        self.params = kwargs
         self._remote = remote
         self._annotations = []
 
@@ -131,7 +147,7 @@ class SimpleLayer(DataLayer):
             self.vis_url = self.config.vis_server.ingest(
                 self.data, name=self.name)
 
-        self.params = self.config.vis_server.get_params(
+        self.kwargs = self.config.vis_server.get_params(
             self.name, self.data, **kwargs)
 
 
@@ -220,6 +236,22 @@ class GeonotebookLayerCollection(object):
         if layers is not None:
             for l in layers:
                 self.append(l)
+
+    # serialize functions must return a json-serializable data structure
+    def serialize(self, include_system_layers=True):
+        ret = {'layers': [],
+               'system_layers': []}
+
+        for name, layer in six.iteritems(self._layers):
+            if hasattr(layer, 'serialize') and callable(layer.serialize):
+                ret['layers'].append(layer.serialize())
+
+        if include_system_layers:
+            for name, layer in six.iteritems(self._system_layers):
+                if hasattr(layer, 'serialize') and callable(layer.serialize):
+                    ret['system_layers'].append(layer.serialize())
+
+        return ret
 
     def append(self, value):
         if isinstance(value, GeonotebookLayer):
