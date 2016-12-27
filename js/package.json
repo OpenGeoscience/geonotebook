@@ -13,7 +13,8 @@
     "test:cov": "karma start karma-cov.conf.js",
     "test:debug": "karma start --no-auto-watch karma.conf.js",
     "test:run": "karma run",
-    "lint": "eslint --cache ."
+    "lint": "eslint --cache .",
+    "lint:ci": "eslint --cache . --format junit"
   },
   "repository": {
     "type": "git",

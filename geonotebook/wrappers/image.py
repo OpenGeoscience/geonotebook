@@ -99,7 +99,7 @@ class RasterIOReader(object):
 
     @validate_index
     def get_band_nodata(self, index):
-        return self.dataset.nodatavals
+        return self.dataset.nodatavals[index - 1]
 
     @validate_index
     def get_band_name(self, index, default=None):

@@ -69,8 +69,11 @@ class Remote(object):
         def handle_reply(result):
             print(result)
 
+        def handle_callback_error(error):
+            print "Callback Error: %s" % error[0]
+
         Geonotebook._remote.set_center(-74.25, 40.0, 4).then(
-            handle_reply, handle_error)
+            handle_reply, handle_error).catch(handle_callback_error)
 
 
 
@@ -174,7 +177,8 @@ class Remote(object):
 
 
 class Geonotebook(object):
-    msg_types = ['get_protocol', 'set_center', 'add_annotation']
+    msg_types = ['get_protocol', 'set_center', 'add_annotation',
+                 'get_map_state']
 
     _protocol = None
     _remote = None
@@ -311,10 +315,23 @@ class Geonotebook(object):
     def kernel_id(self):
         return get_kernel_id(self._kernel)
 
+    def serialize(self):
+        ret = {}
+
+        if self.x and self.y and self.z:
+            ret['center'] = [self.x, self.y, self.z]
+
+        ret['layers'] = self.layers.serialize()
+
+        return ret
+
     def rpc_error(self, error):
         self.log.error(
             "JSONRPCError (%s): %s" % (error['code'], error['message'])
         )
+
+    def callback_error(self, exception):
+        self.log.error('Callback Error: %s' % exception[0])
 
     # Remote RPC wrappers #
 
@@ -323,7 +340,10 @@ class Geonotebook(object):
             self.x, self.y, self.z = result
 
         return self._remote.set_center(x, y, z)\
-            .then(_set_center, self.rpc_error)
+            .then(_set_center, self.rpc_error).catch(self.callback_error)
+
+    def get_map_state(self):
+        return self.serialize()
 
     def add_layer(self, data, name=None, vis_url=None, layer_type=None,
                   **kwargs):
@@ -368,36 +388,17 @@ class Geonotebook(object):
         def _add_layer(layer_name):
             self.layers.append(layer)
 
-        # These should be managed by some kind of handler to allow for
-        # additional types to be added more easily
-        if layer_type is None:
-            params = layer.params
-            params['zIndex'] = len(self.layers)
+        layer._type = layer_type
 
-            cb = self._remote.add_layer(layer.name, layer.vis_url, params)\
-                .then(_add_layer, self.rpc_error)
+        if layer._type in ('wms', 'osm'):
+            layer.kwargs['zIndex'] = len(self.layers)
 
-        elif layer_type == 'wms':
-            params = layer.params
-            params['zIndex'] = len(self.layers)
+        if hasattr(layer, 'vis_url'):
+            layer.kwargs['vis_url'] = layer.vis_url
 
-            cb = self._remote.add_wms_layer(layer.name, layer.vis_url, params)\
-                .then(_add_layer, self.rpc_error)
-        elif layer_type == 'osm':
-            params = {'zIndex': len(self.layers)}
-
-            cb = self._remote.add_osm_layer(layer.name, layer.vis_url, params)\
-                .then(_add_layer, self.rpc_error)
-        elif layer_type == 'annotation':
-            params = layer.params
-
-            cb = self._remote.add_annotation_layer(layer.name, params)\
-                .then(_add_layer, self.rpc_error)
-        else:
-            # Exception?
-            pass
-
-        return cb
+        return self._remote.add_layer(layer_type, layer.name, layer.kwargs) \
+                           .then(_add_layer, self.rpc_error) \
+                           .catch(self.callback_error)
 
     def remove_layer(self, layer_name):
         # If layer_name is an object with a 'name' attribute we assume
@@ -410,7 +411,7 @@ class Geonotebook(object):
             self.layers.remove(layer_name)
 
         cb = self._remote.remove_layer(layer_name).then(
-            _remove_layer, self.rpc_error)
+            _remove_layer, self.rpc_error).catch(self.callback_error)
 
         return cb
 
@@ -478,15 +479,18 @@ class GeonotebookKernel(IPythonKernel):
 
         # THis should be handled in a callback that is fired off
         # When set protocol etc is complete.
-        self.geonotebook.add_layer(
-            None, name="osm_base", layer_type="osm",
-            vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-            system_layer=True)
+        if self.initializing:
+            self.geonotebook.add_layer(
+                None, name="osm_base", layer_type="osm",
+                vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                system_layer=True)
 
-        self.geonotebook.add_layer(
-            None, name="annotation",
-            layer_type="annotation", vis_url=None,
-            system_layer=True, expose_as="annotation")
+            self.geonotebook.add_layer(
+                None, name="annotation",
+                layer_type="annotation", vis_url=None,
+                system_layer=True, expose_as="annotation")
+
+            self.initializing = False
 
     def do_shutdown(self, restart):
         self.geonotebook = None
@@ -513,6 +517,7 @@ class GeonotebookKernel(IPythonKernel):
     def __init__(self, **kwargs):
         kwargs['log'].setLevel(logging.INFO)
         self.log = kwargs['log']
+        self.initializing = True
 
         super(GeonotebookKernel, self).__init__(**kwargs)
 

@@ -1,3 +1,5 @@
+import _ from 'underscore';
+
 import MapObject from './MapObject';
 import {
   is_response,
@@ -88,6 +90,22 @@ Geonotebook.prototype.recv_msg = function (message) {
     // Once protocol negotiation is complete create the geojs map
     // and add the base OSM layer
     this.map.init_map();
+
+    this.map.notebook._remote.get_map_state().then((state) => {
+      _.each(_.union(state.layers.system_layers, state.layers.layers), (layer) => {
+        this.map.add_layer(layer.type, layer.name, layer.kwargs);
+
+        if (layer.type === 'annotation' && _.size(layer.annotations)) {
+          _.each(layer.annotations, (annotation) => {
+            this.map.add_annotation(annotation.type, annotation.args, annotation.kwargs);
+          });
+        }
+      });
+
+      if (_.has(state, 'center')) {
+        this.map.set_center.apply(this.map, state.center);
+      }
+    });
   } else if (this.protocol_negotiation_complete) {
     // Pass response messages on to remote to be resolved
     if (is_response(msg)) {
@@ -141,6 +159,10 @@ Geonotebook.prototype.register_events = function (Jupyter, events) {
 };
 
 Geonotebook.prototype.init_html_and_css = function () {
+  $('#ipython-main-app').addClass('geonotebook');
+  $('#notebook-container').addClass('geonotebook');
+  $('.container').addClass('geonotebook');
+  $('#maintoolbar-container').addClass('geonotebook');
   $('#ipython-main-app').after('<div id="geonotebook-panel"><div id="geonotebook-map" /></div>');
 };
 
