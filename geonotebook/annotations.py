@@ -21,6 +21,11 @@ class Annotation(object):
                 'args': self._args,
                 'kwargs': self._kwargs}
 
+    def svg(self, *args, **kwargs):
+        if hasattr(super(Annotation, self), 'svg'):
+            kwargs['fill_color'] = self.style['fillColor']
+            return super(Annotation, self).svg(*args, **kwargs)
+
     def _get_kwargs(self, k):
         def _get_kwargs(self):
             return self._kwargs[k]
