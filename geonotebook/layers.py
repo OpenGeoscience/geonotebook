@@ -5,6 +5,7 @@ import six
 
 from . import annotations
 from .config import Config
+from .vis.utils import generate_colormap
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -27,10 +28,11 @@ class GeonotebookLayer(object):
         self.config = Config()
         self.remote = remote
         self.name = name
-        self.kwargs = kwargs
 
-        self._system_layer = kwargs.get("system_layer", False)
-        self._expose_as = kwargs.get("expose_as", None)
+        self._system_layer = kwargs.pop("system_layer", False)
+        self._expose_as = kwargs.pop("expose_as", None)
+
+        self.kwargs = kwargs
 
     def __repr__(self):
         return "<{}('{}')>".format(
@@ -128,12 +130,61 @@ class NoDataLayer(GeonotebookLayer):
 
 class DataLayer(GeonotebookLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
+        # Handle normalization of kwargs here so vis server recieves
+        # standardized set of options. Especially colormap which may
+        # be a mpl object (e.g. not serializable)
+        kwargs = self.normalize_kwargs(data, kwargs)
+
         super(DataLayer, self).__init__(name, remote, **kwargs)
         self.data = data
 
         assert vis_url is not None or data is not None, \
             "Must pass in vis_url or data to {}".format(
                 self.__class__.__name__)
+
+    def normalize_kwargs(self, data, kwargs):
+
+        kwargs['opacity'] = kwargs.get("opacity", 1.0)
+        kwargs['gamma'] = kwargs.get("gamma", 1.0)
+
+        # TODO: interval expansion here
+
+        # Colormap only applies to singleband datasets
+        if len(data.band_indexes) == 1:
+            try:
+                # If we have the colormap in the form
+                # of a list of dicts with color/quantity then
+                # set options['colormap'] equal to this
+                for d in kwargs.get("colormap", None):
+                    assert 'color' in d
+                    assert 'quantity' in d
+
+            except Exception:
+                # Otherwise try to figure out the correct colormap
+                # using data min/max
+                try:
+                    _min, _max = kwargs.get('interval', (None, None))
+                except ValueError:
+                    # Log warning here
+                    _min, _max = None, None
+
+                if _min is None:
+                    try:
+                        _min = min(data.min)
+                    except ValueError:
+                        _min = data.min
+
+                if _max is None:
+                    try:
+                        _max = max(data.max)
+                    except ValueError:
+                        _max = data.max
+
+
+                kwargs['colormap'] = generate_colormap(
+                    kwargs.get('colormap', None), _min, _max)
+
+        return kwargs
 
 
 class SimpleLayer(DataLayer):
@@ -145,10 +196,10 @@ class SimpleLayer(DataLayer):
 
         if self.vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
-                self.data, name=self.name, **kwargs)
+                self.data, name=self.name, **self.kwargs)
 
-        self.kwargs = self.config.vis_server.get_params(
-            self.name, self.data, **kwargs)
+        # self.kwargs = self.config.vis_server.get_params(
+        #    self.name, self.data, **kwargs)
 
 
 class TimeSeriesLayer(DataLayer):
@@ -167,15 +218,15 @@ class TimeSeriesLayer(DataLayer):
 
         if self.vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
-                self.current, name=self.current.name, **kwargs)
+                self.current, name=self.current.name, **self.kwargs)
 
-        self.vis_server_kwargs = kwargs
+        # self.kwargs = kwargs
 
     @property
     def params(self):
         if self._params[self._cur] is None:
             self._params[self._cur] = self.config.vis_server.get_params(
-                self.current.name, self.current, **self.vis_server_kwargs)
+                self.current.name, self.current, **self.kwargs)
         return self._params[self._cur]
 
     @property
@@ -207,7 +258,7 @@ class TimeSeriesLayer(DataLayer):
     def _replace_layer(self):
         if self.vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
-                self.current, name=self.current.name, **self.vis_server_kwargs)
+                self.current, name=self.current.name, **self.kwargs)
 
         # TODO: Need better handlers here for post-replace callbacks
         self._remote.replace_layer(self.name, self.vis_url, self.params)\

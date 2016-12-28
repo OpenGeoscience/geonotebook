@@ -6,7 +6,7 @@ from .handler import (KtileHandler,
                       KtileLayerHandler,
                       KtileTileHandler)
 from collections import MutableMapping
-from ..utils import generate_colormap
+
 
 import TileStache as ts
 # NB:  this uses a 'private' API for parsing the Config layer dictionary
@@ -135,16 +135,6 @@ class Ktile(object):
 
         return params
 
-    # The purpose of the 'ingest' endpoint is to get a file (e.g. as
-    # represented by a RasterData object) and move it into whatever
-    # system is going to actually render tiles.  It should not rely on
-    # any subsetting or style info - it is not designed, for instance, to make
-    # specific bands available on the tile server, it is about (as needed)
-    # transfering bytes from a source location (data.path) to a destination
-    # Defined as apart of the vis_server config along with any metadata
-    # Needed to geospatially reference the data on the remote system
-
-
     def _static_vrt_options(self, data, kwargs):
         options = {
             'vrt_path': kwargs['vrt_path'],
@@ -170,46 +160,6 @@ class Ktile(object):
 
         return options
 
-    def _style_options(self, data, kwargs):
-        # Style Options
-        options = {
-            'opacity': kwargs.get("opacity", 1.0),
-            'gamma':  kwargs.get("gamma", 1.0)
-        }
-
-        if 'interval' in kwargs:
-            options['interval'] = kwargs['interval']
-
-        # Colormap only applies to singleband datasets
-        if len(data.band_indexes) == 1:
-            try:
-                # If we have the colormap in the form
-                # of a list of dicts with color/quantity then
-                # set options['colormap'] equal to this
-                for d in kwargs.get("colormap", None):
-                    assert 'color' in d
-                    assert 'quantity' in d
-                options['colormap'] = kwargs.get('colormap')
-
-            except:
-                # Otherwise try to figure out the correct colormap
-                # using data min/max
-                try:
-                    _min, _max = kwargs.get('interval', (None, None))
-                except ValueError:
-                    # Log warning here
-                    _min, _max = None, None
-
-                if _min is None:
-                    _min = data.min
-
-                if _max is None:
-                    _max = data.max
-
-                options['colormap'] = generate_colormap(
-                    kwargs.get('colormap', None), _min, _max)
-
-        return options
 
     def ingest(self, data, name=None, **kwargs):
 
@@ -224,6 +174,8 @@ class Ktile(object):
         options = {
             'name': data.name if name is None else name
         }
+
+        options.update(kwargs)
 
         # Note:
         # Check if the reader has defined a vrt_path
@@ -253,7 +205,7 @@ class Ktile(object):
             # We don't have a static VRT, set options for a dynamic VRT
             options.update(self._dynamic_vrt_options(data, kwargs))
 
-        options.update(self._style_options(data, kwargs))
+
         # Make the Request
         base_url = '{}/{}/{}'.format(self.base_url, kernel_id, name)
 
