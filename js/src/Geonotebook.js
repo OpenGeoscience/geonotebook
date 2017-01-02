@@ -130,6 +130,7 @@ Geonotebook.prototype.recv_msg = function (message) {
       } catch (ex) {
         // If we catch an error report it back to the RPC caller
         this.send_msg(response(null, ex, msg.id));
+        throw ex;
       }
     } else {
       // Not a response or a request - send parse error

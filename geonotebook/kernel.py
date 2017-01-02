@@ -364,8 +364,12 @@ class Geonotebook(object):
         # Otherwise we cant generate the coorect vis_url.
         # from pudb.remote import set_trace; set_trace(term_size=(364, 89))
 
-        kwargs['kernel_id'] = self.kernel_id
         layer_type = kwargs.get('layer_type', None)
+
+        kwargs['kernel_id'] = self.kernel_id
+
+        if layer_type != 'annotation':
+            kwargs['zIndex'] = len(self.layers)
 
         # HACK:  figure out a way to do this without so many conditionals
         if isinstance(data, RasterData):
@@ -397,9 +401,6 @@ class Geonotebook(object):
 
         def _add_layer(layer_name):
             self.layers.append(layer)
-
-        if layer_type in ('wms', 'osm'):
-            layer.vis_options.zIndex = len(self.layers)
 
         return self._remote.add_layer(layer.name, layer.vis_url,
                                       layer.vis_options.serialize(),

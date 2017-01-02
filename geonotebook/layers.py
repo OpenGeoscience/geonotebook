@@ -254,16 +254,13 @@ class TimeSeriesLayer(DataLayer):
             name, remote, data=data, vis_url=None, **kwargs
         )
         self.__cur = 0
-        self._vis_urls = []
+        self._vis_urls = [None] * len(data)
 
         self._remote = remote
 
         if vis_url is None:
-
-            vis_url = self.config.vis_server.ingest(
+            self._vis_urls[0] = self.config.vis_server.ingest(
                 self.current, name=self.name, **self.vis_options.serialize())
-
-            self._vis_options.append(vis_url)
 
     @property
     def vis_url(self):
@@ -271,16 +268,14 @@ class TimeSeriesLayer(DataLayer):
 
     @property
     def name(self):
-        _, options = self._vis_options[self._cur]
         return "{}_{}_{}".format(
-            self._name, self.current.name, hash(options) + sys.maxsize + 1)
-
+            self._name, self.current.name,
+            hash(self.vis_options) + sys.maxsize + 1)
 
     @property
     def query_params(self):
-        self.config.vis_server.get_params(
+        return self.config.vis_server.get_params(
             self.current.name, self.current, **self.vis_options.serialize())
-
 
     @property
     def current(self):
@@ -300,17 +295,18 @@ class TimeSeriesLayer(DataLayer):
 
         self.__cur = value
 
-    def _replace_layer(self):
-        if self._cur > len(self._vis_options):
-            vis_url = self.config.vis_server.ingest(
-                self.current, name=self.current.name,
-                **self.vis_options.serialize())
+        if self._vis_urls[value] is None:
+            self._vis_urls[value] = self.config.vis_server.ingest(
+                self.current, name=self.name, **self.vis_options.serialize())
 
-            self._vis_options.append(vis_url)
+    def _replace_layer(self, idx):
+        prev_name = self.name
 
-        self._remote.replace_layer(
-            self._type, self.name, self.query_params) \
-            .then(lambda resp: True, lambda: True)
+        self._cur = idx
+        self._remote.replace_layer(prev_name, self.name, self.vis_url,
+                                   self.vis_options.serialize(),
+                                   self.query_params)\
+            .then(lambda: True, lambda: True)
 
         return self.current
 
@@ -318,16 +314,13 @@ class TimeSeriesLayer(DataLayer):
         if idx is None:
             return self._cur
         else:
-            self._cur = idx
-            return self._replace_layer()
+            return self._replace_layer(idx)
 
     def backward(self):
-        self._cur -= 1
-        return self._replace_layer()
+        return self._replace_layer(self._cur - 1)
 
     def forward(self):
-        self._cur += 1
-        return self._replace_layer()
+        return self._replace_layer(self._cur + 1)
 
 
 class GeonotebookLayerCollection(object):

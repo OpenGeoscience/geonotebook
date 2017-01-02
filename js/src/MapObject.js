@@ -224,13 +224,13 @@ MapObject.prototype.add_layer = function (layer_name, vis_url, vis_params, query
   } else if (layer_type === 'wms') {
     return this.add_wms_layer(layer_name, vis_url, vis_params, query_params);
   } else {
-    return this.add_default_layer(layer_name, vis_url, query_params);
+    return this.add_default_layer(layer_name, vis_url, vis_params, query_params);
   }
 };
 
 
-MapObject.prototype.replace_layer = function (layer_name, vis_url, vis_params, query_params) {
-  var old_layer = _.find(this.geojsmap.layers(), function (e) { return e.name() === layer_name; });
+MapObject.prototype.replace_layer = function (prev_layer, layer_name, vis_url, vis_params, query_params) {
+  var old_layer = _.find(this.geojsmap.layers(), function (e) { return e.name() === prev_layer; });
 
   if (old_layer === undefined) {
     console.log('Could not find ' + layer_name + ' layer'); // eslint-disable-line no-console
@@ -256,7 +256,7 @@ MapObject.prototype.add_osm_layer = function (layer_name, url, vis_params, query
 
 
 
-MapObject.prototype.add_default_layer = function (layer_name, base_url, query_params) {
+MapObject.prototype.add_default_layer = function (layer_name, base_url, vis_params, query_params) {
     // If a layer with this name already exists,  replace it
   if (this.get_layer(layer_name) !== undefined) {
     this.geojsmap.deleteLayer(this.get_layer(layer_name));
@@ -268,7 +268,7 @@ MapObject.prototype.add_default_layer = function (layer_name, base_url, query_pa
   });
 
     // make sure zindex is explicitly set
-  this._set_layer_zindex(wms, query_params['zIndex']);
+  this._set_layer_zindex(wms, vis_params['zIndex']);
 
   wms.name(layer_name);
 
