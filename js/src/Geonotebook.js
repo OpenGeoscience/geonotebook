@@ -78,6 +78,25 @@ Geonotebook.prototype.resolve_arg_list = function (fn, msg) {
   }
 };
 
+
+Geonotebook.prototype.refresh_map_state = function(){
+  this.map.notebook._remote.get_map_state().then((state) => {
+    _.each(_.union(state.layers.system_layers, state.layers.layers), (layer) => {
+      this.map.add_layer(layer.name, layer.vis_url, layer.vis_options, layer.query_params);
+
+    if (_.size(layer.annotations)) {
+        _.each(layer.annotations, (annotation) => {
+          this.map.add_annotation(annotation.type, annotation.args, annotation.kwargs);
+        });
+      }
+    });
+
+    if (_.has(state, 'center')) {
+      this.map.set_center.apply(this.map, state.center);
+    }
+  });
+}
+
 Geonotebook.prototype.recv_msg = function (message) {
   var msg = this._unwrap(message);
   // TODO: move this into request/response like a
@@ -91,21 +110,6 @@ Geonotebook.prototype.recv_msg = function (message) {
     // and add the base OSM layer
     this.map.init_map();
 
-    this.map.notebook._remote.get_map_state().then((state) => {
-      _.each(_.union(state.layers.system_layers, state.layers.layers), (layer) => {
-        this.map.add_layer(layer.type, layer.name, layer.kwargs);
-
-        if (layer.type === 'annotation' && _.size(layer.annotations)) {
-          _.each(layer.annotations, (annotation) => {
-            this.map.add_annotation(annotation.type, annotation.args, annotation.kwargs);
-          });
-        }
-      });
-
-      if (_.has(state, 'center')) {
-        this.map.set_center.apply(this.map, state.center);
-      }
-    });
   } else if (this.protocol_negotiation_complete) {
     // Pass response messages on to remote to be resolved
     if (is_response(msg)) {

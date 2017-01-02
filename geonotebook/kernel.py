@@ -326,12 +326,20 @@ class Geonotebook(object):
         return ret
 
     def rpc_error(self, error):
-        self.log.error(
-            "JSONRPCError (%s): %s" % (error['code'], error['message'])
-        )
+        try:
+            self.log.error(
+                "JSONRPCError (%s): %s" % (error['code'], error['message'])
+            )
+        except Exception:
+            self.log.error(
+                "JSONRPCError: Malformed error message: {}".format(error)
+            )
 
     def callback_error(self, exception):
-        self.log.error('Callback Error: %s' % exception[0])
+        import sys, traceback
+        t, v, tb = sys.exc_info()
+        self.log.error('Callback Error: \n%s' %
+                       ''.join(traceback.format_exception(t, v, tb)))
 
     # Remote RPC wrappers #
 
@@ -345,8 +353,7 @@ class Geonotebook(object):
     def get_map_state(self):
         return self.serialize()
 
-    def add_layer(self, data, name=None, vis_url=None, layer_type=None,
-                  **kwargs):
+    def add_layer(self, data, name=None, vis_url=None, **kwargs):
 
         # Create the GeonotebookLayer -  if vis_url is none,  this will take
         # data_path and upload it to the configured vis_server,  this will make
@@ -355,7 +362,10 @@ class Geonotebook(object):
 
         # Make sure we pass in kernel_id to the layer,  then to the vis_server
         # Otherwise we cant generate the coorect vis_url.
+        # from pudb.remote import set_trace; set_trace(term_size=(364, 89))
+
         kwargs['kernel_id'] = self.kernel_id
+        layer_type = kwargs.get('layer_type', None)
 
         # HACK:  figure out a way to do this without so many conditionals
         if isinstance(data, RasterData):
@@ -388,15 +398,12 @@ class Geonotebook(object):
         def _add_layer(layer_name):
             self.layers.append(layer)
 
-        layer._type = layer_type
+        if layer_type in ('wms', 'osm'):
+            layer.vis_options.zIndex = len(self.layers)
 
-        if layer._type in ('wms', 'osm'):
-            layer.kwargs['zIndex'] = len(self.layers)
-
-        if hasattr(layer, 'vis_url'):
-            layer.kwargs['vis_url'] = layer.vis_url
-
-        return self._remote.add_layer(layer_type, layer.name, layer.kwargs) \
+        return self._remote.add_layer(layer.name, layer.vis_url,
+                                      layer.vis_options.serialize(),
+                                      layer.query_params) \
                            .then(_add_layer, self.rpc_error) \
                            .catch(self.callback_error)
 

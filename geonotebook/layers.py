@@ -1,13 +1,89 @@
 from collections import namedtuple
 from collections import OrderedDict
-
+import sys
 import six
+import copy
 
 from . import annotations
 from .config import Config
 from .vis.utils import generate_colormap
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
+
+
+class VisOptions(object):
+    def __init__(self, data, opacity=1.0, gamma=1.0, projection='EPSG:3857',
+                 kernel_id=None, zIndex=None, colormap=None, interval=None,
+                 layer_type=None, **kwargs):
+
+        # self.vis_url = vis_url
+        self.opacity = opacity
+        self.projection = projection
+        self.gamma = gamma
+        self.interval = interval
+        self.colormap = None
+        self.zIndex = zIndex
+        self.kernel_id = kernel_id
+        self.layer_type = layer_type
+
+        if data is not None and len(data.band_indexes) == 1:
+            try:
+                # If we have the colormap in the form
+                # of a list of dicts with color/quantity then
+                # set options['colormap'] equal to this
+                for d in colormap:
+                    assert 'color' in d
+                    assert 'quantity' in d
+
+                self.colormap = colormap
+
+            except Exception:
+                # Otherwise try to figure out the correct colormap
+                # using data min/max
+                try:
+                    _min, _max = interval
+                except TypeError:
+                    _min, _max = None, None
+
+                if _min is None:
+                    try:
+                        _min = min(data.min)
+                    except (ValueError, TypeError):
+                        _min = data.min
+
+                if _max is None:
+                    try:
+                        _max = max(data.max)
+                    except (ValueError, TypeError):
+                        _max = data.max
+
+                self.colormap = generate_colormap(
+                    colormap, _min, _max)
+        else:
+            self.colormap = []
+
+    def serialize(self):
+        return {
+            'layer_type': self.layer_type,
+            'opacity': self.opacity,
+            'gamma': self.gamma,
+            'projection': self.projection,
+            'interval': self.interval,
+            'colormap': self.colormap,
+            'kernel_id': self.kernel_id,
+            'zIndex': self.zIndex
+        }
+
+    def __hash__(self):
+        return hash((
+            self.layer_type,
+            self.opacity,
+            self.gamma,
+            self.interval,
+            self.projection,
+            tuple(tuple(c.items()) for c in self.colormap),
+            self.kernel_id,
+            self.zIndex))
 
 
 class GeonotebookLayer(object):
@@ -22,26 +98,35 @@ class GeonotebookLayer(object):
     # some kind of functionality (e.g. the annotatoin layer).
     _expose_as = None
 
-    _type = None
-
-    def __init__(self, name, remote, **kwargs):
+    def __init__(self, name, remote, data, **kwargs):
         self.config = Config()
         self.remote = remote
-        self.name = name
+        self._name = name
 
         self._system_layer = kwargs.pop("system_layer", False)
         self._expose_as = kwargs.pop("expose_as", None)
 
-        self.kwargs = kwargs
+        self.vis_options = VisOptions(data, **kwargs)
 
     def __repr__(self):
         return "<{}('{}')>".format(
             self.__class__.__name__, self.name)
 
     def serialize(self):
-        return {'name': self.name,
-                'type': self._type,
-                'kwargs': self.kwargs}
+        return {
+            'name': self.name,
+            'vis_url': self.vis_url if hasattr(self, 'vis_url') else None,
+            'vis_options': self.vis_options.serialize(),
+            'query_params': self.query_params
+        }
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def query_params(self):
+        return {}
 
 
 class AnnotationLayer(GeonotebookLayer):
@@ -61,9 +146,13 @@ class AnnotationLayer(GeonotebookLayer):
         return ret
 
     def __init__(self, name, remote, layer_collection, **kwargs):
-        super(AnnotationLayer, self).__init__(name, remote, **kwargs)
+
+        kwargs['layer_type'] = 'annotation'
+
+        super(AnnotationLayer, self).__init__(name, remote, None, **kwargs)
         self.layer_collection = layer_collection
         self._remote = remote
+        self.vis_url = None
         self._annotations = []
 
     def add_annotation(self, ann_type, coords, meta):
@@ -124,118 +213,78 @@ class AnnotationLayer(GeonotebookLayer):
 
 class NoDataLayer(GeonotebookLayer):
     def __init__(self, name, remote, vis_url, **kwargs):
-        super(NoDataLayer, self).__init__(name, remote, **kwargs)
+        super(NoDataLayer, self).__init__(name, remote, None, **kwargs)
         self.vis_url = vis_url
 
 
 class DataLayer(GeonotebookLayer):
-    def __init__(self, name, remote, data, vis_url=None, **kwargs):
-        # Handle normalization of kwargs here so vis server recieves
-        # standardized set of options. Especially colormap which may
-        # be a mpl object (e.g. not serializable)
-        kwargs = self.normalize_kwargs(data, kwargs)
-
-        super(DataLayer, self).__init__(name, remote, **kwargs)
+    def __init__(self, name, remote, data=None, vis_url=None, **kwargs):
+        super(DataLayer, self).__init__(name, remote, data, **kwargs)
         self.data = data
 
         assert vis_url is not None or data is not None, \
             "Must pass in vis_url or data to {}".format(
                 self.__class__.__name__)
 
-    def normalize_kwargs(self, data, kwargs):
-
-        kwargs['opacity'] = kwargs.get("opacity", 1.0)
-        kwargs['gamma'] = kwargs.get("gamma", 1.0)
-
-        # TODO: interval expansion here
-
-        # Colormap only applies to singleband datasets
-        if len(data.band_indexes) == 1:
-            try:
-                # If we have the colormap in the form
-                # of a list of dicts with color/quantity then
-                # set options['colormap'] equal to this
-                for d in kwargs.get("colormap", None):
-                    assert 'color' in d
-                    assert 'quantity' in d
-
-            except Exception:
-                # Otherwise try to figure out the correct colormap
-                # using data min/max
-                try:
-                    _min, _max = kwargs.get('interval', (None, None))
-                except ValueError:
-                    # Log warning here
-                    _min, _max = None, None
-
-                if _min is None:
-                    try:
-                        _min = min(data.min)
-                    except ValueError:
-                        _min = data.min
-
-                if _max is None:
-                    try:
-                        _max = max(data.max)
-                    except ValueError:
-                        _max = data.max
-
-
-                kwargs['colormap'] = generate_colormap(
-                    kwargs.get('colormap', None), _min, _max)
-
-        return kwargs
-
 
 class SimpleLayer(DataLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
         super(SimpleLayer, self).__init__(
-            name, remote, data, vis_url=vis_url, **kwargs
+            name, remote, data=data, vis_url=vis_url, **kwargs
         )
-        self.vis_url = vis_url
 
-        if self.vis_url is None:
+        if vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
-                self.data, name=self.name, **self.kwargs)
+                self.data, name=self.name, **self.vis_options.serialize())
 
-        # self.kwargs = self.config.vis_server.get_params(
-        #    self.name, self.data, **kwargs)
+    @property
+    def name(self):
+        return "{}_{}".format(self._name, hash(self.vis_options) + sys.maxsize + 1)
+
+    @property
+    def query_params(self):
+        return self.config.vis_server.get_params(
+            self.name, self.data, **self.vis_options.serialize())
+
 
 
 class TimeSeriesLayer(DataLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
         super(TimeSeriesLayer, self).__init__(
-            name, remote, data, vis_url=None, **kwargs
+            name, remote, data=data, vis_url=None, **kwargs
         )
         self.__cur = 0
+        self._vis_urls = []
+
         self._remote = remote
 
-        # TODO: check vis_url is valid length etc
-        self._vis_url = vis_url \
-            if vis_url is not None \
-            else [None] * len(self.data)
-        self._params = [None] * len(self.data)
+        if vis_url is None:
 
-        if self.vis_url is None:
-            self.vis_url = self.config.vis_server.ingest(
-                self.current, name=self.current.name, **self.kwargs)
+            vis_url = self.config.vis_server.ingest(
+                self.current, name=self.name, **self.vis_options.serialize())
 
-        # self.kwargs = kwargs
-
-    @property
-    def params(self):
-        if self._params[self._cur] is None:
-            self._params[self._cur] = self.config.vis_server.get_params(
-                self.current.name, self.current, **self.kwargs)
-        return self._params[self._cur]
+            self._vis_options.append(vis_url)
 
     @property
     def vis_url(self):
-        return self._vis_url[self._cur]
+        return self._vis_urls[self._cur]
 
-    @vis_url.setter
-    def vis_url(self, value):
-        self._vis_url[self._cur] = value
+    @property
+    def name(self):
+        _, options = self._vis_options[self._cur]
+        return "{}_{}_{}".format(
+            self._name, self.current.name, hash(options) + sys.maxsize + 1)
+
+
+    @property
+    def query_params(self):
+        self.config.vis_server.get_params(
+            self.current.name, self.current, **self.vis_options.serialize())
+
+
+    @property
+    def current(self):
+        return self.data[self._cur]
 
     @property
     def _cur(self):
@@ -251,17 +300,16 @@ class TimeSeriesLayer(DataLayer):
 
         self.__cur = value
 
-    @property
-    def current(self):
-        return self.data[self._cur]
-
     def _replace_layer(self):
-        if self.vis_url is None:
-            self.vis_url = self.config.vis_server.ingest(
-                self.current, name=self.current.name, **self.kwargs)
+        if self._cur > len(self._vis_options):
+            vis_url = self.config.vis_server.ingest(
+                self.current, name=self.current.name,
+                **self.vis_options.serialize())
 
-        # TODO: Need better handlers here for post-replace callbacks
-        self._remote.replace_layer(self.name, self.vis_url, self.params)\
+            self._vis_options.append(vis_url)
+
+        self._remote.replace_layer(
+            self._type, self.name, self.query_params) \
             .then(lambda resp: True, lambda: True)
 
         return self.current
