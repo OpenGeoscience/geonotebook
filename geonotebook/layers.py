@@ -1,12 +1,14 @@
 from collections import namedtuple
 from collections import OrderedDict
+
 import sys
+
 import six
-import copy
 
 from . import annotations
 from .config import Config
 from .vis.utils import generate_colormap
+
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -239,13 +241,13 @@ class SimpleLayer(DataLayer):
 
     @property
     def name(self):
-        return "{}_{}".format(self._name, hash(self.vis_options) + sys.maxsize + 1)
+        return "{}_{}".format(
+            self._name, hash(self.vis_options) + sys.maxsize + 1)
 
     @property
     def query_params(self):
         return self.config.vis_server.get_params(
             self.name, self.data, **self.vis_options.serialize())
-
 
 
 class TimeSeriesLayer(DataLayer):

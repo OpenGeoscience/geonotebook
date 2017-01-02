@@ -1,2 +1,1 @@
-from gdalvrtbindings import *
-from gdalvrtbindings import parseString
+from gdalvrtbindings import * # noqa

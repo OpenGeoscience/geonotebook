@@ -19,6 +19,8 @@
 #   vrt
 #
 
+# flake8: noqa
+
 import sys
 import re as re_
 import base64

@@ -1,6 +1,9 @@
-import ipykernel
 import os
+
+import ipykernel
+
 import requests
+
 
 def serialize_config(kConfig):
     return {
@@ -15,6 +18,7 @@ def serialize_provider(kProvider):
     except AttributeError:
         return str(kProvider)
 
+
 # Layer is a KTile layer,  NOT a geonotebook layer.
 def serialize_layer(kLayer):
     return {
@@ -22,7 +26,6 @@ def serialize_layer(kLayer):
         "provider": serialize_provider(kLayer.provider)
         # Other layer properties should be added here
     }
-
 
 
 # Layer is a geonotebook layer, NOT a KTile layer.

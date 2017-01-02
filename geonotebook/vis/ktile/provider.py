@@ -1,10 +1,13 @@
 import os
 import tempfile
-import gdal, osr
-from thread import allocate_lock
+
 import mapnik
 
-from .vrt import *
+from vrt import (
+    ComplexSourceType,
+    SourceFilenameType,
+    VRTDataset,
+    VRTRasterBandType)
 
 try:
     from PIL import Image
@@ -13,7 +16,8 @@ except ImportError:
     import Image
 
 if 'mapnik' in locals():
-    _version = hasattr(mapnik, 'mapnik_version') and mapnik.mapnik_version() or 701
+    _version = hasattr(mapnik, 'mapnik_version') and \
+        mapnik.mapnik_version() or 701
 
     if _version >= 20000:
         Box2d = mapnik.Box2d
@@ -22,6 +26,7 @@ if 'mapnik' in locals():
 
 
 DEFAULT_MAP_SRS = 'EPSG:4326'
+
 
 class MapnikPythonProvider(object):
     numpy_to_vrt_type = {
@@ -50,10 +55,8 @@ class MapnikPythonProvider(object):
 
         self.name = kwargs.get('name', None)
 
-
         self.raster_x_size = kwargs.get('raster_x_size', None)
         self.raster_y_size = kwargs.get('raster_y_size', None)
-
 
         self.transform = kwargs.get('transform', None)
 
@@ -82,7 +85,6 @@ class MapnikPythonProvider(object):
 
         self.scale_factor = None
 
-
     def serialize(self):
         return {
             "filepath": self.filepath,
@@ -91,7 +93,6 @@ class MapnikPythonProvider(object):
             "name": self.name,
             "opacity": self.opacity,
             "gamma": self.gamma,
-            "nodata": self.nodata,
             "colormap": self.colormap,
             "is_static": True if self._static_vrt else False,
             "raster_x_size": self.raster_x_size,
@@ -100,7 +101,6 @@ class MapnikPythonProvider(object):
             "nodata": self.nodata,
             "layer_srs": self.layer_srs
         }
-
 
     def __hash__(self):
         return hash((
@@ -114,13 +114,12 @@ class MapnikPythonProvider(object):
             tuple(tuple(cm.items()) for cm in self.colormap),
             self.scale_factor))
 
-
     def generate_vrt(self):
         if self._static_vrt is not None:
             return
 
-        vrt = VRTDataset(rasterXSize = self.raster_x_size,
-                         rasterYSize = self.raster_y_size)
+        vrt = VRTDataset(rasterXSize=self.raster_x_size,
+                         rasterYSize=self.raster_y_size)
         vrt.SRS = [self.map_srs]
         vrt.GeoTransform = [", ".join([str(f) for f in self.transform])]
 
@@ -128,7 +127,7 @@ class MapnikPythonProvider(object):
 
         for i, b in enumerate(self._bands):
             vrt_band = VRTRasterBandType(dataType=self.dtype,
-                                         band=i+1,
+                                         band=i + 1,
                                          NoDataValue=[str(self.nodata)])
             source = ComplexSourceType(
                 NODATA=str(self.nodata),
@@ -137,9 +136,6 @@ class MapnikPythonProvider(object):
                         relativeToVRT=0,
                         valueOf_=self.filepath)],
                 SourceBand=[b])
-
-
-
 
             if len(self._bands) == 3:
                 vrt_band.ColorInterp = [colors[i]]
@@ -155,12 +151,10 @@ class MapnikPythonProvider(object):
 
             vrt.VRTRasterBand.append(vrt_band)
 
-
         with open(self._vrt_path, 'w') as fh:
             vrt.export(fh, 0)
 
         return self._vrt_path
-
 
     @property
     def vrt_path(self):
@@ -173,7 +167,6 @@ class MapnikPythonProvider(object):
 
         return self._vrt_path
 
-
     @property
     def filepath(self):
         return self._filepath
@@ -185,19 +178,16 @@ class MapnikPythonProvider(object):
 
         self._filepath = val
 
-
     @property
     def layer_srs(self):
         if self._layer_srs is None:
             # TODO: Hard-coded
-            self._layer_srs = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs "
+            self._layer_srs = \
+                """+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs """
 
         return self._layer_srs
 
-
     def style_map(self, Map):
-        #from pudb.remote import set_trace; set_trace(term_size=(283, 87))
-
         style = mapnik.Style()
         rule = mapnik.Rule()
 
@@ -208,12 +198,11 @@ class MapnikPythonProvider(object):
             mapnik.COLORIZER_DISCRETE,
             mapnik.Color('white')
         )
-            # colorizer.epsilon = 0.001
+        # colorizer.epsilon = 0.001
         if self.colormap:
             for stop in self.colormap:
                 colorizer.add_stop(stop['quantity'], mapnik.Color(
                     stop['color'].encode('ascii')))
-
 
         sym.colorizer = colorizer
 
@@ -225,7 +214,7 @@ class MapnikPythonProvider(object):
         lyr = mapnik.Layer('GDAL Layer from TIFF', self.layer_srs)
 
         lyr.datasource = mapnik.Gdal(base=os.path.dirname(self.vrt_path),
-                                     file=os.path.basename(self.vrt_path),\
+                                     file=os.path.basename(self.vrt_path),
                                      band=self.mapnik_band)
 
         lyr.styles.append('Raster Style')
@@ -234,13 +223,12 @@ class MapnikPythonProvider(object):
 
         return Map
 
-
     def renderArea(self, width, height, srs, xmin, ymin, xmax, ymax, zoom):
         '''
         '''
 
-        # NB: To be thread-safe Map object cannot be stored as apart
-        #     of the class, see: https://groups.google.com/forum/#!topic/mapnik/USDlVfSk328
+        # NB: To be thread-safe Map object cannot be stored in the class state.
+        # see: https://groups.google.com/forum/#!topic/mapnik/USDlVfSk328
 
         Map = mapnik.Map(width, height, srs)
         Map.zoom_to_box(Box2d(xmin, ymin, xmax, ymax))
@@ -256,9 +244,10 @@ class MapnikPythonProvider(object):
             mapnik.render(Map, img, self.scale_factor)
 
         def gamma_correct(im):
-            """Fast gamma correction with PIL's image.point() method"""
+            """Fast gamma correction with PIL's image.point() method."""
             if self.gamma != 1.0:
-                table = [pow(x/255., 1.0 / self.gamma) * 255 for x in range(256)]
+                table = [pow(x / 255., 1.0 / self.gamma) * 255
+                         for x in range(256)]
                 # Expand table to number of bands
                 table = table * len(im.mode)
                 return im.point(table)

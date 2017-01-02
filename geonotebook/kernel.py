@@ -6,6 +6,7 @@ from ipykernel.ipkernel import IPythonKernel
 from promise import Promise
 
 from . import jsonrpc
+from .config import Config
 from .jsonrpc import (is_request,
                       is_response,
                       json_rpc_request,
@@ -17,10 +18,9 @@ from .layers import (AnnotationLayer,
                      SimpleLayer,
                      TimeSeriesLayer)
 
+from .utils import get_kernel_id
 from .wrappers import RasterData, RasterDataCollection
 
-from .config import Config
-from .utils import get_kernel_id
 
 class Remote(object):
     """Provides an object that proxies procedures on a remote object.
@@ -336,7 +336,8 @@ class Geonotebook(object):
             )
 
     def callback_error(self, exception):
-        import sys, traceback
+        import sys
+        import traceback
         t, v, tb = sys.exc_info()
         self.log.error('Callback Error: \n%s' %
                        ''.join(traceback.format_exception(t, v, tb)))
@@ -512,7 +513,6 @@ class GeonotebookKernel(IPythonKernel):
             self.geonotebook = Geonotebook(self)
             self.shell.user_ns.update({'M': self.geonotebook})
 
-
     def start(self):
         self.geonotebook = Geonotebook(self)
         self.shell.user_ns.update({'M': self.geonotebook})
@@ -520,7 +520,6 @@ class GeonotebookKernel(IPythonKernel):
 
         config = Config()
         config.vis_server.start_kernel(self)
-
 
     def __init__(self, **kwargs):
         kwargs['log'].setLevel(logging.INFO)

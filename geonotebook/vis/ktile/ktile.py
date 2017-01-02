@@ -1,18 +1,21 @@
-import os
-import json
-import requests
-from notebook.utils import url_path_join as ujoin
-from .handler import (KtileHandler,
-                      KtileLayerHandler,
-                      KtileTileHandler)
 from collections import MutableMapping
 
+import os
+
+from notebook.utils import url_path_join as ujoin
+
+import requests
 
 import TileStache as ts
 # NB:  this uses a 'private' API for parsing the Config layer dictionary
 from TileStache.Config import _parseConfigLayer as parseConfigLayer
 
 from geonotebook.utils import get_kernel_id
+
+from .handler import (KtileHandler,
+                      KtileLayerHandler,
+                      KtileTileHandler)
+
 
 # Manage kernel_id => layer configuration section
 # Note - when instantiated this is a notebook-wide class,
@@ -78,7 +81,6 @@ class Ktile(object):
     def default_cache(self):
         return dict(self.config.items(self.default_cache_section))
 
-
     def start_kernel(self, kernel):
         kernel_id = get_kernel_id(kernel)
         requests.post("{}/{}".format(self.base_url, kernel_id))
@@ -88,12 +90,10 @@ class Ktile(object):
         kernel_id = get_kernel_id(kernel)
         requests.delete("{}/{}".format(self.base_url, kernel_id))
 
-
     # This function is caleld inside the tornado web app
     # from jupyter_load_server_extensions
     def initialize_webapp(self, config, webapp):
         base_url = webapp.settings['base_url']
-
 
         webapp.ktile_config_manager = KtileConfigManager(
             self.default_cache)
@@ -116,7 +116,6 @@ class Ktile(object):
              dict(ktile_config_manager=webapp.ktile_config_manager)),
 
         ])
-
 
     # get_params should take a generic list of parameters e.g. 'bands',
     # 'range', 'gamma' and convert these into a list of vis_server specific
@@ -160,7 +159,6 @@ class Ktile(object):
 
         return options
 
-
     def ingest(self, data, name=None, **kwargs):
 
         # Verify that a kernel_id is present otherwise we can't
@@ -169,7 +167,6 @@ class Ktile(object):
         if kernel_id is None:
             raise Exception(
                 "KTile vis server requires kernel_id as kwarg to ingest!")
-
 
         options = {
             'name': data.name if name is None else name
@@ -197,14 +194,12 @@ class Ktile(object):
             else:
                 kwargs['vrt_path'] = data.reader.vrt_path
 
-
         # If we have a static VRT
         if 'vrt_path' in kwargs and kwargs['vrt_path'] is not None:
             options.update(self._static_vrt_options(data, kwargs))
         else:
             # We don't have a static VRT, set options for a dynamic VRT
             options.update(self._dynamic_vrt_options(data, kwargs))
-
 
         # Make the Request
         base_url = '{}/{}/{}'.format(self.base_url, kernel_id, name)
@@ -228,12 +223,11 @@ class Ktile(object):
 
         try:
             if response['status'] == 0:
-                raise RuntimeError("KTile.ingest() returned error:\n\n{}".format(
-                    ''.join(response['error'])))
+                raise RuntimeError(
+                    "KTile.ingest() returned error:\n\n{}".format(
+                        ''.join(response['error'])))
         except KeyError:
             raise RuntimeError("Malformed reponse from {}: {}".format(
-                base_url, response ))
-
-
+                base_url, response))
 
         return base_url
