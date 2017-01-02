@@ -253,7 +253,19 @@ setup(
     author='Kitware Inc',
     author_email='chris.kotfila@kitware.com',
     license='Apache License 2.0',
+    setup_requires=[
+        "numpy",
+        "jupyter-client",
+        "ipykernel",
+        "notebook"
+    ],
     install_requires=[
+        "futures",
+        "promise",
+        "ModestMaps",
+        "rasterio",
+        "Shapely",
+        "requests",
         "ipykernel",
         "jupyter_client",
         "notebook"
