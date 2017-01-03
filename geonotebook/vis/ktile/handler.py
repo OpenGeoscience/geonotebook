@@ -134,7 +134,7 @@ class KtileTileHandler(IPythonHandler):
         _profile = self.get_query_argument("profile", default=False)
 
         if _debug:
-            import pudb, pu.db # noqa
+            import pudb; pu.db # noqa
 
         config = self.ktile_config_manager[kernel_id]
 

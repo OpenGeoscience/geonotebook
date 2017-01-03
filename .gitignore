@@ -7,3 +7,4 @@
 .cache
 htmlcov/
 *.lprof
+/.dir-locals.el
