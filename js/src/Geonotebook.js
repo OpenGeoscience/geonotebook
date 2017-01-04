@@ -78,13 +78,12 @@ Geonotebook.prototype.resolve_arg_list = function (fn, msg) {
   }
 };
 
-
-Geonotebook.prototype.refresh_map_state = function(){
+Geonotebook.prototype.refresh_map_state = function () {
   this.map.notebook._remote.get_map_state().then((state) => {
     _.each(_.union(state.layers.system_layers, state.layers.layers), (layer) => {
       this.map.add_layer(layer.name, layer.vis_url, layer.vis_options, layer.query_params);
 
-    if (_.size(layer.annotations)) {
+      if (_.size(layer.annotations)) {
         _.each(layer.annotations, (annotation) => {
           this.map.add_annotation(annotation.type, annotation.args, annotation.kwargs);
         });
@@ -95,7 +94,7 @@ Geonotebook.prototype.refresh_map_state = function(){
       this.map.set_center.apply(this.map, state.center);
     }
   });
-}
+};
 
 Geonotebook.prototype.recv_msg = function (message) {
   var msg = this._unwrap(message);
@@ -109,7 +108,6 @@ Geonotebook.prototype.recv_msg = function (message) {
     // Once protocol negotiation is complete create the geojs map
     // and add the base OSM layer
     this.map.init_map();
-
   } else if (this.protocol_negotiation_complete) {
     // Pass response messages on to remote to be resolved
     if (is_response(msg)) {

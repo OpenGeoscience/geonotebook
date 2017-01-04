@@ -228,7 +228,6 @@ MapObject.prototype.add_layer = function (layer_name, vis_url, vis_params, query
   }
 };
 
-
 MapObject.prototype.replace_layer = function (prev_layer, layer_name, vis_url, vis_params, query_params) {
   var old_layer = _.find(this.geojsmap.layers(), function (e) { return e.name() === prev_layer; });
 
@@ -241,7 +240,6 @@ MapObject.prototype.replace_layer = function (prev_layer, layer_name, vis_url, v
   }
 };
 
-
 MapObject.prototype.add_osm_layer = function (layer_name, url, vis_params, query_params) {
   var osm = this.geojsmap.createLayer('osm');
 
@@ -253,8 +251,6 @@ MapObject.prototype.add_osm_layer = function (layer_name, url, vis_params, query
 
   return layer_name;
 };
-
-
 
 MapObject.prototype.add_default_layer = function (layer_name, base_url, vis_params, query_params) {
     // If a layer with this name already exists,  replace it
@@ -273,7 +269,7 @@ MapObject.prototype.add_default_layer = function (layer_name, base_url, vis_para
   wms.name(layer_name);
 
   var param_string = '';
-  if ($.param(query_params)){
+  if ($.param(query_params)) {
     param_string = '?' + $.param(query_params);
   }
 
@@ -283,7 +279,6 @@ MapObject.prototype.add_default_layer = function (layer_name, base_url, vis_para
 
   return layer_name;
 };
-
 
 MapObject.prototype.add_wms_layer = function (layer_name, base_url, query_params) {
     // If a layer with this name already exists,  replace it

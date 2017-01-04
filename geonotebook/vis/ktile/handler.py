@@ -21,7 +21,7 @@ class KTileAsyncClient(object):
         return cls.__instance
 
     def __init__(self):
-        self.executor = ThreadPoolExecutor(max_workers=1)
+        self.executor = ThreadPoolExecutor(max_workers=20)
         self.io_loop = ioloop.IOLoop.current()
 
     @concurrent.run_on_executor
