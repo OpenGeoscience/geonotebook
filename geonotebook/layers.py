@@ -28,7 +28,12 @@ class VisOptions(object):
         self.kernel_id = kernel_id
         self.layer_type = layer_type
 
-        if data is not None and len(data.band_indexes) == 1:
+        try:
+            num_bands = len(data.band_indexes)
+        except AttributeError:
+            num_bands = -1
+
+        if num_bands == 1:
             try:
                 # If we have the colormap in the form
                 # of a list of dicts with color/quantity then
@@ -238,6 +243,8 @@ class SimpleLayer(DataLayer):
         if vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
                 self.data, name=self.name, **self.vis_options.serialize())
+        else:
+            self.vis_url = vis_url
 
     @property
     def name(self):
@@ -248,6 +255,10 @@ class SimpleLayer(DataLayer):
     def query_params(self):
         return self.config.vis_server.get_params(
             self.name, self.data, **self.vis_options.serialize())
+
+    def __repr__(self):
+        return "<{}('{}')>".format(
+            self.__class__.__name__, self.name.split("_")[0])
 
 
 class TimeSeriesLayer(DataLayer):
@@ -263,6 +274,10 @@ class TimeSeriesLayer(DataLayer):
         if vis_url is None:
             self._vis_urls[0] = self.config.vis_server.ingest(
                 self.current, name=self.name, **self.vis_options.serialize())
+
+    def __repr__(self):
+        return "<{}('{}')>".format(
+            self.__class__.__name__, self.name.split("_")[0])
 
     @property
     def vis_url(self):
