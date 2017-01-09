@@ -21,14 +21,14 @@ class KTileAsyncClient(object):
         return cls.__instance
 
     def __init__(self):
-        self.executor = ThreadPoolExecutor(max_workers=20)
+        self.executor = ThreadPoolExecutor(max_workers=4)
         self.io_loop = ioloop.IOLoop.current()
 
     @concurrent.run_on_executor
     def getTileResponse(self, layer, coord, extension,
                         _debug=False, _profile=False):
         if _debug:
-            import rpdb; rpdb.set_trace()
+            import rpdb; rpdb.set_trace() # noqa
 
         if _profile:
             # profile injected by kernprof
