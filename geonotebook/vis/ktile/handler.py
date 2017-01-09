@@ -28,7 +28,7 @@ class KTileAsyncClient(object):
     def getTileResponse(self, layer, coord, extension,
                         _debug=False, _profile=False):
         if _debug:
-            from pudb.remote import set_trace; set_trace(term_size=(255, 70)) # noqa
+            import rpdb; rpdb.set_trace()
 
         if _profile:
             # profile injected by kernprof
@@ -140,6 +140,10 @@ class KtileTileHandler(IPythonHandler):
 
         layer = config.layers[layer_name]
         coord = Coordinate(int(y), int(x), int(z))
+
+        # To run synchronously:
+        # status_code, headers, content = layer.getTileResponse(
+        #     coord, extension)
 
         status_code, headers, content = yield self.client.getTileResponse(
             layer, coord, extension,

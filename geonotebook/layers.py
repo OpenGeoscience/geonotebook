@@ -7,90 +7,10 @@ import six
 
 from . import annotations
 from .config import Config
-from .vis.utils import generate_colormap
 
+from .vis.utils import VisOptions
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
-
-
-class VisOptions(object):
-    def __init__(self, data, opacity=1.0, gamma=1.0, projection='EPSG:3857',
-                 kernel_id=None, zIndex=None, colormap=None, interval=None,
-                 layer_type=None, **kwargs):
-
-        # self.vis_url = vis_url
-        self.opacity = opacity
-        self.projection = projection
-        self.gamma = gamma
-        self.interval = interval
-        self.colormap = None
-        self.zIndex = zIndex
-        self.kernel_id = kernel_id
-        self.layer_type = layer_type
-
-        try:
-            num_bands = len(data.band_indexes)
-        except AttributeError:
-            num_bands = -1
-
-        if num_bands == 1:
-            try:
-                # If we have the colormap in the form
-                # of a list of dicts with color/quantity then
-                # set options['colormap'] equal to this
-                for d in colormap:
-                    assert 'color' in d
-                    assert 'quantity' in d
-
-                self.colormap = colormap
-
-            except Exception:
-                # Otherwise try to figure out the correct colormap
-                # using data min/max
-                try:
-                    _min, _max = interval
-                except TypeError:
-                    _min, _max = None, None
-
-                if _min is None:
-                    try:
-                        _min = min(data.min)
-                    except (ValueError, TypeError):
-                        _min = data.min
-
-                if _max is None:
-                    try:
-                        _max = max(data.max)
-                    except (ValueError, TypeError):
-                        _max = data.max
-
-                self.colormap = generate_colormap(
-                    colormap, _min, _max)
-        else:
-            self.colormap = []
-
-    def serialize(self):
-        return {
-            'layer_type': self.layer_type,
-            'opacity': self.opacity,
-            'gamma': self.gamma,
-            'projection': self.projection,
-            'interval': self.interval,
-            'colormap': self.colormap,
-            'kernel_id': self.kernel_id,
-            'zIndex': self.zIndex
-        }
-
-    def __hash__(self):
-        return hash((
-            self.layer_type,
-            self.opacity,
-            self.gamma,
-            self.interval,
-            self.projection,
-            tuple(tuple(c.items()) for c in self.colormap),
-            self.kernel_id,
-            self.zIndex))
 
 
 class GeonotebookLayer(object):
