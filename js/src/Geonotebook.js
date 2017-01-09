@@ -108,6 +108,9 @@ Geonotebook.prototype.recv_msg = function (message) {
     // Once protocol negotiation is complete create the geojs map
     // and add the base OSM layer
     this.map.init_map();
+
+    // We should probably be doing this with an event system
+    this.refresh_map_state();
   } else if (this.protocol_negotiation_complete) {
     // Pass response messages on to remote to be resolved
     if (is_response(msg)) {
