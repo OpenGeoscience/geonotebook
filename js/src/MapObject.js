@@ -235,7 +235,11 @@ MapObject.prototype.replace_layer = function (prev_layer, layer_name, vis_url, v
     console.log('Could not find ' + layer_name + ' layer'); // eslint-disable-line no-console
     return false;
   } else {
+    // Set the zIndex
     query_params['zIndex'] = old_layer.zIndex();
+    // Delete the Layer
+    this.geojsmap.deleteLayer(this.get_layer(old_layer.name()));
+    // Add the new layer
     return this.add_layer(layer_name, vis_url, vis_params, query_params);
   }
 };
