@@ -38,7 +38,11 @@ RUN set -ex \
     && pip2 install \
          notebook \
          mapnik \
+         pyproj \
+         ipywidgets \
          scikit-image
+
+RUN jupyter nbextension enable --py widgetsnbextension --sys-prefix
 
 # Generate default config and disable authentication
 RUN /usr/sbin/jupyter-notebook --generate-config \
