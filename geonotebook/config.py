@@ -55,3 +55,10 @@ class Config(object):
                 vis_server_section))
 
         return cls(**dict(self.config.items(vis_server_section)))
+
+    @property
+    def basemap(self):
+        return {
+            "url": self.config.get("basemap", "url"),
+            "attribution": self.config.get("basemap", "attribution")
+        }

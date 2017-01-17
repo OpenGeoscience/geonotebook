@@ -227,7 +227,11 @@ MapObject.prototype.add_layer = function (layer_type, layer_name, params) {
 };
 
 MapObject.prototype.add_osm_layer = function (layer_name, url, params) {
-  var osm = this.geojsmap.createLayer('osm');
+  var opts = {};
+  if (params.attribution) {
+    opts.attribution = params.attribution;
+  }
+  var osm = this.geojsmap.createLayer('osm', opts);
 
   osm.name(layer_name);
   osm.url(url);
