@@ -230,7 +230,7 @@ MapObject.prototype.add_osm_layer = function (layer_name, url, params) {
   var osm = this.geojsmap.createLayer('osm');
 
   osm.name(layer_name);
-  osm.url = url;
+  osm.url(url);
 
     // make sure zindex is explicitly set
   this._set_layer_zindex(osm, params['zIndex']);

@@ -6,6 +6,7 @@ from ipykernel.ipkernel import IPythonKernel
 from promise import Promise
 
 from . import jsonrpc
+from .config import Config
 from .jsonrpc import (is_request,
                       is_response,
                       json_rpc_request,
@@ -470,9 +471,10 @@ class GeonotebookKernel(IPythonKernel):
         # THis should be handled in a callback that is fired off
         # When set protocol etc is complete.
         if self.initializing:
+            vis_url = Config().config.get('basemap', 'url')
             self.geonotebook.add_layer(
                 None, name="osm_base", layer_type="osm",
-                vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                vis_url=vis_url,
                 system_layer=True)
 
             self.geonotebook.add_layer(
