@@ -9,13 +9,13 @@ from . import vis
 def get_config(path=None):
     conf = configparser.ConfigParser()
     paths = [
-        "${GEONOTEBOOK_INI}",
-        os.path.join(os.getcwd(), ".geonotebook.ini"),
-        "~/.geonotebook.ini",
-        os.path.join(sys.prefix, "etc/geonotebook.ini"),
-        "/usr/local/etc/geonotebook.ini",
+        "/etc/geonotebook.ini",
         "/usr/etc/geonotebook.ini",
-        "/etc/geonotebook.ini"]
+        "/usr/local/etc/geonotebook.ini",
+        os.path.join(sys.prefix, "etc/geonotebook.ini"),
+        "~/.geonotebook.ini",
+        os.path.join(os.getcwd(), ".geonotebook.ini"),
+        "${GEONOTEBOOK_INI}"]
 
     found = False
 
@@ -28,7 +28,6 @@ def get_config(path=None):
                         os.path.expandvars(p)), 'r') as fh:
                     conf.readfp(fh)
                     found = True
-                    break
             except IOError:
                 pass
 
