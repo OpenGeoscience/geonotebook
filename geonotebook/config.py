@@ -51,7 +51,7 @@ class Config(object):
         try:
             cls = self._valid_vis_hash[vis_server_section]
         except KeyError:
-            raise NotImplemented("{} is not a valid vis_server".format(
+            raise NotImplementedError("{} is not a valid vis_server".format(
                 vis_server_section))
 
         return cls(**dict(self.config.items(vis_server_section)))
