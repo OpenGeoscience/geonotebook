@@ -31,7 +31,7 @@ def make_config(settings):
 def mock_file(content):
     """Generate a file like object containing the given content."""
     temp = tempfile.TemporaryFile()
-    temp.write(content)
+    temp.write(content.encode())
     temp.seek(0)
     return temp
 
