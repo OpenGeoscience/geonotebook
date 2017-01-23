@@ -95,7 +95,7 @@ class KtileLayerHandler(IPythonHandler):
             self.ktile_config_manager.add_layer(
                 kernel_id, layer_name, self.request.json)
 
-            self.write({'status': 1})
+            self.finish()
 
         except Exception:
             import sys
@@ -104,14 +104,20 @@ class KtileLayerHandler(IPythonHandler):
 
             self.log.error(''.join(traceback.format_exception(t, v, tb)))
 
-            self.write({'status': 0,
-                        'error': traceback.format_exception(t, v, tb)})
+            self.clear()
+            self.set_status(500)
+            self.finish({'error': traceback.format_exception(t, v, tb)})
 
     def get(self, kernel_id, layer_name, **kwargs):
         try:
-            layer = self.ktile_config_manager[kernel_id].layers[layer_name]
+            config = self.ktile_config_manager[kernel_id]
         except KeyError:
-            raise web.HTTPError(404, u'Kernel %s not found' % kernel_id)
+            raise web.HTTPError(400, u'Kernel %s not found' % kernel_id)
+
+        try:
+            layer = config.layers[layer_name]
+        except KeyError:
+            raise web.HTTPError(404, u'Layer %s not found' % layer_name)
 
         self.finish(serialize_layer(layer))
 
