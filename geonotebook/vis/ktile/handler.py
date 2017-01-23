@@ -42,7 +42,9 @@ class KtileHandler(IPythonHandler):
         try:
             if self.request.headers["Content-Type"].lower().startswith(
                     "application/json"):
-                self.request.json = json.loads(self.request.body.encode('utf-8'))
+                self.request.json = json.loads(
+                    self.request.body.encode('utf-8'))
+
         except Exception:
             self.request.json = None
 
@@ -82,7 +84,8 @@ class KtileLayerHandler(IPythonHandler):
         try:
             if self.request.headers["Content-Type"].lower().startswith(
                     "application/json"):
-                self.request.json = json.loads(self.request.body.encode('utf-8'))
+                self.request.json = json.loads(
+                    self.request.body.encode('utf-8'))
         except Exception:
             self.request.json = None
 

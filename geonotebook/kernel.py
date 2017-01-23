@@ -1,5 +1,4 @@
 from inspect import getargspec, getmembers, isfunction, ismethod
-import logging
 from types import MethodType
 
 from ipykernel.ipkernel import IPythonKernel
@@ -518,10 +517,11 @@ class GeonotebookKernel(IPythonKernel):
         super(GeonotebookKernel, self).start()
 
         config = Config()
+        self.log.setLevel(config.log_level)
+
         config.vis_server.start_kernel(self)
 
     def __init__(self, **kwargs):
-        kwargs['log'].setLevel(logging.INFO)
         self.log = kwargs['log']
         self.initializing = True
 

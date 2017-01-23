@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -46,6 +47,13 @@ class Config(object):
 
     def __init__(self, path=None):
         self.config = get_config(path)
+
+    @property
+    def log_level(self):
+        try:
+            return getattr(logging, self.config.get("default", "log_level"))
+        except (AttributeError, configparser.NoOptionError):
+            return logging.WARNING
 
     @property
     def vis_server(self):
