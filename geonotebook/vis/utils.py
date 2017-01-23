@@ -2,7 +2,6 @@ def generate_colormap(colormap, minimum, maximum):
     # A colormap can be a list of dicts
     # or a matplotlib colormap. Either case
     # the returned object will be a list of dicts.
-    # from pudb.remote import set_trace; set_trace(term_size=(283, 87))
     def range_count(start, stop, count):
         """Generate a list.
 

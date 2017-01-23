@@ -363,7 +363,6 @@ class Geonotebook(object):
 
         # Make sure we pass in kernel_id to the layer,  then to the vis_server
         # Otherwise we cant generate the coorect vis_url.
-        # from pudb.remote import set_trace; set_trace(term_size=(364, 89))
 
         layer_type = kwargs.get('layer_type', None)
 
