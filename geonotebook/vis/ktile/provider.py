@@ -1,7 +1,9 @@
 import os
 import tempfile
 
+import gdal
 import mapnik
+import osr
 
 from .vrt import (
     ComplexSourceType,
@@ -181,9 +183,14 @@ class MapnikPythonProvider(object):
     @property
     def layer_srs(self):
         if self._layer_srs is None:
-            # TODO: Hard-coded
-            self._layer_srs = \
-                """+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs """
+            try:
+                raster = gdal.Open(self.filepath)
+                srs = osr.SpatialReference()
+                srs.ImportFromWkt(raster.GetProjectionRef())
+                self._layer_srs = srs.ExportToProj4()
+            except RuntimeError:
+                self._layer_srs = \
+                    """+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs """
 
         return self._layer_srs
 
