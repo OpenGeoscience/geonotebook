@@ -8,7 +8,7 @@ import six
 from . import annotations
 from .config import Config
 
-from .vis.utils import VisOptions
+from .vis.utils import RasterStyleOptions
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -33,7 +33,7 @@ class GeonotebookLayer(object):
         self._system_layer = kwargs.pop("system_layer", False)
         self._expose_as = kwargs.pop("expose_as", None)
 
-        self.vis_options = VisOptions(data, **kwargs)
+        self.vis_options = RasterStyleOptions(data, **kwargs)
 
     def __repr__(self):
         return "<{}('{}')>".format(

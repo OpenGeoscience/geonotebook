@@ -42,7 +42,7 @@ def generate_colormap(colormap, minimum, maximum):
         return colormap
 
 
-class VisOptions(object):
+class RasterStyleOptions(object):
     def __init__(self, data, opacity=1.0, gamma=1.0, projection='EPSG:3857',
                  kernel_id=None, zIndex=None, colormap=None, interval=None,
                  layer_type=None, **kwargs):
