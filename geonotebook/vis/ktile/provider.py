@@ -36,7 +36,7 @@ class MapnikPythonProvider(object):
 
     def __init__(self, layer, **kwargs):
         # List of bands to display,  should be len == 1 or len == 3
-        self._bands = kwargs.get('bands', -1)
+        self._bands = kwargs.get('bands', [-1])
         self._last_hash = None
         self._layer_srs = None
         self._static_vrt = kwargs.get("vrt_path", None)
