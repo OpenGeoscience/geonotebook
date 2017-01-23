@@ -79,7 +79,7 @@ Geonotebook.prototype.resolve_arg_list = function (fn, msg) {
 };
 
 Geonotebook.prototype.refresh_map_state = function () {
-  this.map.notebook._remote.get_map_state().then((state) => {
+  return this.map.notebook._remote.get_map_state().then((state) => {
     _.each(_.union(state.layers.system_layers, state.layers.layers), (layer) => {
       this.map.add_layer(layer.name, layer.vis_url, layer.vis_options, layer.query_params);
 
