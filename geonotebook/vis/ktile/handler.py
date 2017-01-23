@@ -25,16 +25,7 @@ class KTileAsyncClient(object):
         self.io_loop = ioloop.IOLoop.current()
 
     @concurrent.run_on_executor
-    def getTileResponse(self, layer, coord, extension,
-                        _debug=False, _profile=False):
-        if _debug:
-            import rpdb; rpdb.set_trace() # noqa
-
-        if _profile:
-            # profile injected by kernprof
-            output = layer.getTileResponse(coord, extension)
-            return output
-
+    def getTileResponse(self, layer, coord, extension):
         return layer.getTileResponse(coord, extension)
 
 
@@ -130,11 +121,6 @@ class KtileTileHandler(IPythonHandler):
 
     @gen.coroutine
     def get(self, kernel_id, layer_name, x, y, z, extension, **kwargs):
-        _debug = self.get_query_argument("debug", default=False)
-        _profile = self.get_query_argument("profile", default=False)
-
-        if _debug:
-            import pudb; pu.db # noqa
 
         config = self.ktile_config_manager[kernel_id]
 
@@ -146,8 +132,7 @@ class KtileTileHandler(IPythonHandler):
         #     coord, extension)
 
         status_code, headers, content = yield self.client.getTileResponse(
-            layer, coord, extension,
-            _debug=_debug, _profile=_profile)
+            layer, coord, extension)
 
         if layer.max_cache_age is not None:
             expires = datetime.utcnow() + timedelta(

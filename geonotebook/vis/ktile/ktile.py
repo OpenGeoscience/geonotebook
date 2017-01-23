@@ -125,14 +125,7 @@ class Ktile(object):
     # on a particular dataset etc.
     def get_params(self, name, data, **kwargs):
         # All paramater setup is handled on ingest
-        params = {}
-        if 'debug' in kwargs:
-            params['debug'] = kwargs['debug']
-
-        if 'profile' in kwargs:
-            params['profile'] = kwargs['profile']
-
-        return params
+        return {}
 
     def _static_vrt_options(self, data, kwargs):
         options = {
