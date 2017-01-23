@@ -40,9 +40,9 @@ class KtileHandler(IPythonHandler):
         self.ktile_config_manager = ktile_config_manager
 
         try:
-            if self.request.headers["Content-Type"].startswith(
+            if self.request.headers["Content-Type"].lower().startswith(
                     "application/json"):
-                self.request.json = json.loads(self.request.body)
+                self.request.json = json.loads(self.request.body.encode('utf-8'))
         except Exception:
             self.request.json = None
 
