@@ -58,3 +58,4 @@ RUN git clone https://github.com/OpenGeoscience/geonotebook.git /opt/geonotebook
 VOLUME /notebooks
 WORKDIR /notebooks
 ADD jupyter.sh /jupyter.sh
+CMD ../jupyter.sh
