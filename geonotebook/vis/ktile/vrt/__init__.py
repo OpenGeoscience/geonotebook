@@ -1,1 +1,1 @@
-from gdalvrtbindings import * # noqa
+from .gdalvrtbindings import * # noqa

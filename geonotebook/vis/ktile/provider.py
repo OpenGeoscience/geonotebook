@@ -3,7 +3,7 @@ import tempfile
 
 import mapnik
 
-from vrt import (
+from .vrt import (
     ComplexSourceType,
     SourceFilenameType,
     VRTDataset,
