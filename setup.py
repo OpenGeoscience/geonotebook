@@ -292,8 +292,9 @@ setup(
             'tif = geonotebook.wrappers.image:RasterIOReader',
             'nc = geonotebook.wrappers.image:RasterIOReader',
             'vrt = geonotebook.wrappers.image:VRTReader',
-
+        ],
+        'geonotebook.handlers.default': [
+            '/log = geonotebook.logging_utils:LoggingRequestHandler'
         ]
-
     }
 )

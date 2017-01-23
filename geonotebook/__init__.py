@@ -1,4 +1,7 @@
 from jinja2 import ChoiceLoader, PackageLoader, PrefixLoader
+from notebook.utils import url_path_join
+
+import pkg_resources
 
 from .config import Config
 
@@ -65,18 +68,9 @@ def load_jupyter_server_extension(nbapp):
 
     conf.vis_server.initialize_webapp(conf, webapp)
 
-# Note:  How to add custom web handlers
-#     webapp = nbapp.web_app
-#     base_url = webapp.settings['base_url']
-#
-#     webapp.add_handlers(".*$", [
-#         (ujoin(base_url, r"/nbextensions"), NBExtensionHandler),
-#         (ujoin(base_url, r"/nbextensions/"), NBExtensionHandler),
-#         (ujoin(base_url, r"/nbextensions/config/rendermd/(.*)"),
-#          RenderExtensionHandler),
-#     ])
+    base_url = webapp.settings['base_url']
 
-#   Note: Ugly hack to add geonotebook template to jinja2 search path
-#     nbapp.web_app.settings['jinja2_env'].loader.searchpath = \
-#        [u"/home/kotfic/src/jupyter/geonotebook/geonotebook/templates"] + \
-#        nbapp.web_app.settings['jinja2_env'].loader.searchpath
+    for ep in pkg_resources.iter_entry_points(
+            group='geonotebook.handlers.default'):
+        webapp.add_handlers('.*$', [(url_path_join(base_url, ep.name),
+                                     ep.load())])
