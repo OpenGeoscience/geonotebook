@@ -33,7 +33,7 @@ class GeonotebookLayer(object):
         self._system_layer = kwargs.pop("system_layer", False)
         self._expose_as = kwargs.pop("expose_as", None)
 
-        self.vis_options = RasterStyleOptions(data, **kwargs)
+        self.vis_options = RasterStyleOptions(**kwargs)
 
     def __repr__(self):
         return "<{}('{}')>".format(
@@ -146,6 +146,24 @@ class NoDataLayer(GeonotebookLayer):
 
 class DataLayer(GeonotebookLayer):
     def __init__(self, name, remote, data=None, vis_url=None, **kwargs):
+
+        # Handle matplotlib like colormap conversion to list of
+        # dictionarys containing 'color' and 'quantity' keys.
+        if data is not None:
+            colormap = kwargs.get("colormap", None)
+            # If it's a matplotlib-like colormap generate a generic
+            # list-of-dicts colormap.
+            if hasattr(colormap, '__call__') and hasattr(colormap, 'N'):
+                kwargs['colormap'] = RasterStyleOptions.get_colormap(
+                    data, colormap, **kwargs)
+
+            # if single band and NO colormap, assign the default
+            # list-of-dicts colormap.
+            if colormap is None and hasattr(data, 'band_indexes') \
+               and len(data.band_indexes) == 1:
+                kwargs['colormap'] = RasterStyleOptions.get_colormap(
+                    data, None, **kwargs)
+
         super(DataLayer, self).__init__(name, remote, data, **kwargs)
         self.data = data
 

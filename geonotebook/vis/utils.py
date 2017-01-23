@@ -43,7 +43,7 @@ def generate_colormap(colormap, minimum, maximum):
 
 
 class RasterStyleOptions(object):
-    def __init__(self, data, opacity=1.0, gamma=1.0, projection='EPSG:3857',
+    def __init__(self, opacity=1.0, gamma=1.0, projection='EPSG:3857',
                  kernel_id=None, zIndex=None, colormap=None, interval=None,
                  layer_type=None, **kwargs):
 
@@ -57,46 +57,37 @@ class RasterStyleOptions(object):
         self.kernel_id = kernel_id
         self.layer_type = layer_type
 
-        try:
-            num_bands = len(data.band_indexes)
-        except AttributeError:
-            num_bands = -1
-
-        if num_bands == 1:
-            try:
-                # If we have the colormap in the form
-                # of a list of dicts with color/quantity then
-                # set options['colormap'] equal to this
-                for d in colormap:
-                    assert 'color' in d
-                    assert 'quantity' in d
-
-                self.colormap = colormap
-
-            except Exception:
-                # Otherwise try to figure out the correct colormap
-                # using data min/max
-                try:
-                    _min, _max = interval
-                except TypeError:
-                    _min, _max = None, None
-
-                if _min is None:
-                    try:
-                        _min = min(data.min)
-                    except (ValueError, TypeError):
-                        _min = data.min
-
-                if _max is None:
-                    try:
-                        _max = max(data.max)
-                    except (ValueError, TypeError):
-                        _max = data.max
-
-                self.colormap = generate_colormap(
-                    colormap, _min, _max)
-        else:
+        if colormap is None:
             self.colormap = []
+        else:
+            # If we have the colormap in the form
+            # of a list of dicts with color/quantity then
+            # set options['colormap'] equal to this
+            for d in colormap:
+                assert 'color' in d
+                assert 'quantity' in d
+            self.colormap = colormap
+
+    @staticmethod
+    def get_colormap(data, mpl_cmap, **kwargs):
+        try:
+            _min, _max = kwargs.get("interval", None)
+        except TypeError:
+            _min, _max = None, None
+
+        if _min is None:
+            try:
+                _min = min(data.min)
+            except (ValueError, TypeError):
+                _min = data.min
+
+        if _max is None:
+            try:
+                _max = max(data.max)
+            except (ValueError, TypeError):
+                _max = data.max
+
+        return generate_colormap(mpl_cmap, _min, _max)
 
     def serialize(self):
         return {
