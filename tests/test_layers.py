@@ -113,7 +113,7 @@ def test_timeseries_layer(visserver, rasterdata_list):
         'tsl', rasterdata_list[0].name,
         hash(tsl.vis_options) + sys.maxsize + 1)
     assert len(tsl.data) == 3
-    assert tsl.current.name == "test_data1.tif"
+    assert tsl.current.name == "test_data1"
     assert visserver.ingest.call_count == 1
 
 
@@ -132,7 +132,7 @@ def test_timeseries_layer_forward(mocker, visserver, rasterdata_list):
     vis_options.serialize.return_value = {'vis': 'options'}
 
     # Test
-    assert tsl.current.name == "test_data1.tif"
+    assert tsl.current.name == "test_data1"
     assert visserver.ingest.call_count == 1
 
     # Check that params are set,  and that we got them from the visserver
@@ -150,7 +150,7 @@ def test_timeseries_layer_forward(mocker, visserver, rasterdata_list):
     post_name = tsl.name
 
     # Test
-    assert tsl.current.name == "test_data2.tif"
+    assert tsl.current.name == "test_data2"
     assert visserver.ingest.call_count == 2
 
     # replace_layer is called to update the visual layer on the geojs map
@@ -172,7 +172,7 @@ def test_timeseries_layer_forward(mocker, visserver, rasterdata_list):
     post_name = tsl.name
 
     # Test
-    assert tsl.current.name == "test_data3.tif"
+    assert tsl.current.name == "test_data3"
     assert visserver.ingest.call_count == 3
 
     # replace_layer is called to update the visual layer on the geojs map

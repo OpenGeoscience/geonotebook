@@ -151,9 +151,14 @@ class RDMock(object):
 
 @pytest.fixture
 def rasterdata_list():
-    return [RDMock(name='test_data1.tif'),
-            RDMock(name='test_data2.tif'),
-            RDMock(name='test_data3.tif')]
+    old_tif = RasterData._concrete_data_types['tif']
+    RasterData.register("tif", MockReader)
+
+    yield RasterDataCollection(['test_data1.tif',
+                                'test_data2.tif',
+                                'test_data3.tif'])
+
+    RasterData.register("tif", old_tif)
 
 
 # RasterDataCollection

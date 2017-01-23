@@ -42,8 +42,13 @@ class Annotation(object):
         return self.layer.layer_collection if self.layer is not None else []
 
     def get_data_window(self, minx, miny, maxx, maxy):
-        return ((min(minx, maxx), min(miny, maxy)),
-                (max(minx, maxx), max(miny, maxy)))
+        return ((
+            int(min(minx, maxx)),
+            int(min(miny, maxy))
+        ), (
+            int(max(minx, maxx)),
+            int(max(miny, maxy)))
+        )
 
     @property
     def data(self):
