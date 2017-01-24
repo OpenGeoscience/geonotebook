@@ -5,6 +5,16 @@
     dest: "{{ geonotebook_dir }}"
     version: "{{ geonotebook_version }}"
     accept_hostkey: yes
+    force: yes
+
+- name: add ubuntugis ppa
+  apt_repository:
+    repo: "ppa:ubuntugis/ppa"
+    state: present
+
+- name: update apt cache
+  apt:
+    update_cache: yes
 
 - name: Install system dependencies
   apt:
