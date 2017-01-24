@@ -22,30 +22,13 @@
     - python-pip
     - python-rasterio
     - python-requests
-    - python3-gdal
-    - python3-matplotlib
-    - python3-numpy
-    - python3-pip
-    - python3-rasterio
-    - python3-requests
 
 - name: Update pip and install example notebook requirements
   pip:
     executable: pip2
-    name: "{{ item }}"
+    name: "pip"
     state: latest
     chdir: "{{ geonotebook_dir }}"
-  with_items:
-    - pip
-
-- name: Update pip3 and install example notebook requirements
-  pip:
-    executable: pip3
-    name: "{{ item }}"
-    state: latest
-    chdir: "{{ geonotebook_dir }}"
-  with_items:
-    - pip
 
 - name: Use system installed python-gdal
   lineinfile:
@@ -54,24 +37,21 @@
     dest: "{{geonotebook_dir}}/requirements.txt"
   when: use_system_python_gdal is defined
 
-
 - name: Install geonotebook python requirements
   pip:
-    executable: "{{ item }}"
+    executable: pip2
     requirements: "{{geonotebook_dir}}/requirements.txt"
-  with_items:
-    - pip2
-    - pip3
+  environment:
+    CPLUS_INCLUDE_PATH: /usr/include/gdal
+    C_INCLUDE_PATH: /usr/include/gdal
 
 - name: Install the geonotebook package
   pip:
-    executable: "{{ item }}"
+    executable: pip2
+    extra_args: "-e"
     name: "."
     state: latest
     chdir: "{{ geonotebook_dir }}"
-  with_items:
-    - pip2
-    - pip3
 
 - name: Template out the geonotebook.ini configuration file
   template:
