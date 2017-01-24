@@ -1,0 +1,63 @@
+---
+- name: Make ktile directory
+  file:
+    path: "{{ ktile_dir }}"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  become: yes
+
+- name: Clone the ktile repository
+  git:
+    repo: https://github.com/OpenGeoscience/ktile.git
+    dest: "{{ ktile_dir }}"
+    version: "{{ ktile_version }}"
+    accept_hostkey: yes
+
+- name: add ubuntugis ppa
+  apt_repository:
+    repo: "ppa:ubuntugis/ppa"
+    state: present
+    update_cache: yes
+
+- name: Install system dependencies
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - gdal-bin
+    - python-pip
+    - python-psycopg2
+  become: yes
+
+- name: upgrade pip
+  pip:
+    executable: pip2
+    name: pip
+    state: latest
+  become: yes
+
+- name: Use system installed python-gdal
+  lineinfile:
+    line: "gdal==1.10.0"
+    state: absent
+    dest: "{{ ktile_dir }}/prerequirements.txt"
+  when: true
+
+- name: pip install requirements
+  pip:
+    executable: pip2
+    chdir: "{{ ktile_dir }}"
+    requirements: "{{ item }}"
+  with_items:
+    - "prerequirements.txt"
+    - "requirements-dev.txt"
+    - "requirements.txt"
+  become: yes
+
+- name: pip install ktile
+  pip:
+    executable: pip2
+    chdir: "{{ ktile_dir }}"
+    extra_args: "-e"
+    name: "."
+  become: yes
