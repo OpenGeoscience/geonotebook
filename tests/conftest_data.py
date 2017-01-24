@@ -77,3 +77,8 @@ DATA['single2.mock'] = np.copy(DATA['single.mock'])
 DATA['single2.mock'][0][0] = 200.
 DATA['single3.mock'] = np.copy(DATA['single.mock'])
 DATA['single3.mock'][0][0] = 300.
+
+
+DATA['test_data1.tif'] = np.copy(DATA['rect.mock'])
+DATA['test_data2.tif'] = np.copy(DATA['rect.mock'])
+DATA['test_data3.tif'] = np.copy(DATA['rect.mock'])

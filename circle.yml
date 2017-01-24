@@ -7,7 +7,8 @@ dependencies:
     - sudo apt-get install -q -y libgeos-c1v5
     - sudo apt-get install -q -y libgdal20
     - sudo apt-get install -q -y gdal-bin libgdal-dev python3-numpy python-numpy
-    - pip install tox tox-pyenv
+    - pip install -U pip
+    - pip install tox tox-pyenv entrypoints
     - pyenv local 2.7.12 3.5.2
     - nvm use v6
     - npm config set progress false

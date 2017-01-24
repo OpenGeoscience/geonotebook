@@ -3,6 +3,8 @@ from notebook.utils import url_path_join
 
 import pkg_resources
 
+from .config import Config
+
 
 def _jupyter_server_extension_paths():
     return [{
@@ -62,6 +64,10 @@ def load_jupyter_server_extension(nbapp):
         get_notebook_jinja2_loader(nbapp)
 
     webapp = nbapp.web_app
+    conf = Config()
+
+    conf.vis_server.initialize_webapp(conf, webapp)
+
     base_url = webapp.settings['base_url']
 
     for ep in pkg_resources.iter_entry_points(

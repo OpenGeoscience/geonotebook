@@ -253,7 +253,19 @@ setup(
     author='Kitware Inc',
     author_email='chris.kotfila@kitware.com',
     license='Apache License 2.0',
+    setup_requires=[
+        "numpy",
+        "jupyter-client",
+        "ipykernel",
+        "notebook"
+    ],
     install_requires=[
+        "futures",
+        "promise",
+        "ModestMaps",
+        "rasterio",
+        "Shapely",
+        "requests",
         "ipykernel",
         "jupyter_client",
         "notebook"
@@ -275,9 +287,11 @@ setup(
                                   'templates/*.html']},
     entry_points={
         'geonotebook.wrappers.raster': [
-            'geotiff = geonotebook.wrappers.image:GeoTiffImage',
-            'tiff = geonotebook.wrappers.image:GeoTiffImage',
-            'tif = geonotebook.wrappers.image:GeoTiffImage'
+            'geotiff = geonotebook.wrappers.image:RasterIOReader',
+            'tiff = geonotebook.wrappers.image:RasterIOReader',
+            'tif = geonotebook.wrappers.image:RasterIOReader',
+            'nc = geonotebook.wrappers.image:RasterIOReader',
+            'vrt = geonotebook.wrappers.image:VRTReader',
         ],
         'geonotebook.handlers.default': [
             '/log = geonotebook.logging_utils:LoggingRequestHandler'

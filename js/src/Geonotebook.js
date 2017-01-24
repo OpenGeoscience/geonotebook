@@ -78,6 +78,24 @@ Geonotebook.prototype.resolve_arg_list = function (fn, msg) {
   }
 };
 
+Geonotebook.prototype.refresh_map_state = function () {
+  return this.map.notebook._remote.get_map_state().then((state) => {
+    _.each(_.union(state.layers.system_layers, state.layers.layers), (layer) => {
+      this.map.add_layer(layer.name, layer.vis_url, layer.vis_options, layer.query_params);
+
+      if (_.size(layer.annotations)) {
+        _.each(layer.annotations, (annotation) => {
+          this.map.add_annotation(annotation.type, annotation.args, annotation.kwargs);
+        });
+      }
+    });
+
+    if (_.has(state, 'center')) {
+      this.map.set_center.apply(this.map, state.center);
+    }
+  });
+};
+
 Geonotebook.prototype.recv_msg = function (message) {
   var msg = this._unwrap(message);
   // TODO: move this into request/response like a
@@ -91,21 +109,8 @@ Geonotebook.prototype.recv_msg = function (message) {
     // and add the base OSM layer
     this.map.init_map();
 
-    this.map.notebook._remote.get_map_state().then((state) => {
-      _.each(_.union(state.layers.system_layers, state.layers.layers), (layer) => {
-        this.map.add_layer(layer.type, layer.name, layer.kwargs);
-
-        if (layer.type === 'annotation' && _.size(layer.annotations)) {
-          _.each(layer.annotations, (annotation) => {
-            this.map.add_annotation(annotation.type, annotation.args, annotation.kwargs);
-          });
-        }
-      });
-
-      if (_.has(state, 'center')) {
-        this.map.set_center.apply(this.map, state.center);
-      }
-    });
+    // We should probably be doing this with an event system
+    this.refresh_map_state();
   } else if (this.protocol_negotiation_complete) {
     // Pass response messages on to remote to be resolved
     if (is_response(msg)) {
@@ -126,6 +131,7 @@ Geonotebook.prototype.recv_msg = function (message) {
       } catch (ex) {
         // If we catch an error report it back to the RPC caller
         this.send_msg(response(null, ex, msg.id));
+        throw ex;
       }
     } else {
       // Not a response or a request - send parse error
