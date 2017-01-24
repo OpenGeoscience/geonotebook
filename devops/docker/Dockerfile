@@ -51,7 +51,7 @@ RUN /usr/sbin/jupyter-notebook --generate-config \
 
 RUN git clone https://github.com/OpenGeoscience/geonotebook.git /opt/geonotebook \
     && pushd /opt/geonotebook \
-    && git checkout ktile-integration \
+    && git checkout master \
     && pip2 install https://github.com/OpenGeoscience/KTile/archive/master.zip \
     && pip2 install .
 
