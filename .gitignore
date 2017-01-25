@@ -8,3 +8,4 @@
 htmlcov/
 *.lprof
 /.dir-locals.el
+/.vagrant
