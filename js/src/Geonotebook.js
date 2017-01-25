@@ -1,4 +1,5 @@
 import _ from 'underscore';
+import Split from 'split.js';
 
 import MapObject from './MapObject';
 import {
@@ -170,6 +171,27 @@ Geonotebook.prototype.init_html_and_css = function () {
   $('.container').addClass('geonotebook');
   $('#maintoolbar-container').addClass('geonotebook');
   $('#ipython-main-app').after('<div id="geonotebook-panel"><div id="geonotebook-map" /></div>');
+  $('#ipython-main-app').parent().css('overflow-x', 'hidden');
+
+  // get saved panel sizes
+  var sizes = localStorage.getItem('geonotebook-split-sizes');
+  if (sizes) {
+    sizes = JSON.parse(sizes);
+  } else {
+    sizes = [50, 50];
+  }
+
+  // Initialize resizing control
+  var split = Split(['#ipython-main-app', '#geonotebook-panel'], {
+    sizes: sizes,
+    onDragEnd: () => {
+      localStorage.setItem(
+        'geonotebook-split-sizes',
+        JSON.stringify(split.getSizes())
+      );
+      this.map.resize();
+    }
+  });
 };
 
 Geonotebook.prototype.bind_key_to_geonotebook_event = function (Jupyter, key_binding, action_name, action_opts) {
