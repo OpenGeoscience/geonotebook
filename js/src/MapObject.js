@@ -47,6 +47,17 @@ MapObject.prototype.init_map = function () {
     // this.geojsmap.geoOn('geo_select', this.geo_select.bind(this));
 };
 
+/**
+ * Force the map object to resize itself when layouts change.
+ */
+MapObject.prototype.resize = function () {
+  var node = $(this.geojsmap.node());
+  this.geojsmap.size({
+    width: node.width(),
+    height: node.height()
+  });
+};
+
 MapObject.prototype.rpc_error = function (error) {
   console.log('JSONRPCError(' + error.code + '): ' + error.message); // eslint-disable-line no-console
 };
