@@ -184,7 +184,6 @@ Geonotebook.prototype.init_html_and_css = function () {
   // Initialize resizing control
   var split = Split(['#ipython-main-app', '#geonotebook-panel'], {
     sizes: sizes,
-    gutterSize: 6,
     onDragEnd: () => {
       localStorage.setItem(
         'geonotebook-split-sizes',
