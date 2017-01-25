@@ -55,8 +55,9 @@ MapObject.prototype.msg_types = [
   'get_protocol',
   'set_center',
   '_debug',
-  'replace_wms_layer',
   'add_layer',
+  'replace_layer',
+  'replace_wms_layer',
   'clear_annotations',
   'remove_layer'
 ];
@@ -177,7 +178,7 @@ MapObject.prototype.state_annotation_handler = function (evt) {
   }
 };
 
-MapObject.prototype.add_annotation_layer = function (layer_name, params) {
+MapObject.prototype.add_annotation_layer = function (layer_name) {
   var layer = this.geojsmap.createLayer('annotation', {
     annotations: ['rectangle', 'point', 'polygon']
   });
@@ -213,23 +214,40 @@ MapObject.prototype._set_layer_zindex = function (layer, index) {
   }
 };
 
-MapObject.prototype.add_layer = function (layer_type, layer_name, params) {
+MapObject.prototype.add_layer = function (layer_name, vis_url, vis_params, query_params) {
+  var layer_type = vis_params['layer_type'];
+
   if (layer_type === 'annotation') {
-    return this.add_annotation_layer(layer_name, params);
-  } else if (layer_type === 'wms') {
-    return this.add_wms_layer(layer_name, params.vis_url, params);
+    return this.add_annotation_layer(layer_name);
   } else if (layer_type === 'osm') {
-    return this.add_osm_layer(layer_name, params.vis_url, params);
+    return this.add_osm_layer(layer_name, vis_url, vis_params, query_params);
+  } else if (layer_type === 'wms') {
+    return this.add_wms_layer(layer_name, vis_url, vis_params, query_params);
   } else {
-    console.error('Attempting to add layer of type ' + layer_type);
-    return false;
+    return this.add_default_layer(layer_name, vis_url, vis_params, query_params);
   }
 };
 
-MapObject.prototype.add_osm_layer = function (layer_name, url, params) {
+MapObject.prototype.replace_layer = function (prev_layer, layer_name, vis_url, vis_params, query_params) {
+  var old_layer = _.find(this.geojsmap.layers(), function (e) { return e.name() === prev_layer; });
+
+  if (old_layer === undefined) {
+    console.log('Could not find ' + layer_name + ' layer'); // eslint-disable-line no-console
+    return false;
+  } else {
+    // Set the zIndex
+    query_params['zIndex'] = old_layer.zIndex();
+    // Delete the Layer
+    this.geojsmap.deleteLayer(this.get_layer(old_layer.name()));
+    // Add the new layer
+    return this.add_layer(layer_name, vis_url, vis_params, query_params);
+  }
+};
+
+MapObject.prototype.add_osm_layer = function (layer_name, url, vis_params, query_params) {
   var opts = {};
-  if (params.attribution) {
-    opts.attribution = params.attribution;
+  if (vis_params.attribution) {
+    opts.attribution = vis_params.attribution;
   }
   var osm = this.geojsmap.createLayer('osm', opts);
 
@@ -237,74 +255,16 @@ MapObject.prototype.add_osm_layer = function (layer_name, url, params) {
   osm.url(url);
 
     // make sure zindex is explicitly set
-  this._set_layer_zindex(osm, params['zIndex']);
+  this._set_layer_zindex(osm, vis_params['zIndex']);
 
   return layer_name;
 };
 
-MapObject.prototype.replace_wms_layer = function (layer_name, base_url, params) {
-  var old_layer = _.find(this.geojsmap.layers(), function (e) { return e.name() === layer_name; });
-
-  if (old_layer === undefined) {
-    console.log('Could not find ' + layer_name + ' layer'); // eslint-disable-line no-console
-    return false;
-  } else {
-    var projection = 'EPSG:3857';
-
-    var wms = this.geojsmap.createLayer('osm', {
-      keepLower: false,
-      attribution: null
-    });
-    wms.name(layer_name);
-    this._set_layer_zindex(wms, old_layer.zIndex());
-
-    wms.url(function (x, y, zoom) {
-      var bb = wms.gcsTileBounds({
-        x: x,
-        y: y,
-        level: zoom
-      }, projection);
-
-      var bbox_mercator = bb.left + ',' + bb.bottom + ',' +
-                    bb.right + ',' + bb.top;
-
-      var local_params = {
-        'SERVICE': 'WMS',
-        'VERSION': '1.3.0',
-        'REQUEST': 'GetMap',
-                //                     'LAYERS': layer_name, // US Elevation
-        'STYLES': '',
-        'BBOX': bbox_mercator,
-        'WIDTH': 512,
-        'HEIGHT': 512,
-        'FORMAT': 'image/png',
-        'TRANSPARENT': true,
-        'SRS': projection,
-        'TILED': true
-                // TODO: What if anythin should be in SLD_BODY?
-             // 'SLD_BODY': sld
-      };
-
-      if (params['SLD_BODY']) {
-        local_params['SLD_BODY'] = params['SLD_BODY'];
-      }
-
-      return base_url + '&' + $.param(local_params);
-    });
-
-    this.geojsmap.deleteLayer(old_layer);
-
-    return true;
-  }
-};
-
-MapObject.prototype.add_wms_layer = function (layer_name, base_url, params) {
+MapObject.prototype.add_default_layer = function (layer_name, base_url, vis_params, query_params) {
     // If a layer with this name already exists,  replace it
   if (this.get_layer(layer_name) !== undefined) {
     this.geojsmap.deleteLayer(this.get_layer(layer_name));
   }
-
-  var projection = 'EPSG:3857';
 
   var wms = this.geojsmap.createLayer('osm', {
     keepLower: false,
@@ -312,7 +272,37 @@ MapObject.prototype.add_wms_layer = function (layer_name, base_url, params) {
   });
 
     // make sure zindex is explicitly set
-  this._set_layer_zindex(wms, params['zIndex']);
+  this._set_layer_zindex(wms, vis_params['zIndex']);
+
+  wms.name(layer_name);
+
+  var param_string = '';
+  if ($.param(query_params)) {
+    param_string = '?' + $.param(query_params);
+  }
+
+  wms.url(function (x, y, zoom) {
+    return base_url + '/' + x + '/' + y + '/' + zoom + '.png' + param_string;
+  });
+
+  return layer_name;
+};
+
+MapObject.prototype.add_wms_layer = function (layer_name, base_url, query_params) {
+    // If a layer with this name already exists,  replace it
+  if (this.get_layer(layer_name) !== undefined) {
+    this.geojsmap.deleteLayer(this.get_layer(layer_name));
+  }
+
+  var projection = query_params['projection'] || 'EPSG:3857';
+
+  var wms = this.geojsmap.createLayer('osm', {
+    keepLower: false,
+    attribution: null
+  });
+
+    // make sure zindex is explicitly set
+  this._set_layer_zindex(wms, query_params['zIndex']);
 
   wms.name(layer_name);
 
@@ -343,8 +333,8 @@ MapObject.prototype.add_wms_layer = function (layer_name, base_url, params) {
              // 'SLD_BODY': sld
     };
 
-    if (params['SLD_BODY']) {
-      local_params['SLD_BODY'] = params['SLD_BODY'];
+    if (query_params['SLD_BODY']) {
+      local_params['SLD_BODY'] = query_params['SLD_BODY'];
     }
 
     return base_url + '&' + $.param(local_params);

@@ -83,7 +83,7 @@ def test_dictionary_key_access_key_error(glc):
 
 
 def test_layer_collection_append_layer(glc):
-    l = layers.GeonotebookLayer('test_layer', None)
+    l = layers.GeonotebookLayer('test_layer', None, None)
     glc.append(l)
 
     assert glc['test_layer'] == l
@@ -91,7 +91,7 @@ def test_layer_collection_append_layer(glc):
 
 
 def test_layer_collection_append_same_layer(glc):
-    l = layers.GeonotebookLayer('test_layer', None)
+    l = layers.GeonotebookLayer('test_layer', None, None)
     glc.append(l)
 
     with pytest.raises(Exception):
@@ -100,7 +100,7 @@ def test_layer_collection_append_same_layer(glc):
 
 def test_layer_collection_append_system_layer(glc):
     pre_length = len(glc)
-    l = layers.GeonotebookLayer('test_layer', None, system_layer=True)
+    l = layers.GeonotebookLayer('test_layer', None, None, system_layer=True)
     glc.append(l)
 
     # System layers don't show up in length
@@ -112,7 +112,7 @@ def test_layer_collection_append_system_layer(glc):
 
 
 def test_layer_collection_append_same_system_layer(glc):
-    l = layers.GeonotebookLayer('test_layer', None, system_layer=True)
+    l = layers.GeonotebookLayer('test_layer', None, None, system_layer=True)
     glc.append(l)
 
     with pytest.raises(Exception):
@@ -121,7 +121,7 @@ def test_layer_collection_append_same_system_layer(glc):
 
 def test_layer_collection_append_exposed_layer(glc):
     pre_length = len(glc)
-    l = layers.GeonotebookLayer('test_layer', None, expose_as='test')
+    l = layers.GeonotebookLayer('test_layer', None, None, expose_as='test')
     glc.append(l)
     # Expose_as is not just for system layers
     assert glc['test_layer'] == l
@@ -131,14 +131,14 @@ def test_layer_collection_append_exposed_layer(glc):
 
 
 def test_layer_collection_append_exposed_layer_bad_attr(glc):
-    l = layers.GeonotebookLayer('test_layer', None, expose_as='_layers')
+    l = layers.GeonotebookLayer('test_layer', None, None, expose_as='_layers')
     with pytest.raises(RuntimeError):
         glc.append(l)
 
 
 def test_layer_collection_append_exposed_system_layer(glc):
     pre_length = len(glc)
-    l = layers.GeonotebookLayer('test_layer', None,
+    l = layers.GeonotebookLayer('test_layer', None, None,
                                 system_layer=True, expose_as='test')
     glc.append(l)
 
@@ -171,14 +171,14 @@ def test_layer_collection_remove_layer_by_layer(glc):
 
 
 def test_layer_collection_setitem(glc):
-    l = layers.GeonotebookLayer('test_layer', None)
+    l = layers.GeonotebookLayer('test_layer', None, None)
     glc['foo'] = l
     assert glc.find("foo") == l
     assert glc[0] == l
 
 
 def test_layer_collection_setitem_with_int(glc):
-    l = layers.GeonotebookLayer('test_layer', None)
+    l = layers.GeonotebookLayer('test_layer', None, None)
     glc[0] = l
     assert glc.find("foo") == l
     assert glc[0] == l
@@ -190,7 +190,7 @@ def test_layer_collection_setitem_with_bad_value(glc):
 
 
 def test_layer_collection_setitem_with_system_layer(glc):
-    l = layers.GeonotebookLayer('test_layer', None, system_layer=True)
+    l = layers.GeonotebookLayer('test_layer', None, None, system_layer=True)
     with pytest.raises(Exception):
         glc['test_layer'] = l
 

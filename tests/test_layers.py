@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from geonotebook import layers
@@ -7,7 +9,7 @@ pytestmark = pytest.mark.usefixtures("geonotebook_ini")
 
 
 def test_layer_reprs(visserver):
-    assert str(layers.GeonotebookLayer('gnbl', None)) == \
+    assert str(layers.GeonotebookLayer('gnbl', None, None)) == \
         "<GeonotebookLayer('gnbl')>"
     assert str(layers.AnnotationLayer('al', None, None)) == \
         "<AnnotationLayer('al')>"
@@ -88,7 +90,6 @@ def test_simple_layer(visserver):
     assert sl.vis_url == 'http://bogus_url.com'
 
     assert visserver.ingest.call_count == 1
-    assert visserver.get_params.call_count == 1
 
 
 def test_simple_layer_with_no_data_and_no_vis_url(visserver):
@@ -108,15 +109,17 @@ def test_simple_layer_override_vis_url(visserver):
 def test_timeseries_layer(visserver, rasterdata_list):
     tsl = layers.TimeSeriesLayer('tsl', None, rasterdata_list)
 
-    assert tsl.name == 'tsl'
+    assert tsl.name == '{}_{}_{}'.format(
+        'tsl', rasterdata_list[0].name,
+        hash(tsl.vis_options) + sys.maxsize + 1)
     assert len(tsl.data) == 3
-    assert tsl.current.name == "test_data1.tif"
+    assert tsl.current.name == "test_data1"
     assert visserver.ingest.call_count == 1
 
 
 def test_timeseries_layer_forward(mocker, visserver, rasterdata_list):
     # Setup
-    visserver.ingest.return_value = "http://bogus_url.com/test_data1.tif"
+    visserver.ingest.return_value = "http://bogus_url.com/test_data1"
     visserver.get_params.return_value = {'foo': 'bar'}
 
     tsl = layers.TimeSeriesLayer('tsl', None, rasterdata_list)
@@ -125,51 +128,65 @@ def test_timeseries_layer_forward(mocker, visserver, rasterdata_list):
     # Because _remote's API is generated dynamically by the nbextension's
     # get_protocol.
     mocker.patch.object(tsl, '_remote', create=True)
+    vis_options = mocker.patch.object(tsl, 'vis_options')
+    vis_options.serialize.return_value = {'vis': 'options'}
 
     # Test
-    assert tsl.current.name == "test_data1.tif"
+    assert tsl.current.name == "test_data1"
     assert visserver.ingest.call_count == 1
 
     # Check that params are set,  and that we got them from the visserver
-    assert tsl.params == {'foo': 'bar'}
+    assert tsl.query_params == {'foo': 'bar'}
     assert visserver.get_params.call_count == 1
 
     # Setup
-    visserver.ingest.return_value = "http://bogus_url.com/test_data2.tif"
+    visserver.ingest.return_value = "http://bogus_url.com/test_data2"
     visserver.get_params.return_value = {'foo': 'bar1'}
 
+    pre_name = tsl.name
+
     tsl.forward()
 
+    post_name = tsl.name
+
     # Test
-    assert tsl.current.name == "test_data2.tif"
+    assert tsl.current.name == "test_data2"
     assert visserver.ingest.call_count == 2
 
-    # replace_wms_layer is called to update the visual layer on the geojs map
-    assert tsl._remote.replace_wms_layer.call_count == 1
+    # replace_layer is called to update the visual layer on the geojs map
+    assert tsl._remote.replace_layer.call_count == 1
     assert visserver.get_params.call_count == 2
-    tsl._remote.replace_wms_layer.assert_called_with(
-        "tsl", "http://bogus_url.com/test_data2.tif", {'foo': 'bar1'})
+
+    tsl._remote.replace_layer.assert_called_with(
+        pre_name, post_name, "http://bogus_url.com/test_data2",
+        {'vis': 'options'}, {'foo': 'bar1'})
 
     # Setup
-    visserver.ingest.return_value = "http://bogus_url.com/test_data3.tif"
+    visserver.ingest.return_value = "http://bogus_url.com/test_data3"
     visserver.get_params.return_value = {'foo': 'bar2'}
+
+    pre_name = tsl.name
 
     tsl.forward()
 
+    post_name = tsl.name
+
     # Test
-    assert tsl.current.name == "test_data3.tif"
+    assert tsl.current.name == "test_data3"
     assert visserver.ingest.call_count == 3
 
-    # replace_wms_layer is called to update the visual layer on the geojs map
-    assert tsl._remote.replace_wms_layer.call_count == 2
+    # replace_layer is called to update the visual layer on the geojs map
+
+    assert tsl._remote.replace_layer.call_count == 2
     assert visserver.get_params.call_count == 3
-    tsl._remote.replace_wms_layer.assert_called_with(
-        "tsl", "http://bogus_url.com/test_data3.tif", {'foo': 'bar2'})
+    tsl._remote.replace_layer.assert_called_with(
+        pre_name, post_name, "http://bogus_url.com/test_data3",
+        {'vis': 'options'}, {'foo': 'bar2'})
 
 
 def test_timeseries_layer_backward(mocker, visserver, rasterdata_list):
     # Setup
-    visserver.ingest.return_value = "http://bogus_url.com/test_data1.tif"
+    visserver.ingest.return_value = "http://bogus_url.com/test_data1"
     visserver.get_params.return_value = {'foo': 'bar'}
 
     tsl = layers.TimeSeriesLayer('tsl', None, rasterdata_list)
@@ -178,9 +195,13 @@ def test_timeseries_layer_backward(mocker, visserver, rasterdata_list):
     # Because _remote's API is generated dynamically by the nbextension's
     # get_protocol.
     mocker.patch.object(tsl, '_remote', create=True)
-    assert tsl.params == {'foo': 'bar'}
 
-    visserver.ingest.return_value = "http://bogus_url.com/test_data2.tif"
+    vis_options = mocker.patch.object(tsl, 'vis_options')
+    vis_options.serialize.return_value = {'vis': 'options'}
+
+    assert tsl.query_params == {'foo': 'bar'}
+
+    visserver.ingest.return_value = "http://bogus_url.com/test_data2"
     visserver.get_params.return_value = {'foo': 'bar1'}
 
     tsl.forward()
@@ -191,13 +212,12 @@ def test_timeseries_layer_backward(mocker, visserver, rasterdata_list):
     tsl.backward()
 
     assert visserver.ingest.call_count == ingest_preback
-    assert visserver.get_params.call_count == param_preback
+    assert visserver.get_params.call_count == param_preback + 1
 
 
 def test_timeseries_layer_idx(mocker, visserver, rasterdata_list):
     # Setup
-    visserver.ingest.return_value = "http://bogus_url.com/test_data1.tif"
-    visserver.get_params.return_value = {'foo': 'bar'}
+    visserver.ingest.return_value = "http://bogus_url.com/test_data1"
 
     tsl = layers.TimeSeriesLayer('tsl', None, rasterdata_list)
 
@@ -205,18 +225,24 @@ def test_timeseries_layer_idx(mocker, visserver, rasterdata_list):
     # Because _remote's API is generated dynamically by the nbextension's
     # get_protocol.
     mocker.patch.object(tsl, '_remote', create=True)
-    assert tsl.params == {'foo': 'bar'}
+    vis_options = mocker.patch.object(tsl, 'vis_options')
+    vis_options.serialize.return_value = {'vis': 'options'}
 
-    visserver.ingest.return_value = "http://bogus_url.com/test_data3.tif"
-    visserver.get_params.return_value = {'foo': 'bar2'}
+    visserver.ingest.return_value = "http://bogus_url.com/test_data3"
+    visserver.get_params.return_value = {'query': 'params'}
+
+    prev_name = tsl.name
 
     tsl.idx(2)
 
+    cur_name = tsl.name
     assert visserver.ingest.call_count == 2
-    assert visserver.get_params.call_count == 2
-    assert tsl._remote.replace_wms_layer.call_count == 1
-    tsl._remote.replace_wms_layer.assert_called_with(
-        "tsl", "http://bogus_url.com/test_data3.tif", {'foo': 'bar2'})
+    assert visserver.get_params.call_count == 1
+    assert tsl._remote.replace_layer.call_count == 1
+
+    tsl._remote.replace_layer.assert_called_with(
+        prev_name, cur_name, "http://bogus_url.com/test_data3",
+        {'vis': 'options'}, {'query': 'params'})
 
 
 def test_timeseries_out_of_range(visserver, rasterdata_list):

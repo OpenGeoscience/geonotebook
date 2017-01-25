@@ -1,10 +1,14 @@
 from collections import namedtuple
 from collections import OrderedDict
 
+import sys
+
 import six
 
 from . import annotations
 from .config import Config
+
+from .vis.utils import RasterStyleOptions
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -21,25 +25,35 @@ class GeonotebookLayer(object):
     # some kind of functionality (e.g. the annotatoin layer).
     _expose_as = None
 
-    _type = None
-
-    def __init__(self, name, remote, **kwargs):
+    def __init__(self, name, remote, data, **kwargs):
         self.config = Config()
         self.remote = remote
-        self.name = name
-        self.kwargs = kwargs
+        self._name = name
 
-        self._system_layer = kwargs.get("system_layer", False)
-        self._expose_as = kwargs.get("expose_as", None)
+        self._system_layer = kwargs.pop("system_layer", False)
+        self._expose_as = kwargs.pop("expose_as", None)
+
+        self.vis_options = RasterStyleOptions(**kwargs)
 
     def __repr__(self):
         return "<{}('{}')>".format(
             self.__class__.__name__, self.name)
 
     def serialize(self):
-        return {'name': self.name,
-                'type': self._type,
-                'kwargs': self.kwargs}
+        return {
+            'name': self.name,
+            'vis_url': self.vis_url if hasattr(self, 'vis_url') else None,
+            'vis_options': self.vis_options.serialize(),
+            'query_params': self.query_params
+        }
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def query_params(self):
+        return {}
 
 
 class AnnotationLayer(GeonotebookLayer):
@@ -59,9 +73,13 @@ class AnnotationLayer(GeonotebookLayer):
         return ret
 
     def __init__(self, name, remote, layer_collection, **kwargs):
-        super(AnnotationLayer, self).__init__(name, remote, **kwargs)
+
+        kwargs['layer_type'] = 'annotation'
+
+        super(AnnotationLayer, self).__init__(name, remote, None, **kwargs)
         self.layer_collection = layer_collection
         self._remote = remote
+        self.vis_url = None
         self._annotations = []
 
     def add_annotation(self, ann_type, coords, meta):
@@ -122,13 +140,31 @@ class AnnotationLayer(GeonotebookLayer):
 
 class NoDataLayer(GeonotebookLayer):
     def __init__(self, name, remote, vis_url, **kwargs):
-        super(NoDataLayer, self).__init__(name, remote, **kwargs)
+        super(NoDataLayer, self).__init__(name, remote, None, **kwargs)
         self.vis_url = vis_url
 
 
 class DataLayer(GeonotebookLayer):
-    def __init__(self, name, remote, data, vis_url=None, **kwargs):
-        super(DataLayer, self).__init__(name, remote, **kwargs)
+    def __init__(self, name, remote, data=None, vis_url=None, **kwargs):
+
+        # Handle matplotlib like colormap conversion to list of
+        # dictionarys containing 'color' and 'quantity' keys.
+        if data is not None:
+            colormap = kwargs.get("colormap", None)
+            # If it's a matplotlib-like colormap generate a generic
+            # list-of-dicts colormap.
+            if hasattr(colormap, '__call__') and hasattr(colormap, 'N'):
+                kwargs['colormap'] = RasterStyleOptions.get_colormap(
+                    data, colormap, **kwargs)
+
+            # if single band and NO colormap, assign the default
+            # list-of-dicts colormap.
+            if colormap is None and hasattr(data, 'band_indexes') \
+               and len(data.band_indexes) == 1:
+                kwargs['colormap'] = RasterStyleOptions.get_colormap(
+                    data, None, **kwargs)
+
+        super(DataLayer, self).__init__(name, remote, data, **kwargs)
         self.data = data
 
         assert vis_url is not None or data is not None, \
@@ -139,52 +175,66 @@ class DataLayer(GeonotebookLayer):
 class SimpleLayer(DataLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
         super(SimpleLayer, self).__init__(
-            name, remote, data, vis_url=vis_url, **kwargs
+            name, remote, data=data, vis_url=vis_url, **kwargs
         )
-        self.vis_url = vis_url
 
-        if self.vis_url is None:
+        if vis_url is None:
             self.vis_url = self.config.vis_server.ingest(
-                self.data, name=self.name)
+                self.data, name=self.name, **self.vis_options.serialize())
+        else:
+            self.vis_url = vis_url
 
-        self.kwargs = self.config.vis_server.get_params(
-            self.name, self.data, **kwargs)
+    @property
+    def name(self):
+        return "{}_{}".format(
+            self._name, hash(self.vis_options) + sys.maxsize + 1)
+
+    @property
+    def query_params(self):
+        return self.config.vis_server.get_params(
+            self.name, self.data, **self.vis_options.serialize())
+
+    def __repr__(self):
+        return "<{}('{}')>".format(
+            self.__class__.__name__, self.name.split("_")[0])
 
 
 class TimeSeriesLayer(DataLayer):
     def __init__(self, name, remote, data, vis_url=None, **kwargs):
         super(TimeSeriesLayer, self).__init__(
-            name, remote, data, vis_url=None, **kwargs
+            name, remote, data=data, vis_url=None, **kwargs
         )
         self.__cur = 0
+        self._vis_urls = [None] * len(data)
+
         self._remote = remote
 
-        # TODO: check vis_url is valid length etc
-        self._vis_url = vis_url \
-            if vis_url is not None \
-            else [None] * len(self.data)
-        self._params = [None] * len(self.data)
+        if vis_url is None:
+            self._vis_urls[0] = self.config.vis_server.ingest(
+                self.current, name=self.name, **self.vis_options.serialize())
 
-        if self.vis_url is None:
-            self.vis_url = self.config.vis_server.ingest(
-                self.current, name=self.current.name)
-
-        self.vis_server_kwargs = kwargs
-
-    @property
-    def params(self):
-        if self._params[self._cur] is None:
-            self._params[self._cur] = self.config.vis_server.get_params(
-                self.current.name, self.current, **self.vis_server_kwargs)
-        return self._params[self._cur]
+    def __repr__(self):
+        return "<{}('{}')>".format(
+            self.__class__.__name__, self.name.split("_")[0])
 
     @property
     def vis_url(self):
-        return self._vis_url[self._cur]
+        return self._vis_urls[self._cur]
 
-    @vis_url.setter
-    def vis_url(self, value):
-        self._vis_url[self._cur] = value
+    @property
+    def name(self):
+        return "{}_{}_{}".format(
+            self._name, self.current.name,
+            hash(self.vis_options) + sys.maxsize + 1)
+
+    @property
+    def query_params(self):
+        return self.config.vis_server.get_params(
+            self.current.name, self.current, **self.vis_options.serialize())
+
+    @property
+    def current(self):
+        return self.data[self._cur]
 
     @property
     def _cur(self):
@@ -200,32 +250,32 @@ class TimeSeriesLayer(DataLayer):
 
         self.__cur = value
 
-    @property
-    def current(self):
-        return self.data[self._cur]
+        if self._vis_urls[value] is None:
+            self._vis_urls[value] = self.config.vis_server.ingest(
+                self.current, name=self.name, **self.vis_options.serialize())
 
-    def _replace_layer(self):
-        if self.vis_url is None:
-            self.vis_url = self.config.vis_server.ingest(
-                self.current, name=self.current.name)
+    def _replace_layer(self, idx):
+        prev_name = self.name
 
-        # TODO: Need better handlers here for post-replace callbacks
-        self._remote.replace_wms_layer(self.name, self.vis_url, self.params)\
-            .then(lambda resp: True, lambda: True)
+        self._cur = idx
+        self._remote.replace_layer(prev_name, self.name, self.vis_url,
+                                   self.vis_options.serialize(),
+                                   self.query_params)\
+            .then(lambda: True, lambda: True)
 
         return self.current
 
-    def idx(self, idx):
-        self._cur = idx
-        return self._replace_layer()
+    def idx(self, idx=None):
+        if idx is None:
+            return self._cur
+        else:
+            return self._replace_layer(idx)
 
     def backward(self):
-        self._cur -= 1
-        return self._replace_layer()
+        return self._replace_layer(self._cur - 1)
 
     def forward(self):
-        self._cur += 1
-        return self._replace_layer()
+        return self._replace_layer(self._cur + 1)
 
 
 class GeonotebookLayerCollection(object):

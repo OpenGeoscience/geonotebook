@@ -151,9 +151,14 @@ class RDMock(object):
 
 @pytest.fixture
 def rasterdata_list():
-    return [RDMock(name='test_data1.tif'),
-            RDMock(name='test_data2.tif'),
-            RDMock(name='test_data3.tif')]
+    old_tif = RasterData._concrete_data_types['tif']
+    RasterData.register("tif", MockReader)
+
+    yield RasterDataCollection(['test_data1.tif',
+                                'test_data2.tif',
+                                'test_data3.tif'])
+
+    RasterData.register("tif", old_tif)
 
 
 # RasterDataCollection
@@ -194,9 +199,9 @@ def rdc_one():
 def glc():
     # glc: Geonotebook Layer Collection
 
-    foo = layers.GeonotebookLayer('foo', None, vis_url='vis')
-    bar = layers.GeonotebookLayer('bar', None, vis_url='vis')
-    baz = layers.GeonotebookLayer('baz', None, vis_url='vis')
+    foo = layers.GeonotebookLayer('foo', None, None, vis_url='vis')
+    bar = layers.GeonotebookLayer('bar', None, None, vis_url='vis')
+    baz = layers.GeonotebookLayer('baz', None, None, vis_url='vis')
 
     return layers.GeonotebookLayerCollection([foo, bar, baz])
 
@@ -217,7 +222,7 @@ def glc_annotation(rect, coords, single, missing):
 
 @pytest.fixture
 def geonotebook_layer():
-    return layers.GeonotebookLayer('foo', None, vis_url='vis')
+    return layers.GeonotebookLayer('foo', None, None, vis_url='vis')
 
 
 # Vis Server fixtures

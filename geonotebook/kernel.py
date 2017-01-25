@@ -1,5 +1,4 @@
 from inspect import getargspec, getmembers, isfunction, ismethod
-import logging
 from types import MethodType
 
 from ipykernel.ipkernel import IPythonKernel
@@ -18,6 +17,7 @@ from .layers import (AnnotationLayer,
                      SimpleLayer,
                      TimeSeriesLayer)
 
+from .utils import get_kernel_id
 from .wrappers import RasterData, RasterDataCollection
 
 
@@ -310,6 +310,10 @@ class Geonotebook(object):
 
         self._kernel = kernel
 
+    @property
+    def kernel_id(self):
+        return get_kernel_id(self._kernel)
+
     def serialize(self):
         ret = {}
 
@@ -321,12 +325,21 @@ class Geonotebook(object):
         return ret
 
     def rpc_error(self, error):
-        self.log.error(
-            "JSONRPCError (%s): %s" % (error['code'], error['message'])
-        )
+        try:
+            self.log.error(
+                "JSONRPCError (%s): %s" % (error['code'], error['message'])
+            )
+        except Exception:
+            self.log.error(
+                "JSONRPCError: Malformed error message: {}".format(error)
+            )
 
     def callback_error(self, exception):
-        self.log.error('Callback Error: %s' % exception[0])
+        import sys
+        import traceback
+        t, v, tb = sys.exc_info()
+        self.log.error('Callback Error: \n%s' %
+                       ''.join(traceback.format_exception(t, v, tb)))
 
     # Remote RPC wrappers #
 
@@ -340,13 +353,22 @@ class Geonotebook(object):
     def get_map_state(self):
         return self.serialize()
 
-    def add_layer(self, data, name=None, vis_url=None, layer_type='wms',
-                  **kwargs):
+    def add_layer(self, data, name=None, vis_url=None, **kwargs):
 
         # Create the GeonotebookLayer -  if vis_url is none,  this will take
         # data_path and upload it to the configured vis_server,  this will make
         # the visualization url available through the 'vis_url' attribute
         # on the layer object.
+
+        # Make sure we pass in kernel_id to the layer,  then to the vis_server
+        # Otherwise we cant generate the coorect vis_url.
+
+        layer_type = kwargs.get('layer_type', None)
+
+        kwargs['kernel_id'] = self.kernel_id
+
+        if layer_type != 'annotation':
+            kwargs['zIndex'] = len(self.layers)
 
         # HACK:  figure out a way to do this without so many conditionals
         if isinstance(data, RasterData):
@@ -379,15 +401,9 @@ class Geonotebook(object):
         def _add_layer(layer_name):
             self.layers.append(layer)
 
-        layer._type = layer_type
-
-        if layer._type in ('wms', 'osm'):
-            layer.kwargs['zIndex'] = len(self.layers)
-
-        if hasattr(layer, 'vis_url'):
-            layer.kwargs['vis_url'] = layer.vis_url
-
-        return self._remote.add_layer(layer_type, layer.name, layer.kwargs) \
+        return self._remote.add_layer(layer.name, layer.vis_url,
+                                      layer.vis_options.serialize(),
+                                      layer.query_params) \
                            .then(_add_layer, self.rpc_error) \
                            .catch(self.callback_error)
 
@@ -490,6 +506,9 @@ class GeonotebookKernel(IPythonKernel):
 
         super(GeonotebookKernel, self).do_shutdown(restart)
 
+        config = Config()
+        config.vis_server.shutdown_kernel(self)
+
         if restart:
             self.geonotebook = Geonotebook(self)
             self.shell.user_ns.update({'M': self.geonotebook})
@@ -499,8 +518,12 @@ class GeonotebookKernel(IPythonKernel):
         self.shell.user_ns.update({'M': self.geonotebook})
         super(GeonotebookKernel, self).start()
 
+        config = Config()
+        self.log.setLevel(config.log_level)
+
+        config.vis_server.start_kernel(self)
+
     def __init__(self, **kwargs):
-        kwargs['log'].setLevel(logging.DEBUG)
         self.log = kwargs['log']
         self.initializing = True
 

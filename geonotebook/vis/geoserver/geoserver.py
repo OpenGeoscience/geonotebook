@@ -36,7 +36,7 @@ class Client(object):
 
 class Geoserver(object):
 
-    def __init__(self, url=None, username="admin",
+    def __init__(self, config, url=None, username="admin",
                  password="geoserver", workspace="test"):
         assert url is not None, \
             "Must pass in a URL to Geoserver instance!"
@@ -44,6 +44,18 @@ class Geoserver(object):
         self.base_url = url
         self.c = Client(self.base_url + "/rest", username=username,
                         password=password)
+
+    # Used for setup when kernel starts
+    def start_kernel(self, kernel):
+        pass
+
+    # Used for cleanup with kernel ends
+    def shutdown_kernel(self, kernel):
+        pass
+
+    # Used for any setup nessisary on the NotebookWebApp object
+    def initialize_webapp(self, config, webapp):
+        pass
 
     @property
     def coverage_stores(self):
@@ -199,7 +211,7 @@ class Geoserver(object):
     # transfering bytes from a source location (data.path) to a destination
     # Defined as apart of the vis_server config along with any metadata
     # Needed to geospatially reference the data on the remote system
-    def ingest(self, data, name=None):
+    def ingest(self, data, name=None, **kwargs):
 
         name = data.name if name is None else name
 
