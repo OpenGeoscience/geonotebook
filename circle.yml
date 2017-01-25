@@ -19,7 +19,7 @@ test:
     - mkdir -p $CIRCLE_TEST_REPORTS/{eslint,pytest}
     - mkdir -p $CIRCLE_ARTIFACTS/coverage
   override:
-    - tox --result-json $CIRCLE_ARTIFACTS/tox-result.json -- --cov-report html:$CIRCLE_ARTIFACTS/coverage --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
+    - tox --result-json $CIRCLE_ARTIFACTS/tox-result.json -- --cov-report html:$CIRCLE_ARTIFACTS/coverage --cov-report xml:$CIRCLE_ARTIFACTS/coverage.xml --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
     - npm run --silent --prefix js lint:ci > $CIRCLE_TEST_REPORTS/eslint/JUnit.xml
     - npm run test --prefix js -- --browsers=Firefox,Chrome && mv js/coverage $CIRCLE_ARTIFACTS/js_coverage
   post:
