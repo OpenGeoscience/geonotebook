@@ -5,10 +5,10 @@ log_level = WARNING
 [geoserver]
 username = admin
 password = geoserver
-url = http://{{ inventory_hostname }}:8080/geoserver
+url = {{ geoserver_url | default("http://localhost:8080/geoserver") }}
 
 [ktile]
-url = http://{{ inventory_hostname }}:8888/ktile
+url = {{ ktile_url | default("http://localhost:8888/ktile") }}
 default_cache = ktile_default_cache
 
 [ktile_default_cache]
