@@ -1,0 +1,13 @@
+[Unit]
+Description=Geonotebook
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/jupyter notebook --no-browser --ip=0.0.0.0
+User={{ ansible_user_id }}
+Group={{ ansible_user_id }}
+WorkingDirectory={{ geonotebook_dir }}/notebooks
+
+[Install]
+WantedBy=multi-user.target

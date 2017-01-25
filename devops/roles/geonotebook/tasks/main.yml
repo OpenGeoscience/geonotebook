@@ -107,3 +107,5 @@
     line: "c.NotebookApp.token = '{{ geonotebook_auth_token }}'"
     state: present
   when: geonotebook_auth_enabled
+
+- include: daemon.yml

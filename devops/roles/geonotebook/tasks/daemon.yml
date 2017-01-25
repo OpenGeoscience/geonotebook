@@ -1,0 +1,14 @@
+---
+- name: Install service
+  template:
+    src: "geonotebook.service.j2"
+    dest: "/etc/systemd/system/geonotebook.service"
+  become: yes
+  become_user: root
+
+- name: (Re)start service
+  service:
+    name: geonotebook
+    state: restarted
+  become: yes
+  become_user: root
