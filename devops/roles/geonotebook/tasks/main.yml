@@ -78,3 +78,32 @@
   template:
     src: geonotebook.ini.j2
     dest: /usr/local/etc/geonotebook.ini
+
+- name: Generate jupyter notebook config
+  command: "jupyter notebook --generate-config"
+  args:
+    creates: "{{ ansible_user_dir }}/.jupyter/jupyter_notebook_config.py"
+
+- debug:
+    msg: "Specify geonotebook_auth_token when deploying to a production environment"
+  when: geonotebook_auth_token == ""
+
+- name: Remove existing auth token setting
+  lineinfile:
+    name: "{{ ansible_user_dir }}/.jupyter/jupyter_notebook_config.py"
+    regexp: "^c.NotebookApp.token"
+    state: absent
+
+- name: Disable auth token
+  lineinfile:
+    name: "{{ ansible_user_dir }}/.jupyter/jupyter_notebook_config.py"
+    line: "c.NotebookApp.token = ''"
+    state: present
+  when: not geonotebook_auth_enabled
+
+- name: Configure auth token
+  lineinfile:
+    name: "{{ ansible_user_dir }}/.jupyter/jupyter_notebook_config.py"
+    line: "c.NotebookApp.token = '{{ geonotebook_auth_token }}'"
+    state: present
+  when: geonotebook_auth_enabled

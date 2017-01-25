@@ -2,3 +2,6 @@ geonotebook_version: master
 geonotebook_dir: /opt/geonotebook
 geonotebook_update: no
 geonotebook_force: no
+
+geonotebook_auth_enabled: yes
+geonotebook_auth_token: ""
