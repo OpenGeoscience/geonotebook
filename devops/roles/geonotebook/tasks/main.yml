@@ -1,11 +1,22 @@
 ---
+- name: Ensure geonotebook base directory exists
+  file:
+    path: "{{ geonotebook_dir }}"
+    state: directory
+    group: "{{ ansible_user_id }}"
+    owner: "{{ ansible_user_id }}"
+    mode: 0755
+  become: yes
+  become_user: root
+
 - name: Clone the geonotebook repository
   git:
     repo: https://github.com/OpenGeoscience/geonotebook.git
     dest: "{{ geonotebook_dir }}"
     version: "{{ geonotebook_version }}"
     accept_hostkey: yes
-    force: yes
+    update: "{{ geonotebook_update|default(omit) }}"
+    force: "{{ geonotebook_force|default(omit) }}"
 
 - name: add ubuntugis ppa
   apt_repository:
