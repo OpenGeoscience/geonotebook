@@ -176,7 +176,7 @@ class Remote(object):
 
 
 class Geonotebook(object):
-    msg_types = ['get_protocol', 'set_center', 'add_annotation',
+    msg_types = ['get_protocol', 'set_center', 'add_annotation_client',
                  'get_map_state']
 
     _protocol = None
@@ -427,6 +427,23 @@ class Geonotebook(object):
         return self.__class__.class_protocol()
 
     def add_annotation(self, ann_type, coords, meta):
+        """Add an annotation to the annotation layer.
+
+        :param str ann_type: 'point', 'rectangle', or 'polygon'
+        :param list[dict] coords: A list of coordinates defining the annotation
+        :param dict meta: Extra metadata stored with the annotation
+        """
+        def _add_annotation(result):
+            self.layers.annotation.add_annotation(ann_type, coords, meta)
+
+        return self._remote.add_annotation(
+            ann_type, [coords], meta
+        ).then(
+            _add_annotation,
+            self.rpc_error
+        ).catch(self.callback_error)
+
+    def add_annotation_client(self, ann_type, coords, meta):
         self.layers.annotation.add_annotation(ann_type, coords, meta)
         return True
 

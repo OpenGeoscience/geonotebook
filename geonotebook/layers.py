@@ -84,21 +84,17 @@ class AnnotationLayer(GeonotebookLayer):
 
     def add_annotation(self, ann_type, coords, meta):
         if ann_type == 'point':
-            x, y = coords[0]['x'], coords[0]['y']
-
             meta['layer'] = self
 
             self._annotations.append(
-                self._annotation_types[ann_type](x, y, **meta))
+                self._annotation_types[ann_type](coords, **meta))
         elif ann_type in self._annotation_types.keys():
-            coordinates = [(c['x'], c['y']) for c in coords]
-
             meta['layer'] = self
 
             holes = meta.pop('holes', None)
 
             self._annotations.append(
-                self._annotation_types[ann_type](coordinates, holes, **meta))
+                self._annotation_types[ann_type](coords, holes, **meta))
         else:
             raise RuntimeError("Cannot add annotation of type %s" % ann_type)
 

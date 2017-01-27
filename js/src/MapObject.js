@@ -70,7 +70,8 @@ MapObject.prototype.msg_types = [
   'replace_layer',
   'replace_wms_layer',
   'clear_annotations',
-  'remove_layer'
+  'remove_layer',
+  'add_annotation'
 ];
 
 MapObject.prototype._debug = function (msg) {
@@ -128,8 +129,8 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
   if (type === 'point') {
     annotation_layer.addAnnotation(pointAnnotation({
       position: transformCoordinates(this.geojsmap.ingcs(), this.geojsmap.gcs(), {
-        x: args[0],
-        y: args[1]
+        x: args[0][0],
+        y: args[0][1]
       }),
       style: kwargs.style
     }));
@@ -156,6 +157,16 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
   } else {
     console.error('Attempting to add annotation of type ' + type);
   }
+  return true;
+};
+
+MapObject.prototype._map_coordinates = function (coordinates, type) {
+  if (type === 'point') {
+    return [coordinates[0].x, coordinates[0].y];
+  }
+  return _.map(coordinates, (c) => {
+    return [c.x, c.y];
+  });
 };
 
 MapObject.prototype._add_annotation_handler = function (annotation) {
@@ -170,9 +181,14 @@ MapObject.prototype._add_annotation_handler = function (annotation) {
     rgb: annotation.options('style').fillColor
   };
 
-  this.notebook._remote.add_annotation(
+  var coordinates = this._map_coordinates(
+    annotation.coordinates('EPSG:4326'),
+    annotation.type()
+  );
+
+  this.notebook._remote.add_annotation_client(
         annotation.type(),
-        annotation.coordinates('EPSG:4326'),
+        coordinates,
         annotation_meta
     ).then(
         function () {
