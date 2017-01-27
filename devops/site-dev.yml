@@ -1,11 +1,11 @@
 - name: Setup dev environment
   hosts: all
 
-  become: yes
-
   roles:
     - role: geerlingguy.nodejs
+      become: yes
     - role: ktile
+      become: yes
     - role: geonotebook
       geonotebook_version: master
       use_system_python_gdal: true

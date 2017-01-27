@@ -12,6 +12,8 @@
     repo: https://github.com/OpenGeoscience/ktile.git
     dest: "{{ ktile_dir }}"
     version: "{{ ktile_version }}"
+    update: "{{ ktile_update }}"
+    force: "{{ ktile_force }}"
     accept_hostkey: yes
 
 - name: add ubuntugis ppa

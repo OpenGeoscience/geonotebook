@@ -22,10 +22,8 @@
   apt_repository:
     repo: "ppa:ubuntugis/ppa"
     state: present
-
-- name: update apt cache
-  apt:
     update_cache: yes
+  become: yes
 
 - name: Install system dependencies
   apt:
@@ -43,6 +41,7 @@
     - python-pip
     - python-rasterio
     - python-requests
+  become: yes
 
 - name: Update pip and install example notebook requirements
   pip:
@@ -50,6 +49,7 @@
     name: "pip"
     state: latest
     chdir: "{{ geonotebook_dir }}"
+  become: yes
 
 - name: Use system installed python-gdal
   lineinfile:
@@ -65,6 +65,7 @@
   environment:
     CPLUS_INCLUDE_PATH: /usr/include/gdal
     C_INCLUDE_PATH: /usr/include/gdal
+  become: yes
 
 - name: Install the geonotebook package
   pip:
@@ -73,11 +74,13 @@
     name: "."
     state: latest
     chdir: "{{ geonotebook_dir }}"
+  become: yes
 
 - name: Template out the geonotebook.ini configuration file
   template:
     src: geonotebook.ini.j2
     dest: /usr/local/etc/geonotebook.ini
+  become: yes
 
 - name: Generate jupyter notebook config
   command: "jupyter notebook --generate-config"
