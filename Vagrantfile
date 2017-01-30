@@ -16,6 +16,11 @@ Vagrant.configure("2") do |config|
   config.vm.synced_folder ".", "/vagrant", disabled: true
   config.vm.synced_folder ".", "/opt/geonotebook"
 
+  config.vm.provider "virtualbox" do |virtualbox|
+    virtualbox.memory = ENV["VAGRANT_MEMORY"] || 2048
+    virtualbox.customize ["modifyvm", :id, "--cpus", ENV["VAGRANT_CPUS"] || 2]
+  end
+
   config.vm.provision "ansible" do |ansible|
     ansible.playbook = "devops/site-dev.yml"
     ansible.galaxy_role_file = "devops/site-dev-requirements.yml"
