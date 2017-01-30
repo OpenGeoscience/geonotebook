@@ -256,10 +256,14 @@ MapObject.prototype.replace_layer = function (prev_layer, layer_name, vis_url, v
 };
 
 MapObject.prototype.add_osm_layer = function (layer_name, url, vis_params, query_params) {
-  var osm = this.geojsmap.createLayer('osm');
+  var opts = {};
+  if (vis_params.attribution) {
+    opts.attribution = vis_params.attribution;
+  }
+  var osm = this.geojsmap.createLayer('osm', opts);
 
   osm.name(layer_name);
-  osm.url = url;
+  osm.url(url);
 
     // make sure zindex is explicitly set
   this._set_layer_zindex(osm, vis_params['zIndex']);

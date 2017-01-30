@@ -10,13 +10,13 @@ from . import vis
 def get_config(path=None):
     conf = configparser.ConfigParser()
     paths = [
-        "${GEONOTEBOOK_INI}",
-        os.path.join(os.getcwd(), ".geonotebook.ini"),
-        "~/.geonotebook.ini",
-        os.path.join(sys.prefix, "etc/geonotebook.ini"),
-        "/usr/local/etc/geonotebook.ini",
+        "/etc/geonotebook.ini",
         "/usr/etc/geonotebook.ini",
-        "/etc/geonotebook.ini"]
+        "/usr/local/etc/geonotebook.ini",
+        os.path.join(sys.prefix, "etc/geonotebook.ini"),
+        "~/.geonotebook.ini",
+        os.path.join(os.getcwd(), ".geonotebook.ini"),
+        "${GEONOTEBOOK_INI}"]
 
     found = False
 
@@ -29,7 +29,6 @@ def get_config(path=None):
                         os.path.expandvars(p)), 'r') as fh:
                     conf.readfp(fh)
                     found = True
-                    break
             except IOError:
                 pass
 
@@ -61,7 +60,14 @@ class Config(object):
         try:
             cls = self._valid_vis_hash[vis_server_section]
         except KeyError:
-            raise NotImplemented("{} is not a valid vis_server".format(
+            raise NotImplementedError("{} is not a valid vis_server".format(
                 vis_server_section))
 
         return cls(self.config, **dict(self.config.items(vis_server_section)))
+
+    @property
+    def basemap(self):
+        return {
+            "url": self.config.get("basemap", "url"),
+            "attribution": self.config.get("basemap", "attribution")
+        }

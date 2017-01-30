@@ -45,7 +45,7 @@ def generate_colormap(colormap, minimum, maximum):
 class RasterStyleOptions(object):
     def __init__(self, opacity=1.0, gamma=1.0, projection='EPSG:3857',
                  kernel_id=None, zIndex=None, colormap=None, interval=None,
-                 layer_type=None, **kwargs):
+                 layer_type=None, attribution=None, **kwargs):
 
         # self.vis_url = vis_url
         self.opacity = opacity
@@ -56,6 +56,7 @@ class RasterStyleOptions(object):
         self.zIndex = zIndex
         self.kernel_id = kernel_id
         self.layer_type = layer_type
+        self.attribution = attribution
 
         if colormap is None:
             self.colormap = []
@@ -98,7 +99,8 @@ class RasterStyleOptions(object):
             'interval': self.interval,
             'colormap': self.colormap,
             'kernel_id': self.kernel_id,
-            'zIndex': self.zIndex
+            'zIndex': self.zIndex,
+            'attribution': self.attribution
         }
 
     def __hash__(self):
@@ -110,4 +112,5 @@ class RasterStyleOptions(object):
             self.projection,
             tuple(tuple(c.items()) for c in self.colormap),
             self.kernel_id,
-            self.zIndex))
+            self.zIndex,
+            self.attribution))

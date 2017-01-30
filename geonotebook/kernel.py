@@ -487,10 +487,12 @@ class GeonotebookKernel(IPythonKernel):
         # THis should be handled in a callback that is fired off
         # When set protocol etc is complete.
         if self.initializing:
+            basemap = Config().basemap
             self.geonotebook.add_layer(
                 None, name="osm_base", layer_type="osm",
-                vis_url="http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                system_layer=True)
+                vis_url=basemap["url"],
+                system_layer=True,
+                attribution=basemap["attribution"])
 
             self.geonotebook.add_layer(
                 None, name="annotation",
