@@ -21,7 +21,8 @@ Vagrant.configure("2") do |config|
     ansible.galaxy_role_file = "devops/site-dev-requirements.yml"
 
     ansible.extra_vars = {
-      geonotebook_auth_enabled: false
+      geonotebook_auth_enabled: false,
+      geonotebook_version: ENV["GEONOTEBOOK_VERSION"] || "master"
     }
   end
 end
