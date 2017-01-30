@@ -29,6 +29,8 @@
   apt:
     name: "{{ item }}"
   with_items:
+    - curl
+    - awscli
     - gdal-bin
     - python-numpy
     - python-matplotlib
