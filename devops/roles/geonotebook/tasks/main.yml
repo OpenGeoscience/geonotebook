@@ -1,4 +1,25 @@
 ---
+- name: Install system dependencies
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - git
+    - curl
+    - awscli
+    - gdal-bin
+    - python-numpy
+    - python-matplotlib
+    - libgdal-dev
+    - python-numpy
+    - python-matplotlib
+    - python-gdal
+    - python-matplotlib
+    - python-numpy
+    - python-pip
+    - python-rasterio
+    - python-requests
+  become: yes
+
 - name: Ensure geonotebook base directory exists
   file:
     path: "{{ geonotebook_dir }}"
@@ -23,26 +44,6 @@
     repo: "ppa:ubuntugis/ppa"
     state: present
     update_cache: yes
-  become: yes
-
-- name: Install system dependencies
-  apt:
-    name: "{{ item }}"
-  with_items:
-    - curl
-    - awscli
-    - gdal-bin
-    - python-numpy
-    - python-matplotlib
-    - libgdal-dev
-    - python-numpy
-    - python-matplotlib
-    - python-gdal
-    - python-matplotlib
-    - python-numpy
-    - python-pip
-    - python-rasterio
-    - python-requests
   become: yes
 
 - name: Update pip and install example notebook requirements

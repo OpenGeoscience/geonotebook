@@ -1,4 +1,14 @@
 ---
+- name: Install system dependencies
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - git
+    - gdal-bin
+    - python-pip
+    - python-psycopg2
+  become: yes
+
 - name: Make ktile directory
   file:
     path: "{{ ktile_dir }}"
@@ -21,15 +31,6 @@
     repo: "ppa:ubuntugis/ppa"
     state: present
     update_cache: yes
-
-- name: Install system dependencies
-  apt:
-    name: "{{ item }}"
-  with_items:
-    - gdal-bin
-    - python-pip
-    - python-psycopg2
-  become: yes
 
 - name: upgrade pip
   pip:
