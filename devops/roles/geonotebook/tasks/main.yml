@@ -18,6 +18,8 @@
     - python-pip
     - python-rasterio
     - python-requests
+    - python-seaborn
+    - python-skimage
   become: yes
 
 - name: Ensure geonotebook base directory exists
