@@ -262,11 +262,13 @@ setup(
     },
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     data_files=[
-        ('etc', ['config/geonotebook.ini'])
+        ('etc', ['config/geonotebook.ini']),
+        ('share/jupyter/nbextensions/geonotebook', [
+            'geonotebook/static/index.js',
+            'geonotebook/static/styles.css'
+        ])
     ],
-    package_data={'geonotebook': ['static/*.js',
-                                  'static/*.css',
-                                  'templates/*.html']},
+    package_data={'geonotebook': ['templates/*.html']},
     entry_points={
         'geonotebook.wrappers.raster': [
             'geotiff = geonotebook.wrappers.image:RasterIOReader',
