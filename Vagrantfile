@@ -10,6 +10,7 @@ Vagrant.configure("2") do |config|
     config.cache.enable :npm
   end
 
+  config.vm.define :geonotebook
   config.vm.hostname = "geonotebook"
   config.vm.network "forwarded_port", guest: 8888, host: 8888
   config.vm.post_up_message = "Geonotebook is running at http://localhost:8888"
