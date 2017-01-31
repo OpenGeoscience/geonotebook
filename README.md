@@ -78,6 +78,8 @@ tox
 ## Docker Container
 System requirements for running the notebook can sometimes prove burdensome to install. To ease these issues we have included a [docker container](devops/docker) that will run the notebook inside a containerized process. 
 
+## Vagrant Machine
+Additionally there is a `Vagrantfile` for standing up an instance of Geonotebook within a virtual machine, further instructions can be found [here](Vagrant.md).
 
 ## Tile Server
 

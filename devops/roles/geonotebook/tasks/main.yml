@@ -1,15 +1,11 @@
 ---
-- name: Clone the geonotebook repository
-  git:
-    repo: https://github.com/OpenGeoscience/geonotebook.git
-    dest: "{{ geonotebook_dir }}"
-    version: "{{ geonotebook_version }}"
-    accept_hostkey: yes
-
 - name: Install system dependencies
   apt:
     name: "{{ item }}"
   with_items:
+    - git
+    - curl
+    - awscli
     - gdal-bin
     - python-numpy
     - python-matplotlib
@@ -22,30 +18,43 @@
     - python-pip
     - python-rasterio
     - python-requests
-    - python3-gdal
-    - python3-matplotlib
-    - python3-numpy
-    - python3-pip
-    - python3-rasterio
-    - python3-requests
+    - python-seaborn
+    - python-skimage
+  become: yes
+
+- name: Ensure geonotebook base directory exists
+  file:
+    path: "{{ geonotebook_dir }}"
+    state: directory
+    group: "{{ ansible_user_id }}"
+    owner: "{{ ansible_user_id }}"
+    mode: 0755
+  become: yes
+  become_user: root
+
+- name: Clone the geonotebook repository
+  git:
+    repo: https://github.com/OpenGeoscience/geonotebook.git
+    dest: "{{ geonotebook_dir }}"
+    version: "{{ geonotebook_version }}"
+    accept_hostkey: yes
+    update: "{{ geonotebook_update|default(omit) }}"
+    force: "{{ geonotebook_force|default(omit) }}"
+
+- name: add ubuntugis ppa
+  apt_repository:
+    repo: "ppa:ubuntugis/ppa"
+    state: present
+    update_cache: yes
+  become: yes
 
 - name: Update pip and install example notebook requirements
   pip:
     executable: pip2
-    name: "{{ item }}"
+    name: "pip"
     state: latest
     chdir: "{{ geonotebook_dir }}"
-  with_items:
-    - pip
-
-- name: Update pip3 and install example notebook requirements
-  pip:
-    executable: pip3
-    name: "{{ item }}"
-    state: latest
-    chdir: "{{ geonotebook_dir }}"
-  with_items:
-    - pip
+  become: yes
 
 - name: Use system installed python-gdal
   lineinfile:
@@ -54,26 +63,57 @@
     dest: "{{geonotebook_dir}}/requirements.txt"
   when: use_system_python_gdal is defined
 
-
 - name: Install geonotebook python requirements
   pip:
-    executable: "{{ item }}"
+    executable: pip2
     requirements: "{{geonotebook_dir}}/requirements.txt"
-  with_items:
-    - pip2
-    - pip3
+  environment:
+    CPLUS_INCLUDE_PATH: /usr/include/gdal
+    C_INCLUDE_PATH: /usr/include/gdal
+  become: yes
 
 - name: Install the geonotebook package
   pip:
-    executable: "{{ item }}"
+    executable: pip2
+    extra_args: "-e"
     name: "."
     state: latest
     chdir: "{{ geonotebook_dir }}"
-  with_items:
-    - pip2
-    - pip3
+  become: yes
 
 - name: Template out the geonotebook.ini configuration file
   template:
     src: geonotebook.ini.j2
     dest: /usr/local/etc/geonotebook.ini
+  become: yes
+
+- name: Generate jupyter notebook config
+  command: "jupyter notebook --generate-config"
+  args:
+    creates: "{{ ansible_user_dir }}/.jupyter/jupyter_notebook_config.py"
+
+- debug:
+    msg: "Specify geonotebook_auth_token when deploying to a production environment"
+  when: geonotebook_auth_token == ""
+
+- name: Remove existing auth token setting
+  lineinfile:
+    name: "{{ ansible_user_dir }}/.jupyter/jupyter_notebook_config.py"
+    regexp: "^c.NotebookApp.token"
+    state: absent
+
+- name: Disable auth token
+  lineinfile:
+    name: "{{ ansible_user_dir }}/.jupyter/jupyter_notebook_config.py"
+    line: "c.NotebookApp.token = ''"
+    state: present
+  when: not geonotebook_auth_enabled
+
+- name: Configure auth token
+  lineinfile:
+    name: "{{ ansible_user_dir }}/.jupyter/jupyter_notebook_config.py"
+    line: "c.NotebookApp.token = '{{ geonotebook_auth_token }}'"
+    state: present
+  when: geonotebook_auth_enabled
+
+- include: daemon.yml
