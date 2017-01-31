@@ -39,13 +39,13 @@ pip install -r requirements.txt
 pip install .
 
 # Enable both the notebook and server extensions
-jupyter serverextension enable --user --py geonotebook
-jupyter nbextension enable --user --py geonotebook
+jupyter serverextension enable --sys-prefix --py geonotebook
+jupyter nbextension enable --sys-prefix --py geonotebook
 ```
 
 *Note* The `serverextension` and `nbextension` commands accept flags that configure how
-and where the extensions are installed.  For example, if you only want the extension enabled in the
-current virtual environment, you can replace `--user` with `--sys-prefix`.
+and where the extensions are installed.  See `jupyter serverextension --help` for more
+information.
 
 ### Installing geonotebook for development
 When developing geonotebook, it is often helpful to install packages as a reference to the
