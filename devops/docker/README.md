@@ -3,7 +3,7 @@
 Geonotebook relies on a complex stack of technologies that are not always easy to install and properly configure. To ease this complexity we provide a docker container for running the notebook on docker compatible systems. To install docker on your system please see docker's [documentation](https://docs.docker.com/engine/installation/) for your operating system.
 
 ## Build the container
-First you must build the docker container.  After checking out the current repository and navigating to ```devops/docker/``` you can run
+First you must build the docker container.  After checking out the current repository, you can run
 
 ```
 docker build -t geonotebook .

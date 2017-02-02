@@ -49,13 +49,16 @@ RUN /usr/sbin/jupyter-notebook --generate-config \
     && sed -i s/#c.NotebookApp.token\ \=\ \'\'/c.NotebookApp.token\ \=\ \'\'/g \
            /root/.jupyter/jupyter_notebook_config.py
 
-RUN git clone https://github.com/OpenGeoscience/geonotebook.git /opt/geonotebook \
-    && pushd /opt/geonotebook \
-    && git checkout master \
-    && pip2 install https://github.com/OpenGeoscience/KTile/archive/master.zip \
-    && pip2 install .
+RUN pip2 install https://github.com/OpenGeoscience/KTile/archive/master.zip
+
+ADD . /opt/geonotebook
+ADD devops/docker/jupyter.sh /jupyter.sh
+
+RUN pushd /opt/geonotebook \
+    && pip2 install . \
+    && jupyter serverextension enable --py geonotebook --sys-prefix \
+    && jupyter nbextension enable --py geonotebook --sys-prefix
 
 VOLUME /notebooks
 WORKDIR /notebooks
-ADD jupyter.sh /jupyter.sh
 CMD ../jupyter.sh
