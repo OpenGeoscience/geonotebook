@@ -215,29 +215,11 @@ def install_geonotebook_ini(cmd, link=False):
                     shutil.copyfile(src, dest)
 
 
-def install_nbextension(cmd, link=False):
-    from notebook.nbextensions import (install_nbextension_python,
-                                       enable_nbextension)
-
-    install_nbextension_python("geonotebook",
-                               overwrite=True, sys_prefix=True, symlink=link)
-    enable_nbextension("notebook", "geonotebook/index", sys_prefix=True)
-
-
-def install_serverextension(cmd):
-    from notebook.serverextensions import toggle_serverextension_python
-    toggle_serverextension_python('geonotebook', enabled=True, sys_prefix=True)
-
-
-@post_install(install_serverextension)
-@post_install(install_nbextension)
 @post_install(install_kernel)
 class CustomInstall(install):
     pass
 
 
-@post_install(install_serverextension)
-@post_install(install_nbextension, link=True)
 @post_install(install_geonotebook_ini, link=True)
 @post_install(install_kernel)
 class CustomDevelop(develop):
@@ -280,11 +262,13 @@ setup(
     },
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     data_files=[
-        ('etc', ['config/geonotebook.ini'])
+        ('etc', ['config/geonotebook.ini']),
+        ('share/jupyter/nbextensions/geonotebook', [
+            'geonotebook/static/index.js',
+            'geonotebook/static/styles.css'
+        ])
     ],
-    package_data={'geonotebook': ['static/*.js',
-                                  'static/*.css',
-                                  'templates/*.html']},
+    package_data={'geonotebook': ['templates/*.html']},
     entry_points={
         'geonotebook.wrappers.raster': [
             'geotiff = geonotebook.wrappers.image:RasterIOReader',

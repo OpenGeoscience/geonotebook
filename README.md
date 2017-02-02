@@ -38,11 +38,35 @@ pip install -r requirements.txt
 
 pip install .
 
-# Alternatively you may do a development install, e.g.
-# pip install -e .
+# Enable both the notebook and server extensions
+jupyter serverextension enable --sys-prefix --py geonotebook
+jupyter nbextension enable --sys-prefix --py geonotebook
 ```
 
-*Note* The geonotebook package has been designed to install the notebook extension etc automatically. You should not need to run ```jupyter nbextension install ...``` etc.
+*Note* The `serverextension` and `nbextension` commands accept flags that configure how
+and where the extensions are installed.  See `jupyter serverextension --help` for more
+information.
+
+### Installing geonotebook for development
+When developing geonotebook, it is often helpful to install packages as a reference to the
+checked out repository rather than copying them to the system `site-packages`.  A "development
+install" will allow you to make live changes to python or javascript without reinstalling the
+package.
+```bash
+# Install the geonotebook python package as "editable"
+pip install -e .
+
+# Install the notebook extension as a symlink
+jupyter nbextension install --sys-prefix --symlink --py geonotebook
+
+# Enable the extension
+jupyter serverextension enable --sys-prefix --py geonotebook
+jupyter nbextension enable --sys-prefix --py geonotebook
+
+# Start the javascript builder
+cd js
+npm run watch
+```
 
 ### Run the notebook:
 ```bash
