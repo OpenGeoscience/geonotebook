@@ -51,9 +51,11 @@ RUN /usr/sbin/jupyter-notebook --generate-config \
 
 RUN git clone https://github.com/OpenGeoscience/geonotebook.git /opt/geonotebook \
     && pushd /opt/geonotebook \
-    && git checkout master \
+    && git checkout devops_enable_extension \
     && pip2 install https://github.com/OpenGeoscience/KTile/archive/master.zip \
-    && pip2 install .
+    && pip2 install . \
+    && jupyter serverextension enable --py geonotebook --sys-prefix \
+    && jupyter nbextension enable --py geonotebook --sys-prefix
 
 VOLUME /notebooks
 WORKDIR /notebooks
