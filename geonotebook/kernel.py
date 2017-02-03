@@ -433,13 +433,10 @@ class Geonotebook(object):
         :param list[dict] coords: A list of coordinates defining the annotation
         :param dict meta: Extra metadata stored with the annotation
         """
-        def _add_annotation(result):
-            self.layers.annotation.add_annotation(ann_type, coords, meta)
-
         return self._remote.add_annotation(
             ann_type, [coords], meta
         ).then(
-            _add_annotation,
+            lambda _: self.add_annotation_client(ann_type, coords, meta),
             self.rpc_error
         ).catch(self.callback_error)
 
