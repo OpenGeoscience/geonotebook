@@ -126,13 +126,19 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
     this._color_counter++;
   }
 
+  var style = {
+    fillColor: kwargs.rgb || this.next_color(),
+    fillOpacity: 0.8,
+    strokeWidth: 2
+  };
+
   if (type === 'point') {
     annotation_layer.addAnnotation(pointAnnotation({
       position: transformCoordinates(this.geojsmap.ingcs(), this.geojsmap.gcs(), {
         x: args[0][0],
         y: args[0][1]
       }),
-      style: kwargs.style
+      style: style
     }));
   } else if (type === 'rectangle') {
     annotation_layer.addAnnotation(rectangleAnnotation({
@@ -142,7 +148,7 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
           y: coords[1]
         });
       }),
-      style: kwargs.style
+      style: style
     }));
   } else if (type === 'polygon') {
     annotation_layer.addAnnotation(polygonAnnotation({
@@ -152,7 +158,7 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
           y: coords[1]
         });
       }),
-      style: kwargs.style
+      style: style
     }));
   } else {
     console.error('Attempting to add annotation of type ' + type);
@@ -177,7 +183,6 @@ MapObject.prototype._add_annotation_handler = function (annotation) {
   var annotation_meta = {
     id: annotation.id(),
     name: annotation.name(),
-    style: annotation.options('style'),
     rgb: annotation.options('style').fillColor
   };
 
