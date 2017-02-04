@@ -176,7 +176,7 @@ class Remote(object):
 
 
 class Geonotebook(object):
-    msg_types = ['get_protocol', 'set_center', 'add_annotation_client',
+    msg_types = ['get_protocol', 'set_center', 'add_annotation_from_client',
                  'get_map_state']
 
     _protocol = None
@@ -433,14 +433,24 @@ class Geonotebook(object):
         :param list[dict] coords: A list of coordinates defining the annotation
         :param dict meta: Extra metadata stored with the annotation
         """
+        def _add_annotation(response):
+            meta.update(response)
+            self.add_annotation_from_client(ann_type, coords, meta),
+
         return self._remote.add_annotation(
             ann_type, [coords], meta
         ).then(
-            lambda _: self.add_annotation_client(ann_type, coords, meta),
+            _add_annotation,
             self.rpc_error
         ).catch(self.callback_error)
 
-    def add_annotation_client(self, ann_type, coords, meta):
+    def add_annotation_from_client(self, ann_type, coords, meta):
+        """Add an existing annotation to the map state.
+
+        This method is not intended to be called by the user.  It
+        exists to append an annotation initialized on the client
+        to the server map state.
+        """
         self.layers.annotation.add_annotation(ann_type, coords, meta)
         return True
 

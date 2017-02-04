@@ -132,6 +132,26 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
     strokeWidth: 2
   };
 
+  /*
+   * This is an ugly hack to get around the fact that geojs doesn't return
+   * the created annotation object.  Currently, the only way to get this
+   * object is to listen to an event that also fires when generating annotations
+   * with the mouse.  Further, the events are not fired consistently:
+   *
+   *  * When creating an annotation with the mouse, it is only triggered with state
+   *    with mode `create` before it has any coordinate information.  No event
+   *    add event is triggered after the annotation is finished.
+   *  * When creating via the API, it is only triggered with state `done`.
+   *
+   * The code here expects this event will be triggered synchronously.  This is
+   * currently true, but may change in the future.
+   */
+  var annotation;
+  function _handler (evt) {
+    annotation = evt.annotation;
+  }
+  annotation_layer.geoOn(geo_event.annotation.add, _handler);
+
   if (type === 'point') {
     annotation_layer.addAnnotation(pointAnnotation({
       position: transformCoordinates(this.geojsmap.ingcs(), this.geojsmap.gcs(), {
@@ -162,8 +182,20 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
     }));
   } else {
     console.error('Attempting to add annotation of type ' + type);
+    return false;
   }
-  return true;
+  annotation_layer.geoOff(geo_event.annotation.add, _handler);
+
+  if (!annotation) {
+    console.error('GeoJS did not respond with a synchronous annotation event.');
+    return false;
+  }
+
+  return {
+    id: annotation.id(),
+    name: annotation.name(),
+    rgb: style.fillColor
+  };
 };
 
 MapObject.prototype._map_coordinates = function (coordinates, type) {
@@ -191,7 +223,7 @@ MapObject.prototype._add_annotation_handler = function (annotation) {
     annotation.type()
   );
 
-  this.notebook._remote.add_annotation_client(
+  this.notebook._remote.add_annotation_from_client(
         annotation.type(),
         coordinates,
         annotation_meta
