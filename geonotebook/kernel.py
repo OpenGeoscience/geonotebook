@@ -426,7 +426,7 @@ class Geonotebook(object):
     def get_protocol(self):
         return self.__class__.class_protocol()
 
-    def add_annotation(self, ann_type, coords, meta):
+    def add_annotation(self, ann_type, coords, meta=None):
         """Add an annotation to the annotation layer.
 
         :param str ann_type: 'point', 'rectangle', or 'polygon'
@@ -435,8 +435,10 @@ class Geonotebook(object):
         """
         def _add_annotation(response):
             meta.update(response)
-            self.add_annotation_from_client(ann_type, coords, meta),
+            self.add_annotation_from_client(ann_type, coords, meta)
+            return True
 
+        meta = meta or {}
         return self._remote.add_annotation(
             ann_type, [coords], meta
         ).then(
