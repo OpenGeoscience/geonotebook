@@ -192,6 +192,10 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
     return false;
   }
 
+  if (kwargs.name) {
+    annotation.name(kwargs.name);
+  }
+
   return {
     id: annotation.id(),
     name: annotation.name(),
