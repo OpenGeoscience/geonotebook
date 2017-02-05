@@ -117,6 +117,7 @@ MapObject.prototype.remove_layer = function (layer_name) {
 
 MapObject.prototype.clear_annotations = function () {
   var annotation_layer = this.get_layer('annotation');
+  this._color_counter = -1;
   return annotation_layer.removeAllAnnotations();
 };
 
