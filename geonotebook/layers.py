@@ -105,6 +105,7 @@ class AnnotationLayer(GeonotebookLayer):
         # but that is the signature of the function.
         def _clear_annotations(num):
             self._annotations = []
+            return True
 
         def rpc_error(error):
             self.log.error(
