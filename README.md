@@ -8,7 +8,7 @@ Jointly developed by  [Kitware](http://www.kitware.com) and
 
 
 ## Screenshots
-![screen shot](screenshots/geonotebook.png)
+![screen shot](https://data.kitware.com/api/v1/file/5898b1788d777f07219fcafb/download?contentDisposition=inline)
 
 Checkout some additional [screenshots](screenshots/)
 
