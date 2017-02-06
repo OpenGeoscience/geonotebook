@@ -176,7 +176,7 @@ class Remote(object):
 
 
 class Geonotebook(object):
-    msg_types = ['get_protocol', 'set_center', 'add_annotation',
+    msg_types = ['get_protocol', 'set_center', 'add_annotation_from_client',
                  'get_map_state']
 
     _protocol = None
@@ -426,7 +426,33 @@ class Geonotebook(object):
     def get_protocol(self):
         return self.__class__.class_protocol()
 
-    def add_annotation(self, ann_type, coords, meta):
+    def add_annotation(self, ann_type, coords, meta=None):
+        """Add an annotation to the annotation layer.
+
+        :param str ann_type: 'point', 'rectangle', or 'polygon'
+        :param list[dict] coords: A list of coordinates defining the annotation
+        :param dict meta: Extra metadata stored with the annotation
+        """
+        def _add_annotation(response):
+            meta.update(response)
+            self.add_annotation_from_client(ann_type, coords, meta)
+            return True
+
+        meta = meta or {}
+        return self._remote.add_annotation(
+            ann_type, [coords], meta
+        ).then(
+            _add_annotation,
+            self.rpc_error
+        ).catch(self.callback_error)
+
+    def add_annotation_from_client(self, ann_type, coords, meta):
+        """Add an existing annotation to the map state.
+
+        This method is not intended to be called by the user.  It
+        exists to append an annotation initialized on the client
+        to the server map state.
+        """
         self.layers.annotation.add_annotation(ann_type, coords, meta)
         return True
 

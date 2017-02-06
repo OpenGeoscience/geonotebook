@@ -35,7 +35,7 @@ def test_annotation_kwarg_property_setters(geonotebook_layer):
 
 
 def test_point_data(glc_annotation):
-    a = annotations.Point(1, 1, layer=glc_annotation.annotation)
+    a = annotations.Point([1, 1], layer=glc_annotation.annotation)
 
     expected = annotations_data.point
 

@@ -58,8 +58,8 @@ class Annotation(object):
 
 
 class Point(Annotation, sPoint):
-    def __init__(self, x, y, **kwargs):
-        super(Point, self).__init__(x, y, **kwargs)
+    def __init__(self, coordinates, **kwargs):
+        super(Point, self).__init__(coordinates, **kwargs)
 
     def subset(self, raster_data, **kwargs):
         return raster_data.ix(self.x, self.y)

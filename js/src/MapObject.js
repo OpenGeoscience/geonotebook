@@ -70,7 +70,8 @@ MapObject.prototype.msg_types = [
   'replace_layer',
   'replace_wms_layer',
   'clear_annotations',
-  'remove_layer'
+  'remove_layer',
+  'add_annotation'
 ];
 
 MapObject.prototype._debug = function (msg) {
@@ -116,6 +117,7 @@ MapObject.prototype.remove_layer = function (layer_name) {
 
 MapObject.prototype.clear_annotations = function () {
   var annotation_layer = this.get_layer('annotation');
+  this._color_counter = -1;
   return annotation_layer.removeAllAnnotations();
 };
 
@@ -125,13 +127,39 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
     this._color_counter++;
   }
 
+  var style = {
+    fillColor: kwargs.rgb || this.next_color(),
+    fillOpacity: 0.8,
+    strokeWidth: 2
+  };
+
+  /*
+   * This is an ugly hack to get around the fact that geojs doesn't return
+   * the created annotation object.  Currently, the only way to get this
+   * object is to listen to an event that also fires when generating annotations
+   * with the mouse.  Further, the events are not fired consistently:
+   *
+   *  * When creating an annotation with the mouse, it is only triggered with state
+   *    with mode `create` before it has any coordinate information.  No event
+   *    add event is triggered after the annotation is finished.
+   *  * When creating via the API, it is only triggered with state `done`.
+   *
+   * The code here expects this event will be triggered synchronously.  This is
+   * currently true, but may change in the future.
+   */
+  var annotation;
+  function _handler (evt) {
+    annotation = evt.annotation;
+  }
+  annotation_layer.geoOn(geo_event.annotation.add, _handler);
+
   if (type === 'point') {
     annotation_layer.addAnnotation(pointAnnotation({
       position: transformCoordinates(this.geojsmap.ingcs(), this.geojsmap.gcs(), {
-        x: args[0],
-        y: args[1]
+        x: args[0][0],
+        y: args[0][1]
       }),
-      style: kwargs.style
+      style: style
     }));
   } else if (type === 'rectangle') {
     annotation_layer.addAnnotation(rectangleAnnotation({
@@ -141,7 +169,7 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
           y: coords[1]
         });
       }),
-      style: kwargs.style
+      style: style
     }));
   } else if (type === 'polygon') {
     annotation_layer.addAnnotation(polygonAnnotation({
@@ -151,11 +179,37 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
           y: coords[1]
         });
       }),
-      style: kwargs.style
+      style: style
     }));
   } else {
     console.error('Attempting to add annotation of type ' + type);
+    return false;
   }
+  annotation_layer.geoOff(geo_event.annotation.add, _handler);
+
+  if (!annotation) {
+    console.error('GeoJS did not respond with a synchronous annotation event.');
+    return false;
+  }
+
+  if (kwargs.name) {
+    annotation.name(kwargs.name);
+  }
+
+  return {
+    id: annotation.id(),
+    name: annotation.name(),
+    rgb: style.fillColor
+  };
+};
+
+MapObject.prototype._map_coordinates = function (coordinates, type) {
+  if (type === 'point') {
+    return [coordinates[0].x, coordinates[0].y];
+  }
+  return _.map(coordinates, (c) => {
+    return [c.x, c.y];
+  });
 };
 
 MapObject.prototype._add_annotation_handler = function (annotation) {
@@ -166,13 +220,17 @@ MapObject.prototype._add_annotation_handler = function (annotation) {
   var annotation_meta = {
     id: annotation.id(),
     name: annotation.name(),
-    style: annotation.options('style'),
     rgb: annotation.options('style').fillColor
   };
 
-  this.notebook._remote.add_annotation(
+  var coordinates = this._map_coordinates(
+    annotation.coordinates('EPSG:4326'),
+    annotation.type()
+  );
+
+  this.notebook._remote.add_annotation_from_client(
         annotation.type(),
-        annotation.coordinates('EPSG:4326'),
+        coordinates,
         annotation_meta
     ).then(
         function () {
