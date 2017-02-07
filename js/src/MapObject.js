@@ -296,6 +296,8 @@ MapObject.prototype.add_layer = function (layer_name, vis_url, vis_params, query
     return this.add_osm_layer(layer_name, vis_url, vis_params, query_params);
   } else if (layer_type === 'wms') {
     return this.add_wms_layer(layer_name, vis_url, vis_params, query_params);
+  } else if (layer_type === 'vector') {
+    return this.add_vector_layer(layer_name, vis_url, vis_params, query_params);
   } else {
     return this.add_default_layer(layer_name, vis_url, vis_params, query_params);
   }
@@ -416,7 +418,7 @@ MapObject.prototype.add_wms_layer = function (layer_name, base_url, query_params
   return layer_name;
 };
 
-MapObject.prototype.add_vector_layer = function (name, data) {
+MapObject.prototype.add_vector_layer = function (name, data, vis_params, query_params) {
   var layer = this.geojsmap.createLayer('feature');
   JsonReader({layer: layer}).read(data, function (features) {
     console.log(features);

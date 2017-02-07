@@ -170,7 +170,18 @@ class DataLayer(GeonotebookLayer):
 
 
 class VectorLayer(DataLayer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(VectorLayer, self).__init__(*args, **kwargs)
+        self.vis_options.layer_type = 'vector'
+
+    # In the future, we want to serve this data as vector tiles rather
+    # than dumping the data directly to the client.  This will match
+    # the existing interface for Raster datasets.  Until we can transition
+    # fully to tiled vector features, we are abusing the interface by
+    # passing the actual data in place of the visualization url.
+    @property
+    def vis_url(self):
+        return self.data.geojson
 
 
 class SimpleLayer(DataLayer):

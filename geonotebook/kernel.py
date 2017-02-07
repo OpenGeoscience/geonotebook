@@ -387,7 +387,6 @@ class Geonotebook(object):
                 name, self._remote, data=data, vis_url=vis_url, **kwargs
             )
         elif isinstance(data, VectorData):
-            layer_type = 'vector'
             layer = VectorLayer(
                 name, self._remote, data=data, **kwargs
             )
