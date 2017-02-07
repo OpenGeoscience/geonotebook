@@ -8,7 +8,7 @@ import six
 from . import annotations
 from .config import Config
 
-from .vis.utils import RasterStyleOptions
+from .vis.utils import discrete_colors, RasterStyleOptions, VectorStyleOptions
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -25,6 +25,13 @@ class GeonotebookLayer(object):
     # some kind of functionality (e.g. the annotatoin layer).
     _expose_as = None
 
+    # A class that serializes the layer's appearance.  Defaults
+    # to RasterStyleOptions and is passed all keyword arguments
+    # passed to the constructor.  This class must provide a
+    # "serialize" method returning the style representation
+    # that will be passed to the client.
+    StyleOptions = RasterStyleOptions
+
     def __init__(self, name, remote, data, **kwargs):
         self.config = Config()
         self.remote = remote
@@ -33,7 +40,7 @@ class GeonotebookLayer(object):
         self._system_layer = kwargs.pop("system_layer", False)
         self._expose_as = kwargs.pop("expose_as", None)
 
-        self.vis_options = RasterStyleOptions(**kwargs)
+        self.vis_options = self.StyleOptions(**kwargs)
 
     def __repr__(self):
         return "<{}('{}')>".format(
@@ -151,14 +158,14 @@ class DataLayer(GeonotebookLayer):
             # If it's a matplotlib-like colormap generate a generic
             # list-of-dicts colormap.
             if hasattr(colormap, '__call__') and hasattr(colormap, 'N'):
-                kwargs['colormap'] = RasterStyleOptions.get_colormap(
+                kwargs['colormap'] = self.StyleOptions.get_colormap(
                     data, colormap, **kwargs)
 
             # if single band and NO colormap, assign the default
             # list-of-dicts colormap.
             if colormap is None and hasattr(data, 'band_indexes') \
                and len(data.band_indexes) == 1:
-                kwargs['colormap'] = RasterStyleOptions.get_colormap(
+                kwargs['colormap'] = self.StyleOptions.get_colormap(
                     data, None, **kwargs)
 
         super(DataLayer, self).__init__(name, remote, data, **kwargs)
@@ -169,10 +176,24 @@ class DataLayer(GeonotebookLayer):
                 self.__class__.__name__)
 
 
-class VectorLayer(DataLayer):
-    def __init__(self, *args, **kwargs):
-        super(VectorLayer, self).__init__(*args, **kwargs)
-        self.vis_options.layer_type = 'vector'
+class VectorLayer(GeonotebookLayer):
+
+    StyleOptions = VectorStyleOptions
+
+    def __init__(self, name, remote, data, **kwargs):
+        # handle styling options in order of precendence
+        colors = kwargs.get('colors')
+        if isinstance(colors, (list, tuple)):  # a list of colors to use
+            pass
+        elif hasattr(colors, '__call__'):  # a custom style accessor
+            kwargs['colors'] = [
+                colors(d, i) for i, d in enumerate(data)
+            ]
+        elif 'colormap' in kwargs:  # a matplotlib colormap
+            kwargs['colors'] = discrete_colors(kwargs['colormap'], len(data))
+
+        super(VectorLayer, self).__init__(self, name, remote, data, **kwargs)
+        self.data = data
 
     # In the future, we want to serve this data as vector tiles rather
     # than dumping the data directly to the client.  This will match

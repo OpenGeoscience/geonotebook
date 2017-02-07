@@ -1,16 +1,17 @@
+def range_count(start, stop, count):
+    """Generate a list.
+
+    Use the given start stop and count with linear spacing
+    e.g. range_count(1, 3, 5) = [1., 1.5, 2., 2.5, 3.]
+    """
+    step = (stop - start) / float(count - 1)
+    return [start + i * step for i in range(count)]
+
+
 def generate_colormap(colormap, minimum, maximum):
     # A colormap can be a list of dicts
     # or a matplotlib colormap. Either case
     # the returned object will be a list of dicts.
-    def range_count(start, stop, count):
-        """Generate a list.
-
-        Use the given start stop and count with linear spacing
-        e.g. range_count(1, 3, 5) = [1., 1.5, 2., 2.5, 3.]
-        """
-        step = (stop - start) / float(count - 1)
-        return [start + i * step for i in range(count)]
-
     def rgba2hex(rgba):
         """Convert rgba values to hex."""
         # Slice the tuple so that
@@ -40,6 +41,18 @@ def generate_colormap(colormap, minimum, maximum):
         ]
 
         return colormap
+
+
+def discrete_colors(colormap, count):
+    """Generate a list of evenly spaced colors from the given colormap."""
+    # we only suport matplotlib compatible colormap function for now
+    if not hasattr(colormap, 'N'):
+        raise Exception('Invalid colormap')
+
+    return [
+        colormap(i / (count - 1))
+        for i in range_count(0, colormap.N - 1, count)
+    ]
 
 
 class RasterStyleOptions(object):
@@ -114,3 +127,29 @@ class RasterStyleOptions(object):
             self.kernel_id,
             self.zIndex,
             self.attribution))
+
+
+class VectorStyleOptions(object):
+    def __init__(self, opacity=0.8, projection='EPSG:4326',
+                 layer_type='vector', colors=None,
+                 attribution=None, property=None, **kwargs):
+        if projection != 'EPSG:4326':
+            raise Exception('Reprojection not yet supported')
+
+    def serialize(self):
+        return {
+            'layer_type': self.layer_type,
+            'opacity': self.opacity,
+            'projection': self.projection,
+            'attribution': self.attribution,
+            'colors': self.colors
+        }
+
+    def __hash__(self):
+        return hash((
+            self.layer_type,
+            self.opacity,
+            self.projection,
+            self.attribution,
+            self.colors
+        ))
