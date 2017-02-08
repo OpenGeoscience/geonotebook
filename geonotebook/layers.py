@@ -192,6 +192,7 @@ class VectorLayer(GeonotebookLayer):
         elif 'colormap' in kwargs:  # a matplotlib colormap
             kwargs['colors'] = discrete_colors(kwargs['colormap'], len(data))
 
+        name = name or data.reader.name
         super(VectorLayer, self).__init__(name, remote, data, **kwargs)
         self.data = data
 
