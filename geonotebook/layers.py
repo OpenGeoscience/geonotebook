@@ -192,7 +192,7 @@ class VectorLayer(GeonotebookLayer):
         elif 'colormap' in kwargs:  # a matplotlib colormap
             kwargs['colors'] = discrete_colors(kwargs['colormap'], len(data))
 
-        super(VectorLayer, self).__init__(self, name, remote, data, **kwargs)
+        super(VectorLayer, self).__init__(name, remote, data, **kwargs)
         self.data = data
 
     # In the future, we want to serve this data as vector tiles rather

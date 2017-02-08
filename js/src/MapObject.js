@@ -420,8 +420,22 @@ MapObject.prototype.add_wms_layer = function (layer_name, base_url, query_params
 
 MapObject.prototype.add_vector_layer = function (name, data, vis_params, query_params) {
   var layer = this.geojsmap.createLayer('feature');
+  var start = 0;
+  vis_params = vis_params || {};
   JsonReader({layer: layer}).read(data, function (features) {
-    console.log(features);
+    var colors = vis_params.colors;
+    if (colors) {
+      _.each(features, (feature) => {
+        var data = feature.data() || [];
+        var feature_start = start;
+        feature.style('fillColor', (d, i, e, j) => {
+          var index = (feature_start + j) % colors.length;
+          return colors[index];
+        });
+        start += data.length;
+      });
+      layer.draw();
+    }
   });
   layer.name(name);
   return name;

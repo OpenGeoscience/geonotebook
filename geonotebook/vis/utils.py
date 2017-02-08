@@ -132,9 +132,14 @@ class RasterStyleOptions(object):
 class VectorStyleOptions(object):
     def __init__(self, opacity=0.8, projection='EPSG:4326',
                  layer_type='vector', colors=None,
-                 attribution=None, property=None, **kwargs):
+                 attribution=None, **kwargs):
         if projection != 'EPSG:4326':
             raise Exception('Reprojection not yet supported')
+        self.opacity = opacity
+        self.projection = projection
+        self.layer_type = layer_type
+        self.colors = colors
+        self.attribution = attribution
 
     def serialize(self):
         return {
