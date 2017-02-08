@@ -16,6 +16,9 @@ class VectorData(collections.Sequence):
         return len(self.reader)
 
     def __getitem__(self, key):
+        # fiona doesn't raise an error when accessing and invalid key
+        if key < 0 or key >= len(self):
+            raise IndexError()
         return self.reader[key]
 
     @property
