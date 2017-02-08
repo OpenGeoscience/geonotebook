@@ -21,7 +21,14 @@ class VectorData(collections.Sequence):
     @property
     def geojson(self):
         """Return an object (geojson) representation."""
+        features = list(self.reader)
+
+        # Here, we add an id property to each feature which will
+        # be used for styling on the client.
+        for i, feature in enumerate(features):
+            properties = feature.setdefault('properties', {})
+            properties['_geonotebook_feature_id'] = i
         return {
             'type': 'FeatureCollection',
-            'features': list(self.reader)
+            'features': features
         }

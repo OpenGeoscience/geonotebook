@@ -429,7 +429,11 @@ MapObject.prototype.add_vector_layer = function (name, data, vis_params, query_p
         var data = feature.data() || [];
         var feature_start = start;
         feature.style('fillColor', (d, i, e, j) => {
-          var index = (feature_start + j) % colors.length;
+          // we are going to extremes to avoid throwing errors
+          e = e || {};
+          var properties = e.properties || {};
+          var id = properties._geonotebook_feature_id || (feature_start + j);
+          var index = id % colors.length;
           return colors[index];
         });
         start += data.length;
