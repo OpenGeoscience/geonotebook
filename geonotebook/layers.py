@@ -8,7 +8,8 @@ import six
 from . import annotations
 from .config import Config
 
-from .vis.utils import discrete_colors, RasterStyleOptions, VectorStyleOptions
+from .vis.utils import discrete_colors, RasterStyleOptions, \
+    rgba2hex, VectorStyleOptions
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -187,7 +188,7 @@ class VectorLayer(GeonotebookLayer):
             pass
         elif hasattr(colors, '__call__'):  # a custom style accessor
             kwargs['colors'] = [
-                colors(d, i) for i, d in enumerate(data)
+                rgba2hex(colors(d, i)) for i, d in enumerate(data)
             ]
         elif 'colormap' in kwargs:  # a matplotlib colormap
             kwargs['colors'] = discrete_colors(kwargs['colormap'], len(data))
