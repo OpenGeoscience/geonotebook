@@ -46,3 +46,9 @@
     cursor: ns-resize;
     background-image:  url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
 }
+
+/* Override of built-in Jupyter notebook rule.
+   See appendScreenshotAfterExecution docs. */
+.output_subarea.output_png {
+    display: none;
+}

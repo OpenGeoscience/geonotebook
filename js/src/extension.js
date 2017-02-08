@@ -1,6 +1,6 @@
 /* global requirejs */
 
-import { Geonotebook } from 'geonotebook';
+import { Geonotebook, provenance } from 'geonotebook';
 
 if (window.require) {
   window.require.config({
@@ -21,6 +21,8 @@ function load_ipython_extension () {
       if (Jupyter.kernelselector.current_selection === 'geonotebook2' ||
             Jupyter.kernelselector.current_selection === 'geonotebook3') {
         Jupyter.geonotebook = new Geonotebook(Jupyter, events);
+
+        provenance(Jupyter, events);
       }
       console.log('loaded geonotebook');
       resolve();
