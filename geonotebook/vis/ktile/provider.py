@@ -39,7 +39,6 @@ class MapnikPythonProvider(object):
     def __init__(self, layer, **kwargs):
         # List of bands to display,  should be len == 1 or len == 3
         self._bands = kwargs.get('bands', [-1])
-        self._last_hash = None
         self._layer_srs = None
         self._static_vrt = kwargs.get("vrt_path", None)
 
@@ -104,18 +103,6 @@ class MapnikPythonProvider(object):
             "layer_srs": self.layer_srs
         }
 
-    def __hash__(self):
-        return hash((
-            self.filepath,
-            self.map_srs,
-            self.name,
-            tuple(self._bands),
-            self.opacity,
-            self.gamma,
-            self.nodata,
-            tuple(tuple(cm.items()) for cm in self.colormap),
-            self.scale_factor))
-
     def generate_vrt(self):
         if self._static_vrt is not None:
             return
@@ -162,10 +149,6 @@ class MapnikPythonProvider(object):
     def vrt_path(self):
         if self._static_vrt is not None:
             return self._static_vrt
-
-        if self._last_hash != hash(self):
-            self.generate_vrt()
-            self._last_hash = hash(self)
 
         return self._vrt_path
 
