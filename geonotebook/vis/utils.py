@@ -131,7 +131,7 @@ class RasterStyleOptions(object):
 class VectorStyleOptions(object):
     def __init__(self, opacity=0.8, projection='EPSG:4326',
                  layer_type='vector', colors=None,
-                 attribution=None, **kwargs):
+                 attribution=None, zIndex=None, **kwargs):
         if projection != 'EPSG:4326':
             raise Exception('Reprojection not yet supported')
         self.opacity = opacity
@@ -139,6 +139,7 @@ class VectorStyleOptions(object):
         self.layer_type = layer_type
         self.colors = colors
         self.attribution = attribution
+        self.zIndex = zIndex
 
     def serialize(self):
         return {
@@ -146,7 +147,8 @@ class VectorStyleOptions(object):
             'opacity': self.opacity,
             'projection': self.projection,
             'attribution': self.attribution,
-            'colors': self.colors
+            'colors': self.colors,
+            'zIndex': self.zIndex
         }
 
     def __hash__(self):
@@ -155,5 +157,6 @@ class VectorStyleOptions(object):
             self.opacity,
             self.projection,
             self.attribution,
-            self.colors
+            self.colors,
+            self.zIndex
         ))

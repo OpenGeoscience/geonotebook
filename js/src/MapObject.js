@@ -420,6 +420,10 @@ MapObject.prototype.add_wms_layer = function (layer_name, base_url, query_params
 
 MapObject.prototype.add_vector_layer = function (name, data, vis_params, query_params) {
   var layer = this.geojsmap.createLayer('feature');
+
+  // make sure zindex is explicitly set
+  this._set_layer_zindex(layer, vis_params['zIndex']);
+
   var start = 0;
   vis_params = vis_params || {};
   JsonReader({layer: layer}).read(data, function (features) {
