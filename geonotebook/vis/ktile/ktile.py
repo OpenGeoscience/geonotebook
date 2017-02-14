@@ -56,7 +56,8 @@ class KtileConfigManager(MutableMapping):
         # Note: Needs error checking
         layer = parseConfigLayer(layer_dict, self._configs[kernel_id], dirpath)
 
-        self._configs[kernel_id].layers[layer_name] = layer
+        if layer_name not in self._configs[kernel_id].layers:
+            self._configs[kernel_id].layers[layer_name] = layer
 
         return layer.provider.generate_vrt()
 
