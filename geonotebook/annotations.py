@@ -62,7 +62,7 @@ class Point(Annotation, sPoint):
         super(Point, self).__init__(coordinates, **kwargs)
 
     def subset(self, raster_data, **kwargs):
-        return raster_data.ix(self.x, self.y)
+        return raster_data.ix(self._args[0][0], self._args[0][1])
 
 
 class Rectangle(Annotation, sPolygon):

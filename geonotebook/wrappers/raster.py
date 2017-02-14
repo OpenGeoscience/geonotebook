@@ -62,7 +62,6 @@ class RasterData(collections.Sequence):
         return annotation.subset(self, **kwargs)
 
     def ix(self, x, y):
-        x, y = int(x), int(y)
         if len(self) == 1:
             return self.reader.get_band_ix(self.band_indexes, x, y)[0]
         else:
