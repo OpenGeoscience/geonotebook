@@ -45,6 +45,7 @@
     "jquery": "^3.1.1",
     "json-loader": "^0.5.4",
     "mousetrap": "^1.6.0",
+    "ol": "^4.0.1-beta.1",
     "nib": "^1.1.2",
     "parse-function": "^4.0.3",
     "proj4": "2.3.15",
