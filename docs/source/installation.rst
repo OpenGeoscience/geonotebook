@@ -35,8 +35,8 @@ Basic Install
     jupyter nbextension enable --sys-prefix --py geonotebook
 
 .. note:: The ``serverextension`` and ``nbextension`` commands accept flags that configure how
-	  and where the extensions are installed.  See ``jupyter serverextension --help`` for more
-	  information.
+          and where the extensions are installed.  See ``jupyter serverextension --help`` for more
+          information.
 
 
 
@@ -111,14 +111,14 @@ $$$$$$$$$$$$$$$$$$$$
 
 .. warning:: By default, Jupyter authentication is disabled in the Vagrant environment as it's meant to be a development environment. Jupyter authentication should always be enabled on production systems.
 
-	 If Jupyter authentication is desired, the environment variables related to ``GEONOTEBOOK_AUTH_*`` must be set, note the auth token must be set to the same token each time the machine is provisioned.
+         If Jupyter authentication is desired, the environment variables related to ``GEONOTEBOOK_AUTH_*`` must be set, note the auth token must be set to the same token each time the machine is provisioned.
 
 
 Docker Install
 ^^^^^^^^^^^^^^
 Geonotebook relies on a complex stack of technologies that are not always easy to install and properly configure. To ease this complexity we provide a docker container for running the notebook on docker compatible systems. To install docker on your system please see docker's [documentation](https://docs.docker.com/engine/installation/) for your operating system.
 
-First you must build the docker container.  After checking out the current repository, you can run :: 
+First you must build the docker container.  After checking out the current repository, you can run ::
 
     docker build -t geonotebook .
 
