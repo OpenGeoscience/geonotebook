@@ -4,6 +4,7 @@ import Map from 'ol/map';
 import View from 'ol/view';
 import TileLayer from 'ol/layer/tile';
 import XYZ from 'ol/source/xyz';
+import TileWMS from 'ol/source/tilewms';
 import Attribution from 'ol/attribution';
 
 import annotate from './jsonrpc/annotate';
@@ -178,6 +179,15 @@ MapObject.prototype.add_default_layer = function (layer_name, base_url, vis_para
 };
 
 MapObject.prototype.add_wms_layer = function (layer_name, base_url, query_params) {
+  var layer = this.olmap.addLayer(new TileLayer({
+    source: new TileWMS({
+      url: base_url,
+      params: {
+        TILED: true
+      }
+    })
+  }));
+  this._layers[layer_name] = layer;
   return layer_name;
 };
 
