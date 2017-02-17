@@ -6,6 +6,7 @@
    installation
    user-docs
    developer-docs
+   api-reference
 
 Indices and tables
 ==================
