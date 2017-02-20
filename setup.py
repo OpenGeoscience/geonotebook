@@ -265,7 +265,9 @@ setup(
         ('etc', ['config/geonotebook.ini']),
         ('share/jupyter/nbextensions/geonotebook', [
             'geonotebook/static/index.js',
-            'geonotebook/static/styles.css'
+            'geonotebook/static/index.js.map',
+            'geonotebook/static/styles.css',
+            'geonotebook/static/styles.css.map'
         ])
     ],
     package_data={'geonotebook': ['templates/*.html']},
