@@ -6,6 +6,7 @@ import TileLayer from 'ol/layer/tile';
 import XYZ from 'ol/source/xyz';
 import TileWMS from 'ol/source/tilewms';
 import Attribution from 'ol/attribution';
+import proj from 'ol/proj';
 
 import annotate from './jsonrpc/annotate';
 import constants from './jsonrpc/constants';
@@ -102,7 +103,9 @@ MapObject.prototype.set_center = function (x, y, z) {
     throw new constants.InvalidParams('Invalid parameters sent to set_center!');
   }
   var view = this.olmap.getView();
-  view.setCenter([x, y]);
+  view.setCenter(
+    proj.fromLonLat([x, y], view.getProjection())
+  );
   view.setZoom(z);
 
   return [x, y, z];
