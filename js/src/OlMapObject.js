@@ -154,7 +154,7 @@ MapObject.prototype.add_layer = function (layer_name, vis_url, vis_params, query
   } else if (layer_type === 'vector') {
     return this.add_vector_layer(layer_name, vis_url, vis_params, query_params);
   } else {
-    throw new Error('unknown layer type');
+    return this.add_default_layer(layer_name, vis_url, vis_params, query_params);
   }
 };
 
@@ -175,6 +175,14 @@ MapObject.prototype.add_osm_layer = function (layer_name, url, vis_params, query
 };
 
 MapObject.prototype.add_default_layer = function (layer_name, base_url, vis_params, query_params) {
+  var params = $.param(query_params || {});
+
+  var layer = this.olmap.addLayer(new TileLayer({
+    source: new XYZ({
+      url: base_url + '/{x}/{y}/{z}.png?' + params
+    })
+  }));
+  this._layers[layer_name] = layer;
   return layer_name;
 };
 
