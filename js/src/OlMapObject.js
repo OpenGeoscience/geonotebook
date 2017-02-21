@@ -2,7 +2,11 @@ import _ from 'underscore';
 
 import Map from 'ol/map';
 import View from 'ol/view';
+import Collection from 'ol/collection';
+import Draw from 'ol/interaction/draw';
+import VectorLayer from 'ol/layer/vector';
 import TileLayer from 'ol/layer/tile';
+import VectorSource from 'ol/source/vector';
 import XYZ from 'ol/source/xyz';
 import TileWMS from 'ol/source/tilewms';
 import Attribution from 'ol/attribution';
@@ -48,6 +52,11 @@ MapObject.prototype.init_map = function () {
     })
   });
   this._layers = {};
+  this._annotations = new Collection();
+  this._overlay = new VectorLayer({
+    source: new VectorSource({features: this._annotations})
+  });
+  this._overlay.setMap(this.olmap);
 };
 
 /**
@@ -124,6 +133,23 @@ MapObject.prototype.remove_layer = function (layer_name) {
   this.olmap.removeLayer(layer);
   delete this._layers[layer_name];
   return layer_name;
+};
+
+const draw_types = {
+  point_annotation_mode: 'Point',
+  rectangle_annotation_mode: 'Polygon',
+  polygon_annotation_mode: 'Polygon'
+};
+
+MapObject.prototype.triggerDraw = function (action) {
+  if (this._draw) {
+    this.olmap.removeInteraction(this._draw);
+  }
+  this._draw = new Draw({
+    features: this._annotations,
+    type: draw_types[action]
+  });
+  this.olmap.addInteraction(this._draw);
 };
 
 MapObject.prototype.clear_annotations = function () {

@@ -199,6 +199,7 @@ Geonotebook.prototype.bind_key_to_geonotebook_event = function (Jupyter, key_bin
 
   action_opts = action_opts || {};
   action_opts.handler = function () {
+    this.map.triggerDraw(action_name);
     // this.map.geojsmap.geoTrigger(prefix + ':' + action_name);
   }.bind(this);
 
