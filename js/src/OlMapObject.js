@@ -8,6 +8,7 @@ import View from 'ol/view';
 
 import GeoJSON from 'ol/format/geojson';
 
+import interaction from 'ol/interaction';
 import Draw from 'ol/interaction/draw';
 
 import VectorLayer from 'ol/layer/vector';
@@ -80,7 +81,8 @@ MapObject.prototype.init_map = function () {
     view: new View({
       center: [0, 0],
       zoom: 2
-    })
+    }),
+    interactions: interaction.defaults({doubleClickZoom: false})
   });
   this._layers = {};
   this._annotations = new Collection();
@@ -96,6 +98,7 @@ MapObject.prototype.init_map = function () {
     var feature = evt.element;
     var properties = feature.getProperties() || {};
     var json = this._format.writeFeatureObject(feature);
+    var coordinates = json.geometry.coordinates;
 
     if (!feature.getId()) {
       feature.setId(id);
@@ -107,6 +110,10 @@ MapObject.prototype.init_map = function () {
       feature.setProperties(properties);
     }
 
+    if (json.geometry.type === 'Polygon') {
+      coordinates = coordinates[0];
+    }
+
     var meta = {
       id: feature.getId(),
       name: properties.name,
@@ -115,7 +122,7 @@ MapObject.prototype.init_map = function () {
 
     this.notebook._remote.add_annotation_from_client(
       json.geometry.type.toLowerCase(),
-      json.geometry.coordinates,
+      coordinates,
       meta
     ).then(
       function () {
