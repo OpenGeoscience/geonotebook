@@ -25,6 +25,7 @@ import Circle from 'ol/style/circle';
 import annotate from './jsonrpc/annotate';
 import constants from './jsonrpc/constants';
 
+var id = 0;
 var MapObject = function (notebook) {
   this.notebook = notebook;
   this.olmap = null;
@@ -45,7 +46,7 @@ var MapObject = function (notebook) {
 };
 
 MapObject.prototype.next_color = function () {
-  this._color_counter = this._color_counter + 1;
+  this._color_counter = this._color_counter + 2;
 
   var idx = this._color_counter % this.annotation_color_palette.length;
 
@@ -73,8 +74,6 @@ MapObject.prototype._style_feature = function (feature) {
 };
 
 MapObject.prototype.init_map = function () {
-  var id = 0;
-
   $('#geonotebook-map').empty();
   this.olmap = new Map({
     target: 'geonotebook-map',
@@ -92,7 +91,7 @@ MapObject.prototype.init_map = function () {
   });
   this._format = new GeoJSON({
     featureProjection: this.olmap.getView().getProjection(),
-    defaultDataProjection: 'EPSG:4326',
+    defaultDataProjection: 'EPSG:4326'
   });
 
   this._overlay.setMap(this.olmap);
@@ -236,6 +235,7 @@ MapObject.prototype.triggerDraw = function (action) {
 
 MapObject.prototype.clear_annotations = function () {
   this._annotations.clear();
+  return true;
 };
 
 MapObject.prototype.add_annotation = function (type, args, kwargs) {
@@ -260,10 +260,27 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
     },
     properties: kwargs
   }, {featureProjection: 'EPSG:3857', dataProjection: 'EPSG:4326'});
+
+  feature.setId(id);
+  id += 1;
+
+  var name = kwargs.name || type + ' ' + feature.getId();
+  var rgb = kwargs.rgb || this.next_color();
+
+  feature.setProperties({
+    name, rgb
+  });
+
   var ignore = this._ignoreEvent;
   this._ignoreEvent = true;
   this._annotations.push(feature);
   this._ignoreEvent = ignore;
+
+  return {
+    id: feature.getId(),
+    name,
+    rgb
+  };
 };
 
 MapObject.prototype._add_annotation_handler = function (annotation) {
