@@ -91,10 +91,16 @@ MapObject.prototype.init_map = function () {
     style: (feature) => this._style_feature(feature)
   });
   this._format = new GeoJSON({
-    featureProjection: this.olmap.getView().getProjection()
+    featureProjection: this.olmap.getView().getProjection(),
+    defaultDataProjection: 'EPSG:4326',
   });
+
   this._overlay.setMap(this.olmap);
   this._annotations.on('add', (evt) => {
+    if (this._ignoreEvent) {
+      return;
+    }
+
     var feature = evt.element;
     var properties = feature.getProperties() || {};
     var json = this._format.writeFeatureObject(feature);
@@ -229,9 +235,35 @@ MapObject.prototype.triggerDraw = function (action) {
 };
 
 MapObject.prototype.clear_annotations = function () {
+  this._annotations.clear();
 };
 
 MapObject.prototype.add_annotation = function (type, args, kwargs) {
+  var type_map = {
+    point: 'Point',
+    rectangle: 'Polygon',
+    polygon: 'Polygon'
+  };
+  var coordinates = args;
+
+  type = type_map[type];
+
+  if (type === 'Point') {
+    coordinates = args[0];
+  }
+
+  var feature = this._format.readFeatureFromObject({
+    type: 'Feature',
+    geometry: {
+      type,
+      coordinates
+    },
+    properties: kwargs
+  }, {featureProjection: 'EPSG:3857', dataProjection: 'EPSG:4326'});
+  var ignore = this._ignoreEvent;
+  this._ignoreEvent = true;
+  this._annotations.push(feature);
+  this._ignoreEvent = ignore;
 };
 
 MapObject.prototype._add_annotation_handler = function (annotation) {
