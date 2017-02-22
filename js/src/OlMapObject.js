@@ -1,16 +1,25 @@
 import _ from 'underscore';
 
-import Map from 'ol/map';
-import View from 'ol/view';
+import Attribution from 'ol/attribution';
 import Collection from 'ol/collection';
+import Map from 'ol/map';
+import proj from 'ol/proj';
+import View from 'ol/view';
+
+import GeoJSON from 'ol/format/geojson';
+
 import Draw from 'ol/interaction/draw';
+
 import VectorLayer from 'ol/layer/vector';
 import TileLayer from 'ol/layer/tile';
+
 import VectorSource from 'ol/source/vector';
 import XYZ from 'ol/source/xyz';
 import TileWMS from 'ol/source/tilewms';
-import Attribution from 'ol/attribution';
-import proj from 'ol/proj';
+
+import Style from 'ol/style/style';
+import Fill from 'ol/style/fill';
+import Circle from 'ol/style/circle';
 
 import annotate from './jsonrpc/annotate';
 import constants from './jsonrpc/constants';
@@ -42,7 +51,29 @@ MapObject.prototype.next_color = function () {
   return this.annotation_color_palette[idx];
 };
 
+MapObject.prototype._style_feature = function (feature) {
+  var color = feature.getProperties().rgb;
+  if (!color) {
+    color = this.next_color();
+    feature.setProperties({rgb: color});
+  }
+
+  var fill = new Fill({
+    color
+  });
+
+  return new Style({
+    fill: fill,
+    image: new Circle({
+      fill,
+      radius: 8
+    })
+  });
+};
+
 MapObject.prototype.init_map = function () {
+  var id = 0;
+
   $('#geonotebook-map').empty();
   this.olmap = new Map({
     target: 'geonotebook-map',
@@ -54,9 +85,44 @@ MapObject.prototype.init_map = function () {
   this._layers = {};
   this._annotations = new Collection();
   this._overlay = new VectorLayer({
-    source: new VectorSource({features: this._annotations})
+    source: new VectorSource({features: this._annotations}),
+    style: (feature) => this._style_feature(feature)
+  });
+  this._format = new GeoJSON({
+    featureProjection: this.olmap.getView().getProjection()
   });
   this._overlay.setMap(this.olmap);
+  this._annotations.on('add', (evt) => {
+    var feature = evt.element;
+    var properties = feature.getProperties() || {};
+    var json = this._format.writeFeatureObject(feature);
+
+    if (!feature.getId()) {
+      feature.setId(id);
+      id += 1;
+    }
+
+    if (!properties.name) {
+      properties.name = json.geometry.type + ' ' + feature.getId();
+      feature.setProperties(properties);
+    }
+
+    var meta = {
+      id: feature.getId(),
+      name: properties.name,
+      rgb: properties.rgb
+    };
+
+    this.notebook._remote.add_annotation_from_client(
+      json.geometry.type.toLowerCase(),
+      json.geometry.coordinates,
+      meta
+    ).then(
+      function () {
+        console.log('annotation added');
+      }, this.rpc_error.bind(this)
+    );
+  });
 };
 
 /**
@@ -148,6 +214,9 @@ MapObject.prototype.triggerDraw = function (action) {
   this._draw = new Draw({
     features: this._annotations,
     type: draw_types[action]
+  });
+  this._draw.once('drawend', () => {
+    this.olmap.removeInteraction(this._draw);
   });
   this.olmap.addInteraction(this._draw);
 };
