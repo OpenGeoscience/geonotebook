@@ -18,9 +18,10 @@ import VectorSource from 'ol/source/vector';
 import XYZ from 'ol/source/xyz';
 import TileWMS from 'ol/source/tilewms';
 
-import Style from 'ol/style/style';
-import Fill from 'ol/style/fill';
 import Circle from 'ol/style/circle';
+import Fill from 'ol/style/fill';
+import Stroke from 'ol/style/stroke';
+import Style from 'ol/style/style';
 
 import annotate from './jsonrpc/annotate';
 import constants from './jsonrpc/constants';
@@ -64,10 +65,17 @@ MapObject.prototype._style_feature = function (feature) {
     color
   });
 
+  var stroke = new Stroke({
+    color: 'black',
+    width: 2
+  });
+
   return new Style({
-    fill: fill,
+    fill,
+    stroke,
     image: new Circle({
       fill,
+      stroke,
       radius: 8
     })
   });
