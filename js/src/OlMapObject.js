@@ -258,6 +258,8 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
 
   if (type === 'Point') {
     coordinates = args[0];
+  } else {
+    coordinates = [coordinates[0]];
   }
 
   var feature = this._format.readFeatureFromObject({
