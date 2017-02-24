@@ -42,6 +42,7 @@ class GeonotebookLayer(object):
         self._expose_as = kwargs.pop("expose_as", None)
 
         self.vis_options = self.StyleOptions(**kwargs)
+        self.can_subset = False
 
     def __repr__(self):
         return "<{}('{}')>".format(
@@ -171,6 +172,7 @@ class DataLayer(GeonotebookLayer):
 
         super(DataLayer, self).__init__(name, remote, data, **kwargs)
         self.data = data
+        self.can_subset = True
 
         assert vis_url is not None or data is not None, \
             "Must pass in vis_url or data to {}".format(

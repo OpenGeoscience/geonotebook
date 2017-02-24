@@ -53,7 +53,8 @@ class Annotation(object):
     @property
     def data(self):
         for layer in self._get_layer_collection():
-            if hasattr(layer, "data") and layer.data is not None:
+            if getattr(layer, 'can_subset', False) and \
+               hasattr(layer, "data") and layer.data is not None:
                 yield layer, self.subset(layer.data, **self._kwargs)
 
 
