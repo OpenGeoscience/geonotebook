@@ -6,6 +6,8 @@ import Map from 'ol/map';
 import proj from 'ol/proj';
 import View from 'ol/view';
 
+import condition from 'ol/events/condition';
+
 import GeoJSON from 'ol/format/geojson';
 
 import interaction from 'ol/interaction';
@@ -135,7 +137,7 @@ MapObject.prototype.init_map = function () {
     };
 
     this.notebook._remote.add_annotation_from_client(
-      json.geometry.type.toLowerCase(),
+      this._drawType,
       coordinates,
       meta
     ).then(
@@ -222,20 +224,34 @@ MapObject.prototype.remove_layer = function (layer_name) {
   return layer_name;
 };
 
-const draw_types = {
-  point_annotation_mode: 'Point',
-  rectangle_annotation_mode: 'Polygon',
-  polygon_annotation_mode: 'Polygon'
-};
-
 MapObject.prototype.triggerDraw = function (action) {
   if (this._draw) {
     this.olmap.removeInteraction(this._draw);
   }
-  this._draw = new Draw({
-    features: this._annotations,
-    type: draw_types[action]
-  });
+  if (action === 'point_annotation_mode') {
+    this._draw = new Draw({
+      features: this._annotations,
+      type: 'Point'
+    });
+    this._drawType = 'point';
+  } else if (action === 'rectangle_annotation_mode') {
+    this._draw = new Draw({
+      features: this._annotations,
+      type: 'Circle',
+      geometryFunction: Draw.createBox(),
+      freehandCondition: condition.noModifierKeys
+    });
+    this._drawType = 'rectangle';
+  } else if (action === 'polygon_annotation_mode') {
+    this._draw = new Draw({
+      features: this._annotations,
+      type: 'Polygon'
+    });
+    this._drawType = 'polygon';
+  } else {
+    throw new Error('Unknown annotation mode');
+  }
+
   this._draw.once('drawend', () => {
     this.olmap.removeInteraction(this._draw);
   });
