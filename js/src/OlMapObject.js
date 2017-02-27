@@ -95,7 +95,8 @@ MapObject.prototype.init_map = function () {
   this._annotations = new Collection();
   this._overlay = new VectorLayer({
     source: new VectorSource({features: this._annotations}),
-    style: (feature) => this._style_feature(feature)
+    style: (feature) => this._style_feature(feature),
+    opacity: 0.8
   });
   this._format = new GeoJSON({
     featureProjection: this.olmap.getView().getProjection(),
