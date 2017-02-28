@@ -357,30 +357,63 @@ MapObject.prototype.add_osm_layer = function (layer_name, url, vis_params, query
 
 MapObject.prototype.add_default_layer = function (layer_name, base_url, vis_params, query_params) {
   var params = $.param(query_params || {});
-
-  var layer = this.olmap.addLayer(new TileLayer({
+  var layer = new TileLayer({
     source: new XYZ({
       url: base_url + '/{x}/{y}/{z}.png?' + params
     })
-  }));
+  });
+
+  this.olmap.addLayer(layer);
   this._layers[layer_name] = layer;
   return layer_name;
 };
 
 MapObject.prototype.add_wms_layer = function (layer_name, base_url, query_params) {
-  var layer = this.olmap.addLayer(new TileLayer({
+  var layer = new TileLayer({
     source: new TileWMS({
       url: base_url,
       params: {
         TILED: true
       }
     })
-  }));
+  });
+
+  this.olmap.addLayer(layer);
   this._layers[layer_name] = layer;
   return layer_name;
 };
 
 MapObject.prototype.add_vector_layer = function (name, data, vis_params, query_params) {
+  var colors = (vis_params || {}).colors || ['#b0de5c'];
+  var stroke = new Stroke({
+    color: 'black',
+    width: 2
+  });
+
+  var layer = new VectorLayer({
+    source: new VectorSource({
+      features: this._format.readFeatures(data)
+    }),
+    style: (feature) => {
+      var index = feature.getProperties()._geonotebook_feature_id % colors.length;
+      var color = colors[index];
+      var fill = new Fill({
+        color
+      });
+      return new Style({
+        fill,
+        stroke,
+        image: new Circle({
+          fill,
+          stroke,
+          radius: 8
+        })
+      });
+    },
+    opacity: 0.8
+  });
+  this.olmap.addLayer(layer);
+  this._layers[name] = layer;
   return name;
 };
 
