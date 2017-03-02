@@ -3,6 +3,8 @@ import collections
 import fiona
 import six
 
+from .. import annotations
+
 
 class VectorData(collections.Sequence):
 
@@ -35,3 +37,35 @@ class VectorData(collections.Sequence):
             'type': 'FeatureCollection',
             'features': features
         }
+
+    @property
+    def points(self):
+        """Return a generator of "Point" annotation objects."""
+        for feature in self.reader:
+            geometry = feature['geometry']
+            if geometry['type'] == 'Point':
+                coords = geometry['coordinates']
+                yield annotations.Point(
+                    coords, **feature['properties']
+                )
+            elif geometry['type'] == 'MultiPoint':
+                for coords in geometry['coordinates']:
+                    yield annotations.Point(
+                        coords, **feature['properties']
+                    )
+
+    @property
+    def polygons(self):
+        """Return a generator of "Polygon" annotation objects."""
+        for feature in self.reader:
+            geometry = feature['geometry']
+            if geometry['type'] == 'Polygon':
+                coords = geometry['coordinates']
+                yield annotations.Polygon(
+                    coords[0], coords[1:], **feature['properties']
+                )
+            elif geometry['type'] == 'MultiPolygon':
+                for coords in geometry['coordinates']:
+                    yield annotations.Polygon(
+                        coords[0], coords[1:], **feature['properties']
+                    )

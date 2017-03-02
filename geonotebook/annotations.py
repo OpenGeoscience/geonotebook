@@ -9,6 +9,10 @@ class Annotation(object):
         self.layer = kwargs.pop('layer', None)
         self._args = args
         self._kwargs = kwargs
+
+        # set the default fill if not provided in the constructor
+        self.rgb = '#b0de5c'
+
         for k, v in kwargs.items():
             setattr(Annotation, k, property(self._get_kwargs(k),
                                             self._set_kwargs(k),

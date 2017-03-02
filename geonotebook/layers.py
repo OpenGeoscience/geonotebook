@@ -183,7 +183,8 @@ class VectorLayer(GeonotebookLayer):
 
     StyleOptions = VectorStyleOptions
 
-    def __init__(self, name, remote, data, **kwargs):
+    def __init__(self, name, remote, layer_collection, data, **kwargs):
+        self.layer_collection = layer_collection
         # handle styling options in order of precendence
         colors = kwargs.get('colors')
         if isinstance(colors, (list, tuple)):  # a list of colors to use
