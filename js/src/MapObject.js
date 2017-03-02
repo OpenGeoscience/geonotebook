@@ -2,6 +2,7 @@ import _ from 'underscore';
 import 'geojs';
 
 import GeoMap from 'geojs/map';
+import JsonReader from 'geojs/jsonReader';
 import event from 'geojs/event';
 import { pointAnnotation, rectangleAnnotation, polygonAnnotation } from 'geojs/annotation';
 import { transformCoordinates } from 'geojs/transform';
@@ -69,9 +70,12 @@ MapObject.prototype.msg_types = [
   'add_layer',
   'replace_layer',
   'replace_wms_layer',
+  'add_osm_layer',
+  'add_annotation_layer',
   'clear_annotations',
   'remove_layer',
-  'add_annotation'
+  'add_annotation',
+  'add_vector_layer'
 ];
 
 MapObject.prototype._debug = function (msg) {
@@ -292,6 +296,8 @@ MapObject.prototype.add_layer = function (layer_name, vis_url, vis_params, query
     return this.add_osm_layer(layer_name, vis_url, vis_params, query_params);
   } else if (layer_type === 'wms') {
     return this.add_wms_layer(layer_name, vis_url, vis_params, query_params);
+  } else if (layer_type === 'vector') {
+    return this.add_vector_layer(layer_name, vis_url, vis_params, query_params);
   } else {
     return this.add_default_layer(layer_name, vis_url, vis_params, query_params);
   }
@@ -410,6 +416,46 @@ MapObject.prototype.add_wms_layer = function (layer_name, base_url, query_params
   });
 
   return layer_name;
+};
+
+MapObject.prototype.add_vector_layer = function (name, data, vis_params, query_params) {
+  var layer = this.geojsmap.createLayer('feature');
+
+  // make sure zindex is explicitly set
+  this._set_layer_zindex(layer, vis_params['zIndex']);
+
+  var start = 0;
+  vis_params = vis_params || {};
+  JsonReader({layer: layer}).read(data, function (features) {
+    var colors = vis_params.colors;
+    if (colors) {
+      _.each(features, (feature) => {
+        var data = feature.data() || [];
+        var feature_start = start;
+        feature.style('fillColor', (d, i, e, j) => {
+          // point and polygon features have different interfaces, so make
+          // changes to the arguments to unify the rest of the styling function.
+          if (e) {
+            d = e;
+            i = j;
+          }
+
+          // we are going to extremes to avoid throwing errors
+          var properties = d.properties || {};
+          var id = properties._geonotebook_feature_id;
+          if (id === undefined) {
+            id = feature_start + i;
+          }
+          var index = id % colors.length;
+          return colors[index];
+        });
+        start += data.length;
+      });
+    }
+    layer.draw();
+  });
+  layer.name(name);
+  return name;
 };
 
 export default MapObject;

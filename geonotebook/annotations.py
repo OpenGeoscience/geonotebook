@@ -23,7 +23,7 @@ class Annotation(object):
 
     def svg(self, *args, **kwargs):
         if hasattr(super(Annotation, self), 'svg'):
-            kwargs['fill_color'] = self.style['fillColor']
+            kwargs['fill_color'] = self.rgb
             return super(Annotation, self).svg(*args, **kwargs)
 
     def _get_kwargs(self, k):
@@ -53,7 +53,8 @@ class Annotation(object):
     @property
     def data(self):
         for layer in self._get_layer_collection():
-            if hasattr(layer, "data") and layer.data is not None:
+            if getattr(layer, 'can_subset', False) and \
+               hasattr(layer, "data") and layer.data is not None:
                 yield layer, self.subset(layer.data, **self._kwargs)
 
 
@@ -62,7 +63,7 @@ class Point(Annotation, sPoint):
         super(Point, self).__init__(coordinates, **kwargs)
 
     def subset(self, raster_data, **kwargs):
-        return raster_data.ix(self.x, self.y)
+        return raster_data.ix(self._args[0][0], self._args[0][1])
 
 
 class Rectangle(Annotation, sPolygon):

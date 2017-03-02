@@ -1,24 +1,28 @@
+
+
+# A colormap can be a list of dicts
+# or a matplotlib colormap. Either case
+# the returned object will be a list of dicts.
+def rgba2hex(rgba):
+    """Convert rgba values to hex."""
+    # Slice the tuple so that
+    # we don't get alpha and
+    # convert values to 8 bit ints
+    rgb = tuple([min(max(int(255 * i), 0), 255) for i in rgba[:3]])
+    return "#{0:02x}{1:02x}{2:02x}".format(*rgb)
+
+
+def range_count(start, stop, count):
+    """Generate a list.
+
+    Use the given start stop and count with linear spacing
+    e.g. range_count(1, 3, 5) = [1., 1.5, 2., 2.5, 3.]
+    """
+    step = (stop - start) / float(count - 1)
+    return [start + i * step for i in range(count)]
+
+
 def generate_colormap(colormap, minimum, maximum):
-    # A colormap can be a list of dicts
-    # or a matplotlib colormap. Either case
-    # the returned object will be a list of dicts.
-    def range_count(start, stop, count):
-        """Generate a list.
-
-        Use the given start stop and count with linear spacing
-        e.g. range_count(1, 3, 5) = [1., 1.5, 2., 2.5, 3.]
-        """
-        step = (stop - start) / float(count - 1)
-        return [start + i * step for i in range(count)]
-
-    def rgba2hex(rgba):
-        """Convert rgba values to hex."""
-        # Slice the tuple so that
-        # we don't get alpha and
-        # convert values to 8 bit ints
-        rgb = tuple([min(max(int(255 * i), 0), 255) for i in rgba[:3]])
-        return "#{0:02x}{1:02x}{2:02x}".format(*rgb)
-
     # If colormap is an iterable return it
     # Sld code has checks for this anyway
     # So an arbitrary iterable won't work
@@ -40,6 +44,14 @@ def generate_colormap(colormap, minimum, maximum):
         ]
 
         return colormap
+
+
+def discrete_colors(colormap, count):
+    """Generate a list of evenly spaced colors from the given colormap."""
+    return [
+        rgba2hex(colormap(float(i)))
+        for i in range_count(0, 1, count)
+    ]
 
 
 class RasterStyleOptions(object):
@@ -114,3 +126,37 @@ class RasterStyleOptions(object):
             self.kernel_id,
             self.zIndex,
             self.attribution))
+
+
+class VectorStyleOptions(object):
+    def __init__(self, opacity=0.8, projection='EPSG:4326',
+                 layer_type='vector', colors=None,
+                 attribution=None, zIndex=None, **kwargs):
+        if projection != 'EPSG:4326':
+            raise Exception('Reprojection not yet supported')
+        self.opacity = opacity
+        self.projection = projection
+        self.layer_type = layer_type
+        self.colors = colors
+        self.attribution = attribution
+        self.zIndex = zIndex
+
+    def serialize(self):
+        return {
+            'layer_type': self.layer_type,
+            'opacity': self.opacity,
+            'projection': self.projection,
+            'attribution': self.attribution,
+            'colors': self.colors,
+            'zIndex': self.zIndex
+        }
+
+    def __hash__(self):
+        return hash((
+            self.layer_type,
+            self.opacity,
+            self.projection,
+            self.attribution,
+            self.colors,
+            self.zIndex
+        ))

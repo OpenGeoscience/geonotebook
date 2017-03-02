@@ -250,7 +250,9 @@ setup(
         "requests",
         "ipykernel",
         "jupyter_client",
-        "notebook"
+        "notebook",
+        "fiona",
+        "shapely"
     ],
     cmdclass={
         'install': CustomInstall,

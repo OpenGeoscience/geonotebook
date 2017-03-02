@@ -15,10 +15,11 @@ from .layers import (AnnotationLayer,
                      GeonotebookLayerCollection,
                      NoDataLayer,
                      SimpleLayer,
-                     TimeSeriesLayer)
+                     TimeSeriesLayer,
+                     VectorLayer)
 
 from .utils import get_kernel_id
-from .wrappers import RasterData, RasterDataCollection
+from .wrappers import RasterData, RasterDataCollection, VectorData
 
 
 class Remote(object):
@@ -385,7 +386,10 @@ class Geonotebook(object):
             layer = TimeSeriesLayer(
                 name, self._remote, data=data, vis_url=vis_url, **kwargs
             )
-
+        elif isinstance(data, VectorData):
+            layer = VectorLayer(
+                name, self._remote, data=data, **kwargs
+            )
         else:
             assert name is not None, \
                 RuntimeError("Non data layers require a 'name'")
