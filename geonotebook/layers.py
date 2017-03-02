@@ -197,6 +197,7 @@ class VectorLayer(GeonotebookLayer):
             kwargs['colors'] = discrete_colors(kwargs['colormap'], len(data))
 
         name = name or data.reader.name
+        data.layer = self
         super(VectorLayer, self).__init__(name, remote, data, **kwargs)
         self.data = data
 

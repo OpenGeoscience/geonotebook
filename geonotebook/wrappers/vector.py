@@ -9,6 +9,9 @@ from .. import annotations
 class VectorData(collections.Sequence):
 
     def __init__(self, path, **kwargs):
+        # the layer attribute will be set once this instance is
+        # added to a layer
+        self.layer = None
         if isinstance(path, six.string_types):
             self.reader = fiona.open(path)
         else:
@@ -46,12 +49,12 @@ class VectorData(collections.Sequence):
             if geometry['type'] == 'Point':
                 coords = geometry['coordinates']
                 yield annotations.Point(
-                    coords, **feature['properties']
+                    coords, layer=self.layer, **feature['properties']
                 )
             elif geometry['type'] == 'MultiPoint':
                 for coords in geometry['coordinates']:
                     yield annotations.Point(
-                        coords, **feature['properties']
+                        coords, layer=self.layer, **feature['properties']
                     )
 
     @property
@@ -62,10 +65,12 @@ class VectorData(collections.Sequence):
             if geometry['type'] == 'Polygon':
                 coords = geometry['coordinates']
                 yield annotations.Polygon(
-                    coords[0], coords[1:], **feature['properties']
+                    coords[0], coords[1:],
+                    layer=self.layer, **feature['properties']
                 )
             elif geometry['type'] == 'MultiPolygon':
                 for coords in geometry['coordinates']:
                     yield annotations.Polygon(
-                        coords[0], coords[1:], **feature['properties']
+                        coords[0], coords[1:],
+                        layer=self.layer, **feature['properties']
                     )
