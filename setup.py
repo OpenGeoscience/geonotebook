@@ -252,7 +252,8 @@ setup(
         "jupyter_client",
         "notebook",
         "fiona",
-        "shapely"
+        "shapely",
+        "pyproj"
     ],
     cmdclass={
         'install': CustomInstall,
