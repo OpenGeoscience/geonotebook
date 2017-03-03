@@ -184,7 +184,20 @@ class VectorLayer(GeonotebookLayer):
     StyleOptions = VectorStyleOptions
 
     def __init__(self, name, remote, layer_collection, data, **kwargs):
+        # Here we are storing a reference to the layer collection itself.
+        # This is done to maintain API compatibility between annotation objects
+        # and vector data objects.  For example, to subset all layers from a
+        # given geometry, you could use code such as the following:
+        #
+        #  for layer, data in polygon.data:
+        #    # data a numpy array of the data from "layer"
+        #
+        # In this case, the vector object must contain a reference to the
+        # map layer collection.  In a future refactor, we want to change
+        # this behavior to make passing the layer collection here unnecessary.
+        # New layer types should avoid using this pattern if possible.
         self.layer_collection = layer_collection
+
         # handle styling options in order of precendence
         colors = kwargs.get('colors')
         if isinstance(colors, (list, tuple)):  # a list of colors to use
