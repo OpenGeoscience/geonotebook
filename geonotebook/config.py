@@ -7,7 +7,6 @@ import pkg_resources
 from six.moves import configparser
 
 
-
 def get_config(path=None):
     conf = configparser.ConfigParser()
     paths = [

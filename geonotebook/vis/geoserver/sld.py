@@ -80,7 +80,7 @@ SLDTemplates = Environment(loader=DictLoader({
 def get_multiband_raster_sld(
         name, title=None, bands=(1, 2, 3),
         interval=(0, 1), gamma=1.0, opacity=1.0,
-        channel_names=("RedChannel", "GreenChannel", "BlueChannel")):
+        channel_names=("RedChannel", "GreenChannel", "BlueChannel"), **kwargs):
 
     # Make sure interval is a list of intervals - this test
     # is buggy and should be fixed.
@@ -155,7 +155,7 @@ def get_multiband_raster_sld(
 def get_single_band_raster_sld(
         name, band, title=None, opacity=1.0,
         channel_name="GrayChannel", colormap=None,
-        colormap_type="ramp"):
+        colormap_type="ramp", **kwargs):
 
     # Set title default if it wasn't passed in
     if title is None:
