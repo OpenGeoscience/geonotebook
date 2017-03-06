@@ -25,9 +25,6 @@ import Fill from 'ol/style/fill';
 import Stroke from 'ol/style/stroke';
 import Style from 'ol/style/style';
 
-import annotate from './jsonrpc/annotate';
-import constants from './jsonrpc/constants';
-
 var id = 0;
 var MapObject = function (notebook) {
   this.notebook = notebook;
