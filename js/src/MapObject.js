@@ -54,13 +54,14 @@ const annotation_types = {
  * methods.
  *
  *   * constructor(node)
+ *   * resize(size)
  *   * set_center(x, y, z)
  *   * add_annotation_layer(name)
  *   * add_osm_layer(name, url, vis, query)
  *   * add_wms_layer(name, url, vis, query)
  *   * add_vector_layer(name, data, vis, query)
  *   * remove_layer(name, layer)
- *   * add_annotation(name, geojson)
+ *   * add_annotation(type, geojson)
  *   * clear_annotations()
  */
 class MapObject {
