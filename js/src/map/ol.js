@@ -78,6 +78,23 @@ class OlMap {
     return this._baseLayer;
   }
 
+  add_tiled_layer (name, url, vis, query) {
+    var params = '';
+    if ($.param(query)) {
+      params = '?' + $.param(query);
+    }
+    this._baseLayer = this.olmap.addLayer(new TileLayer({
+      source: new XYZ({
+        url: `${url}/{x}/{y}/{z}.png?${params}`,
+        attributions: new Attribution({
+          html: vis.attribution || ''
+        })
+      })
+    }));
+
+    return this._baseLayer;
+  }
+
   add_wms_layer (name, url, vis, query) {
     // TODO: Add SLD parameters
     var layer = new TileLayer({

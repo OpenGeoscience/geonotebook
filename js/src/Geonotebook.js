@@ -1,6 +1,8 @@
 import _ from 'underscore';
 import Split from 'split.js';
 
+import GeoJSMap from './map/geojs';
+import OlMap from './map/ol';
 import MapObject from './MapObject';
 import {
   is_response,
@@ -21,7 +23,7 @@ var Geonotebook = function (Jupyter, events) {
   this._remote = null;
 
   this.init_html_and_css();
-  this.map = new MapObject(this);
+  this.map = new MapObject(this, GeoJSMap);
   this.register_events(Jupyter, events);
   this.load_annotation_buttons(Jupyter);
   Jupyter.map = this.map;

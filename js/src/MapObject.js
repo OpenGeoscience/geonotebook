@@ -124,16 +124,23 @@ class MapObject {
       layer = this.mapObject.add_annotation_layer(layer_name);
     } else if (layer_type === 'wms') {
       layer = this.mapObject.add_wms_layer(layer_name, vis_url, vis_params, query_params);
+    } else if (layer_type === 'osm') {
+      layer = this.mapObject.add_osm_layer(layer_name, vis_url, vis_params, query_params);
     } else if (layer_type === 'vector') {
       layer = this.mapObject.add_vector_layer(layer_name, vis_url, vis_params, query_params);
     } else {
-      layer = this.mapObject.add_osm_layer(layer_name, vis_url, vis_params, query_params);
+      layer = this.mapObject.add_tiled_layer(layer_name, vis_url, vis_params, query_params);
     }
 
     if (layer) {
       this.layers[layer_name] = layer;
     }
     return layer_name;
+  }
+
+  add_annotation_layer (name) {
+    this.mapObject.add_annotation_layer(name);
+    return name;
   }
 
   /**

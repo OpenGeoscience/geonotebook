@@ -65,6 +65,26 @@ class GeoJSMap {
     return osm;
   }
 
+  add_tiled_layer (name, url, vis, query) {
+    var layer = this.geojsmap.createLayer('osm', {
+      attribution: null,
+      keepLower: false
+    });
+    var params = '';
+
+    if ($.param(query)) {
+      params = '?' + $.param(query);
+    }
+
+    layer.name(name);
+    layer.url((x, y, z) => `${url}/${x}/${y}/${z}.png${params}`);
+
+      // make sure zindex is explicitly set
+    this._set_layer_zindex(layer, vis['zIndex']);
+
+    return layer;
+  }
+
   add_wms_layer (name, url, vis, query) {
     var projection = query['projection'] || 'EPSG:3857';
 
