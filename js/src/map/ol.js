@@ -1,5 +1,3 @@
-import _ from 'underscore';
-
 import Attribution from 'ol/attribution';
 import Collection from 'ol/collection';
 import Map from 'ol/map';
@@ -25,85 +23,131 @@ import Fill from 'ol/style/fill';
 import Stroke from 'ol/style/stroke';
 import Style from 'ol/style/style';
 
-var id = 0;
-var MapObject = function (notebook) {
-  this.notebook = notebook;
-  this.olmap = null;
-  this.region = null;
-  this.annotation_color_palette = [
-    '#db5f57', // {r:219, g: 95, b: 87}
-    '#dbae57', // {r:219, g:174, b: 87}
-    '#b9db57', // {r:185, g:219, b: 87}
-    '#69db57', // {r:105, g:219, b: 87}
-    '#57db94', // {r: 87, g:219, b:148}
-    '#57d3db', // {r: 87, g:211, b:219}
-    '#5784db', // {r: 87, g:132, b:219}
-    '#7957db', // {r:121, g: 87, b:219}
-    '#c957db', // {r:201, g: 87, b:219}
-    '#db579e'  // {r:219, g: 87, b:158}
-  ];
-  this._color_counter = -1;
-};
-
-MapObject.prototype.next_color = function () {
-  this._color_counter = this._color_counter + 2;
-
-  var idx = this._color_counter % this.annotation_color_palette.length;
-
-  return this.annotation_color_palette[idx];
-};
-
-MapObject.prototype._style_feature = function (feature) {
-  var color = feature.getProperties().rgb;
-  if (!color) {
-    color = this.next_color();
-    feature.setProperties({rgb: color});
+class OlMap {
+  constructor (node) {
+    this.olmap = new Map({
+      target: node,
+      view: new View({
+        center: [0, 0],
+        zoom: 2
+      }),
+      interactions: interaction.defaults({doubleClickZoom: false})
+    });
+    this._annotations = new Collection();
+    this._overlay = null;
+    this._format = new GeoJSON({
+      featureProjection: this.olmap.getView().getProjection(),
+      defaultDataProjection: 'EPSG:4326'
+    });
   }
 
-  var fill = new Fill({
-    color
-  });
+  resize (size) {
+    this.olmap.setSize([size.width, size.height]);
+  }
 
-  var stroke = new Stroke({
-    color: 'black',
-    width: 2
-  });
+  set_center (x, y, z) {
+    var view = this.olmap.getView();
+    view.setCenter(
+      proj.fromLonLat([x, y], view.getProjection())
+    );
+    view.setZoom(z);
 
-  return new Style({
-    fill,
-    stroke,
-    image: new Circle({
-      fill,
-      stroke,
-      radius: 8
-    })
-  });
-};
+    return [x, y, z];
+  }
 
-MapObject.prototype.init_map = function () {
-  $('#geonotebook-map').empty();
-  this.olmap = new Map({
-    target: 'geonotebook-map',
-    view: new View({
-      center: [0, 0],
-      zoom: 2
-    }),
-    interactions: interaction.defaults({doubleClickZoom: false})
-  });
-  this._layers = {};
-  this._annotations = new Collection();
-  this._overlay = new VectorLayer({
-    source: new VectorSource({features: this._annotations}),
-    style: (feature) => this._style_feature(feature),
-    opacity: 0.8
-  });
-  this._format = new GeoJSON({
-    featureProjection: this.olmap.getView().getProjection(),
-    defaultDataProjection: 'EPSG:4326'
-  });
+  add_annotation_layer () {
+    this._overlay = new VectorLayer({
+      source: new VectorSource({features: this._annotations}),
+      style: (feature) => this._style_feature(feature),
+      opacity: 0.8
+    });
+    this._overlay.setMap(this.olmap);
+    this._annotations.on('add', (evt) => this._annotation_handler(evt));
+  }
 
-  this._overlay.setMap(this.olmap);
-  this._annotations.on('add', (evt) => {
+  add_osm_layer (name, url, vis, query) {
+    this._baseLayer = this.olmap.addLayer(new TileLayer({
+      source: new XYZ({
+        url: url.replace('{s}', 'a'),
+        attributions: new Attribution({
+          html: vis.attribution || ''
+        })
+      })
+    }));
+
+    return this._baseLayer;
+  }
+
+  add_wms_layer (name, url, vis, query) {
+    // TODO: Add SLD parameters
+    var layer = new TileLayer({
+      source: new TileWMS({
+        url: url,
+        params: {
+          TILED: true
+        }
+      })
+    });
+
+    this.olmap.addLayer(layer);
+    return layer;
+  }
+
+  add_vector_layer (name, data, vis, query) {
+    var colors = (vis || {}).colors || ['#b0de5c'];
+    var stroke = new Stroke({
+      color: 'black',
+      width: 2
+    });
+
+    var layer = new VectorLayer({
+      source: new VectorSource({
+        features: this._format.readFeatures(data)
+      }),
+      style: (feature) => {
+        var index = feature.getProperties()._geonotebook_feature_id % colors.length;
+        var color = colors[index];
+        var fill = new Fill({
+          color
+        });
+        return new Style({
+          fill,
+          stroke,
+          image: new Circle({
+            fill,
+            stroke,
+            radius: 8
+          })
+        });
+      },
+      opacity: 0.8
+    });
+    this.olmap.addLayer(layer);
+    return layer;
+  }
+
+  remove_layer (name, layer) {
+    this.olmap.removeLayer(layer);
+  }
+
+  add_annotation (type, geojson) {
+    const feature = this._format.readFeatureFromObject(
+      geojson,
+      {featureProjection: 'EPSG:3857', dataProjection: 'EPSG:4326'}
+    );
+    const ignore = this._ignoreEvent;
+    // TODO: set id?
+    //
+    this._ignoreEvent = true;
+    this._annotations.push(feature);
+    this._ignoreEvent = ignore;
+  }
+
+  clear_annotations () {
+    this._annotations.clear();
+  }
+
+  _annotation_handler (evt) {
     if (this._ignoreEvent) {
       return;
     }
@@ -113,10 +157,7 @@ MapObject.prototype.init_map = function () {
     var json = this._format.writeFeatureObject(feature);
     var coordinates = json.geometry.coordinates;
 
-    if (!feature.getId()) {
-      feature.setId(id);
-      id += 1;
-    }
+    // TODO: set id?
 
     if (!properties.name) {
       properties.name = json.geometry.type + ' ' + feature.getId();
@@ -133,6 +174,7 @@ MapObject.prototype.init_map = function () {
       rgb: properties.rgb
     };
 
+    // TODO: move to mapobject
     this.notebook._remote.add_annotation_from_client(
       this._drawType,
       coordinates,
@@ -142,276 +184,68 @@ MapObject.prototype.init_map = function () {
         console.log('annotation added');
       }, this.rpc_error.bind(this)
     );
-  });
-};
-
-/**
- * Force the map object to resize itself when layouts change.
- */
-MapObject.prototype.resize = function () {
-  var node = $(this.olmap.getViewport());
-  this.olmap.setSize([node.width(), node.height()]);
-};
-
-MapObject.prototype.rpc_error = function (error) {
-  console.log('JSONRPCError(' + error.code + '): ' + error.message); // eslint-disable-line no-console
-};
-
-MapObject.prototype.msg_types = [
-  'get_protocol',
-  'set_center',
-  '_debug',
-  'add_layer',
-  'replace_layer',
-  'replace_wms_layer',
-  'add_osm_layer',
-  'add_annotation_layer',
-  'clear_annotations',
-  'remove_layer',
-  'add_annotation',
-  'add_vector_layer'
-];
-
-MapObject.prototype._debug = function (msg) {
-  console.log(msg); // eslint-disable-line no-console
-};
-
-// Generate a list of protocol definitions for the white listed functions
-// in msg_types. This will be passed to the Python geonotebook object and
-// will initialize its RPC object so JS map frunctions can be called from
-// the Python environment.
-
-MapObject.prototype.get_protocol = function () {
-  return _.map(this.msg_types, (msg_type) => {
-    var args = annotate(this[msg_type]);
-
-    return {
-      procedure: msg_type,
-      required: args.filter(function (arg) { return !arg.default; }),
-      optional: args.filter(function (arg) { return !!arg.default; })
-    };
-  });
-};
-
-MapObject.prototype.set_center = function (x, y, z) {
-  if (x < -180.0 || x > 180.0 || y < -90.0 || y > 90.0) {
-    throw new constants.InvalidParams('Invalid parameters sent to set_center!');
-  }
-  var view = this.olmap.getView();
-  view.setCenter(
-    proj.fromLonLat([x, y], view.getProjection())
-  );
-  view.setZoom(z);
-
-  return [x, y, z];
-};
-
-MapObject.prototype.get_layer = function (layer_name) {
-  return this._layers[layer_name];
-};
-
-MapObject.prototype.remove_layer = function (layer_name) {
-  var layer = this._layers[layer_name];
-  if (!layer) {
-    return null;
   }
 
-  this.olmap.removeLayer(layer);
-  delete this._layers[layer_name];
-  return layer_name;
-};
+  _style_feature (feature) {
+    var color = feature.getProperties().rgb;
+    if (!color) {
+      color = this.next_color();
+      feature.setProperties({rgb: color});
+    }
 
-MapObject.prototype.triggerDraw = function (action) {
-  if (this._draw) {
-    this.olmap.removeInteraction(this._draw);
-  }
-  if (action === 'point_annotation_mode') {
-    this._draw = new Draw({
-      features: this._annotations,
-      type: 'Point'
+    var fill = new Fill({
+      color
     });
-    this._drawType = 'point';
-  } else if (action === 'rectangle_annotation_mode') {
-    this._draw = new Draw({
-      features: this._annotations,
-      type: 'Circle',
-      geometryFunction: Draw.createBox(),
-      freehandCondition: condition.noModifierKeys
+
+    var stroke = new Stroke({
+      color: 'black',
+      width: 2
     });
-    this._drawType = 'rectangle';
-  } else if (action === 'polygon_annotation_mode') {
-    this._draw = new Draw({
-      features: this._annotations,
-      type: 'Polygon'
-    });
-    this._drawType = 'polygon';
-  } else {
-    throw new Error('Unknown annotation mode');
-  }
 
-  this._draw.once('drawend', () => {
-    this.olmap.removeInteraction(this._draw);
-  });
-  this.olmap.addInteraction(this._draw);
-};
-
-MapObject.prototype.clear_annotations = function () {
-  this._annotations.clear();
-  return true;
-};
-
-MapObject.prototype.add_annotation = function (type, args, kwargs) {
-  var type_map = {
-    point: 'Point',
-    rectangle: 'Polygon',
-    polygon: 'Polygon'
-  };
-  var coordinates = args;
-
-  type = type_map[type];
-
-  if (type === 'Point') {
-    coordinates = args[0];
-  } else {
-    coordinates = [coordinates[0]];
-  }
-
-  var feature = this._format.readFeatureFromObject({
-    type: 'Feature',
-    geometry: {
-      type,
-      coordinates
-    },
-    properties: kwargs
-  }, {featureProjection: 'EPSG:3857', dataProjection: 'EPSG:4326'});
-
-  feature.setId(id);
-  id += 1;
-
-  var name = kwargs.name || type + ' ' + feature.getId();
-  var rgb = kwargs.rgb || this.next_color();
-
-  feature.setProperties({
-    name, rgb
-  });
-
-  var ignore = this._ignoreEvent;
-  this._ignoreEvent = true;
-  this._annotations.push(feature);
-  this._ignoreEvent = ignore;
-
-  return {
-    id: feature.getId(),
-    name,
-    rgb
-  };
-};
-
-MapObject.prototype._add_annotation_handler = function (annotation) {
-};
-
-MapObject.prototype.state_annotation_handler = function (evt) {
-};
-
-MapObject.prototype.add_annotation_layer = function (layer_name) {
-  return layer_name;
-};
-
-MapObject.prototype._set_layer_zindex = function (layer, index) {
-};
-
-MapObject.prototype.add_layer = function (layer_name, vis_url, vis_params, query_params) {
-  var layer_type = vis_params['layer_type'];
-
-  if (layer_type === 'annotation') {
-    return this.add_annotation_layer(layer_name);
-  } else if (layer_type === 'osm') {
-    return this.add_osm_layer(layer_name, vis_url, vis_params, query_params);
-  } else if (layer_type === 'wms') {
-    return this.add_wms_layer(layer_name, vis_url, vis_params, query_params);
-  } else if (layer_type === 'vector') {
-    return this.add_vector_layer(layer_name, vis_url, vis_params, query_params);
-  } else {
-    return this.add_default_layer(layer_name, vis_url, vis_params, query_params);
-  }
-};
-
-MapObject.prototype.replace_layer = function (prev_layer, layer_name, vis_url, vis_params, query_params) {
-};
-
-MapObject.prototype.add_osm_layer = function (layer_name, url, vis_params, query_params) {
-  this._baseLayer = this.olmap.addLayer(new TileLayer({
-    source: new XYZ({
-      url: url.replace('{s}', 'a'),
-      attributions: new Attribution({
-        html: vis_params.attribution || ''
-      })
-    })
-  }));
-
-  return layer_name;
-};
-
-MapObject.prototype.add_default_layer = function (layer_name, base_url, vis_params, query_params) {
-  var params = $.param(query_params || {});
-  var layer = new TileLayer({
-    source: new XYZ({
-      url: base_url + '/{x}/{y}/{z}.png?' + params
-    })
-  });
-
-  this.olmap.addLayer(layer);
-  this._layers[layer_name] = layer;
-  return layer_name;
-};
-
-MapObject.prototype.add_wms_layer = function (layer_name, base_url, query_params) {
-  var layer = new TileLayer({
-    source: new TileWMS({
-      url: base_url,
-      params: {
-        TILED: true
-      }
-    })
-  });
-
-  this.olmap.addLayer(layer);
-  this._layers[layer_name] = layer;
-  return layer_name;
-};
-
-MapObject.prototype.add_vector_layer = function (name, data, vis_params, query_params) {
-  var colors = (vis_params || {}).colors || ['#b0de5c'];
-  var stroke = new Stroke({
-    color: 'black',
-    width: 2
-  });
-
-  var layer = new VectorLayer({
-    source: new VectorSource({
-      features: this._format.readFeatures(data)
-    }),
-    style: (feature) => {
-      var index = feature.getProperties()._geonotebook_feature_id % colors.length;
-      var color = colors[index];
-      var fill = new Fill({
-        color
-      });
-      return new Style({
+    return new Style({
+      fill,
+      stroke,
+      image: new Circle({
         fill,
         stroke,
-        image: new Circle({
-          fill,
-          stroke,
-          radius: 8
-        })
-      });
-    },
-    opacity: 0.8
-  });
-  this.olmap.addLayer(layer);
-  this._layers[name] = layer;
-  return name;
-};
+        radius: 8
+      })
+    });
+  }
 
-export default MapObject;
+  trigger_draw (action) {
+    if (this._draw) {
+      this.olmap.removeInteraction(this._draw);
+    }
+    if (action === 'point_annotation_mode') {
+      this._draw = new Draw({
+        features: this._annotations,
+        type: 'Point'
+      });
+      this._drawType = 'point';
+    } else if (action === 'rectangle_annotation_mode') {
+      this._draw = new Draw({
+        features: this._annotations,
+        type: 'Circle',
+        geometryFunction: Draw.createBox(),
+        freehandCondition: condition.noModifierKeys
+      });
+      this._drawType = 'rectangle';
+    } else if (action === 'polygon_annotation_mode') {
+      this._draw = new Draw({
+        features: this._annotations,
+        type: 'Polygon'
+      });
+      this._drawType = 'polygon';
+    } else {
+      throw new Error('Unknown annotation mode');
+    }
+
+    this._draw.once('drawend', () => {
+      this.olmap.removeInteraction(this._draw);
+    });
+    this.olmap.addInteraction(this._draw);
+  }
+}
+
+export default OlMap;
