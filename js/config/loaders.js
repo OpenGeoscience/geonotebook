@@ -16,6 +16,9 @@ module.exports = [
       'css-loader'
     ]
   }, {
+    test: /geojs\/.*\.styl$/,
+    loader: 'style-loader!css-loader!stylus-loader'
+  }, {
     test: /\.json$/,
     loader: 'json-loader'
   }, {
