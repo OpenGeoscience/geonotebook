@@ -46,7 +46,7 @@
     "json-loader": "^0.5.4",
     "mousetrap": "^1.6.0",
     "nib": "^1.1.2",
-    "parse-function": "^4.0.0",
+    "parse-function": "https://github.com/tunnckoCore/parse-function/archive/v4.0.0.tar.gz",
     "proj4": "2.3.15",
     "split.js": "^1.2.0",
     "style-loader": "^0.13.1",
