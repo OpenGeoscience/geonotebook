@@ -4,6 +4,7 @@ dependencies:
   override:
     - sudo add-apt-repository -y ppa:ubuntugis
     - sudo apt-get -q update -y
+    - sudo apt-get install -q -y firefox
     - sudo apt-get install -q -y libgeos-c1v5
     - sudo apt-get install -q -y libgdal20
     - sudo apt-get install -q -y gdal-bin libgdal-dev python3-numpy python-numpy
@@ -22,6 +23,6 @@ test:
   override:
     - tox --result-json $CIRCLE_ARTIFACTS/tox-result.json -- --cov-report html:$CIRCLE_ARTIFACTS/coverage --cov-report xml:$CIRCLE_ARTIFACTS/coverage.xml --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
     - npm run --silent --prefix js lint:ci > $CIRCLE_TEST_REPORTS/eslint/JUnit.xml
-    - npm run test --prefix js -- --browsers=Firefox,Chrome && mv js/coverage $CIRCLE_ARTIFACTS/js_coverage
+    - FIREFOX_BIN=firefox.ubuntu npm run test --prefix js -- --browsers=Firefox,Chrome && mv js/coverage $CIRCLE_ARTIFACTS/js_coverage
   post:
     - bash <(curl -s https://codecov.io/bash)
