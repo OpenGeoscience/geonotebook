@@ -82,6 +82,26 @@ describe('jsonrpc', function () {
           default: 0
         }]);
     });
+    it('handle a class function containing an arrow function', function () {
+      // This is tested because of an edge case in the function parsing
+      // method.  https://github.com/tunnckoCore/parse-function/issues/30
+
+      class A {
+        func (a, b = 0) {
+          return () => a;
+        }
+      }
+      const a = new A();
+
+      expect(jsonrpc.annotate(a.func))
+        .to.eql([{
+          key: 'a',
+          default: false
+        }, {
+          key: 'b',
+          default: 0
+        }]);
+    });
     it('handle non-literal defaults', function () {
       var b = _.constant(0);
       function test (a = b()) {
