@@ -7,11 +7,9 @@ import 'geojs';
 import Geonotebook from './Geonotebook';
 import MapObject from './MapObject';
 import * as jsonrpc from './jsonrpc';
-import provenance from './provenance';
 
 export {
   Geonotebook,
   MapObject,
-  jsonrpc,
-  provenance
+  jsonrpc
 };
