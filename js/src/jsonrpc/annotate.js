@@ -20,13 +20,7 @@ function get_default (value) {
 function annotate (fn) {
   let parsed;
 
-  try {
-    parsed = app.parse(fn);
-  } catch (e) {
-    // catch an edge case in the function parsing, see:
-    // https://github.com/tunnckoCore/parse-function/issues/30
-    parsed = app.parse('function ' + fn.toString());
-  }
+  parsed = app.parse(fn);
 
   if (!parsed.isValid) {
     console.warn('Could not parse function');
