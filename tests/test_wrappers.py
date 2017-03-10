@@ -154,22 +154,6 @@ def test_getitem_bad_throws_exception(coords):
         coords[['foo', 'bar', 'baz']]
 
 
-def test_raster_data_is_valid(tmpdir):
-    p = tmpdir.mkdir("data").join("test.tif")
-    p.write("BOGUS DATA")
-    assert RasterData.is_valid(str(p))
-
-
-def test_raster_data_is_not_valid_no_path(tmpdir):
-    assert not RasterData.is_valid("/some/bogus/path.tif")
-
-
-def test_raster_data_is_not_valid_no_class(tmpdir):
-    p = tmpdir.mkdir("data").join("test.foo")
-    p.write("BOGUS DATA")
-    assert not RasterData.is_valid(str(p))
-
-
 # RasterDataCollection
 
 def test_rdc_incorrect_bands():
@@ -215,7 +199,7 @@ def test_rdc_inconsistent_bands_verify_false_clip_to_first():
 
 def test_rdc_iter(rdc_rect):
     for i, rd in enumerate(rdc_rect):
-        assert rd.path == rdc_rect[i].path
+        assert rd.uri == rdc_rect[i].uri
         assert (rd.get_data() == rdc_rect[i].get_data()).all()
 
 

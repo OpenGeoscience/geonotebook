@@ -178,7 +178,7 @@ class Geoserver(object):
 
         if name not in coverages:
             # Upload the file and convert it to a coveragestore etc
-            with open(data.path, 'rb') as fh:
+            with open(data.reader.path, 'rb') as fh:
                 uri = "/workspaces/{}/coveragestores/{}/file.geotiff"
                 self.c.put(uri.format(self.workspace, name),
                            params={"coverageName": name,
@@ -208,9 +208,9 @@ class Geoserver(object):
     # system is going to actually render tiles.  It should not rely on
     # any subsetting or style info - it is not designed, for instance, to make
     # specific bands available on the tile server, it is about (as needed)
-    # transfering bytes from a source location (data.path) to a destination
-    # Defined as apart of the vis_server config along with any metadata
-    # Needed to geospatially reference the data on the remote system
+    # transfering bytes from a source location (data.reader.path) to a
+    # destination Defined as apart of the vis_server config along with any
+    # metadata Needed to geospatially reference the data on the remote system
     def ingest(self, data, name=None, **kwargs):
 
         name = data.name if name is None else name

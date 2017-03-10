@@ -138,7 +138,7 @@ class Ktile(object):
 
     def _dynamic_vrt_options(self, data, kwargs):
         options = {
-            'path': os.path.abspath(data.path),
+            'path': os.path.abspath(data.reader.path),
             'bands': data.band_indexes,
 
             'nodata': data.nodata,

@@ -274,12 +274,15 @@ setup(
     ],
     package_data={'geonotebook': ['templates/*.html']},
     entry_points={
-        'geonotebook.wrappers.raster': [
-            'geotiff = geonotebook.wrappers.image:RasterIOReader',
-            'tiff = geonotebook.wrappers.image:RasterIOReader',
-            'tif = geonotebook.wrappers.image:RasterIOReader',
-            'nc = geonotebook.wrappers.image:RasterIOReader',
-            'vrt = geonotebook.wrappers.image:VRTReader',
+        'geonotebook.wrappers.raster_schema': [
+            'file = geonotebook.wrappers.file_reader:FileIOReader'
+        ],
+        'geonotebook.wrappers.raster.file': [
+            'geotiff = geonotebook.wrappers.file_reader:RasterIOReader',
+            'tiff = geonotebook.wrappers.file_reader:RasterIOReader',
+            'tif = geonotebook.wrappers.file_reader:RasterIOReader',
+            'nc = geonotebook.wrappers.file_reader:RasterIOReader',
+            'vrt = geonotebook.wrappers.file_reader:VRTReader',
         ],
         'geonotebook.handlers.default': [
             '/log = geonotebook.logging_utils:LoggingRequestHandler'
