@@ -31,7 +31,8 @@ RUN set -ex \
          cython \
          python2-futures \
          gdal \
-         mapnik
+         mapnik \
+         sed
 
 
 RUN set -ex \
