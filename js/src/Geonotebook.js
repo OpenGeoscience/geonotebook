@@ -234,6 +234,49 @@ Geonotebook.prototype.load_annotation_buttons = function (Jupyter) {
     });
 
   Jupyter.toolbar.add_buttons_group([point_event, rect_event, poly_event]);
+
+  // Screenshots
+  var take_screenshot = Jupyter.actions.register({
+    handler: function () {
+      var cell = Jupyter.notebook.get_selected_cell();
+
+      if (cell.cell_type === 'code') {
+        var outputElements = cell.output_area.element.children('.output_area');
+        var goodOutputs = [];
+
+        // Remove any existing screenshots related to this cell
+        _.each(cell.output_area.outputs, function (output, i) {
+          if ((_.has(output, 'metadata') && _.has(output.metadata, 'geonotebook_screenshot') &&
+               output.metadata.geonotebook_screenshot)) {
+            $(outputElements[i]).remove();
+          } else {
+            goodOutputs.push(output);
+          }
+        });
+
+        cell.output_area.outputs = goodOutputs;
+
+        this.map.geojsmap.screenshot().then(function (dataUri) {
+          cell.output_area.append_output({
+            output_type: 'display_data',
+            data: {
+              'image/png': dataUri.replace(/^data:image\/png;base64,/, '')
+            },
+            metadata: {
+              'geonotebook_screenshot': true
+            }
+          });
+        });
+      } else {
+        console.log('Unable to add a screenshot to non-code cell.');
+      }
+    }.bind(this),
+    icon: 'fa-picture-o',
+    help: 'Capture the map',
+    help_index: 'zz'
+  }, 'take_screenshot', 'geonotebook');
+  Jupyter.toolbar.add_buttons_group([take_screenshot]);
+  Jupyter.keyboard_manager.command_shortcuts.add_shortcut('g,s', take_screenshot);
 };
 
 export default Geonotebook;
