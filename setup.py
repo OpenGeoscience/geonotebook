@@ -286,6 +286,10 @@ setup(
         ],
         'geonotebook.handlers.default': [
             '/log = geonotebook.logging_utils:LoggingRequestHandler'
-        ]
+        ],
+        'geonotebook.vis.server': [
+            "geoserver = geonotebook.vis.geoserver:Geoserver",
+            "ktile = geonotebook.vis.ktile:Ktile"
+        ],
     }
 )

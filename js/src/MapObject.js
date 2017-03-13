@@ -5,7 +5,6 @@ import GeoMap from 'geojs/map';
 import JsonReader from 'geojs/jsonReader';
 import event from 'geojs/event';
 import { pointAnnotation, rectangleAnnotation, polygonAnnotation } from 'geojs/annotation';
-import { transformCoordinates } from 'geojs/transform';
 import annotate from './jsonrpc/annotate';
 import constants from './jsonrpc/constants';
 
@@ -159,29 +158,29 @@ MapObject.prototype.add_annotation = function (type, args, kwargs) {
 
   if (type === 'point') {
     annotation_layer.addAnnotation(pointAnnotation({
-      position: transformCoordinates(this.geojsmap.ingcs(), this.geojsmap.gcs(), {
+      position: {
         x: args[0][0],
         y: args[0][1]
-      }),
+      },
       style: style
     }));
   } else if (type === 'rectangle') {
     annotation_layer.addAnnotation(rectangleAnnotation({
       corners: _.map(args[0], (coords) => {
-        return transformCoordinates(this.geojsmap.ingcs(), this.geojsmap.gcs(), {
+        return {
           x: coords[0],
           y: coords[1]
-        });
+        };
       }),
       style: style
     }));
   } else if (type === 'polygon') {
     annotation_layer.addAnnotation(polygonAnnotation({
       vertices: _.map(args[0], (coords) => {
-        return transformCoordinates(this.geojsmap.ingcs(), this.geojsmap.gcs(), {
+        return {
           x: coords[0],
           y: coords[1]
-        });
+        };
       }),
       style: style
     }));

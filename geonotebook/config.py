@@ -2,9 +2,9 @@ import logging
 import os
 import sys
 
-from six.moves import configparser
+import pkg_resources
 
-from . import vis
+from six.moves import configparser
 
 
 def get_config(path=None):
@@ -39,10 +39,11 @@ def get_config(path=None):
 
 
 class Config(object):
-    _valid_vis_hash = {
-        "geoserver": vis.Geoserver,
-        "ktile": vis.Ktile
-    }
+    _valid_vis_hash = {}
+
+    @classmethod
+    def register_vis_server(cls, name, server):
+        cls._valid_vis_hash[name] = server
 
     def __init__(self, path=None):
         self.config = get_config(path)
@@ -71,3 +72,8 @@ class Config(object):
             "url": self.config.get("basemap", "url"),
             "attribution": self.config.get("basemap", "attribution")
         }
+
+
+for ep in pkg_resources.iter_entry_points(
+        group='geonotebook.vis.server'):
+    Config.register_vis_server(ep.name, ep.load())

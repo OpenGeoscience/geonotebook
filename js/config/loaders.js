@@ -9,12 +9,18 @@ module.exports = [
       plugins: ['transform-es2015-modules-commonjs']
     }
   }, {
+    test: /.js$/,
+    loader: 'unlazy'
+  }, {
     test: /\.css$/,
     exclude: /node_modules/,
     loaders: [
       ExtractTextPlugin.extract('style-loader', 'css-loader'),
       'css-loader'
     ]
+  }, {
+    test: /geojs\/.*\.styl$/,
+    loader: 'style-loader!css-loader!stylus-loader'
   }, {
     test: /\.json$/,
     loader: 'json-loader'

@@ -388,7 +388,7 @@ class Geonotebook(object):
             )
         elif isinstance(data, VectorData):
             layer = VectorLayer(
-                name, self._remote, data=data, **kwargs
+                name, self._remote, self.layers, data=data, **kwargs
             )
         else:
             assert name is not None, \
