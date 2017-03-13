@@ -162,9 +162,8 @@ class Geoserver(object):
 
                 options.update(kwargs)
 
-                options['interval'] = [
-                    vals for vals in zip(data.min, data.max)
-                ]
+                options['interval'] = zip(data.min, data.max)
+
                 sld_body = get_multiband_raster_sld(name, **options)
 
             return {"SLD_BODY": sld_body}

@@ -42,7 +42,7 @@ class Config(object):
     _valid_vis_hash = {}
 
     @classmethod
-    def register(cls, name, server):
+    def register_vis_server(cls, name, server):
         cls._valid_vis_hash[name] = server
 
     def __init__(self, path=None):
@@ -76,4 +76,4 @@ class Config(object):
 
 for ep in pkg_resources.iter_entry_points(
         group='geonotebook.vis.server'):
-    Config.register(ep.name, ep.load())
+    Config.register_vis_server(ep.name, ep.load())
