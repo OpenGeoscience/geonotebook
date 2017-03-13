@@ -11,7 +11,7 @@ class Annotation(object):
         self._kwargs = kwargs
 
         # set the default fill if not provided in the constructor
-        self.rgb = '#b0de5c'
+        self.rgb = kwargs.get('rgb', '#b0de5c')
 
         for k, v in kwargs.items():
             setattr(Annotation, k, property(self._get_kwargs(k),
