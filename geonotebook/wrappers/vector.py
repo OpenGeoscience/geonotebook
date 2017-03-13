@@ -3,10 +3,15 @@ import collections
 import fiona
 import six
 
+from .. import annotations
+
 
 class VectorData(collections.Sequence):
 
     def __init__(self, path, **kwargs):
+        # the layer attribute will be set once this instance is
+        # added to a layer
+        self.layer = None
         if isinstance(path, six.string_types):
             self.reader = fiona.open(path)
         else:
@@ -35,3 +40,37 @@ class VectorData(collections.Sequence):
             'type': 'FeatureCollection',
             'features': features
         }
+
+    @property
+    def points(self):
+        """Return a generator of "Point" annotation objects."""
+        for feature in self.reader:
+            geometry = feature['geometry']
+            if geometry['type'] == 'Point':
+                coords = geometry['coordinates']
+                yield annotations.Point(
+                    coords, layer=self.layer, **feature['properties']
+                )
+            elif geometry['type'] == 'MultiPoint':
+                for coords in geometry['coordinates']:
+                    yield annotations.Point(
+                        coords, layer=self.layer, **feature['properties']
+                    )
+
+    @property
+    def polygons(self):
+        """Return a generator of "Polygon" annotation objects."""
+        for feature in self.reader:
+            geometry = feature['geometry']
+            if geometry['type'] == 'Polygon':
+                coords = geometry['coordinates']
+                yield annotations.Polygon(
+                    coords[0], coords[1:],
+                    layer=self.layer, **feature['properties']
+                )
+            elif geometry['type'] == 'MultiPolygon':
+                for coords in geometry['coordinates']:
+                    yield annotations.Polygon(
+                        coords[0], coords[1:],
+                        layer=self.layer, **feature['properties']
+                    )
