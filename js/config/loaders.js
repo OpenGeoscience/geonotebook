@@ -9,6 +9,9 @@ module.exports = [
       plugins: ['transform-es2015-modules-commonjs']
     }
   }, {
+    test: /.js$/,
+    loader: 'unlazy'
+  }, {
     test: /\.css$/,
     exclude: /node_modules/,
     loaders: [
