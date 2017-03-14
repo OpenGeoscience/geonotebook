@@ -1,50 +1,60 @@
 import collections
 import os
+import re
 
 import numpy as np
+
 import pkg_resources as pr
 
 from shapely.geometry import Polygon
 
 
 class RasterData(collections.Sequence):
+    _default_schema = 'file'
 
-    _concrete_data_types = {}
+    _schema_parser = re.compile(r'^(.*?)://.*$')
+
+    _concrete_schema = {}
 
     @classmethod
     def register(cls, name, concrete_class):
         # TODO: some kind of validation on the API provided
         #       by the object from ep.load?
-        cls._concrete_data_types[name] = concrete_class
+        cls._concrete_schema[name] = concrete_class
 
     @classmethod
     def discover_concrete_types(cls):
-        for ep in pr.iter_entry_points(group='geonotebook.wrappers.raster'):
+        for ep in pr.iter_entry_points(
+                group='geonotebook.wrappers.raster_schema'):
             cls.register(ep.name, ep.load())
 
     @classmethod
-    def is_valid(cls, path):
-        try:
-            f = open(path, "r")
-        except (IOError, OSError):
+    def is_valid(cls, uri):
+        scheme = cls._schema_parser.match(uri)
+
+        if scheme is None:
             return False
+        else:
+            return True
 
-        f.close()
-        kind = os.path.splitext(path)[1][1:]
-
-        return kind in cls._concrete_data_types.keys()
-
-    def __init__(self, path, kind=None, indexes=None):
-        if kind is None:
-            # Get kind from the extension
-            kind = os.path.splitext(path)[1][1:]
-
+    def __init__(self, uri, indexes=None):
         try:
-            self.reader = self._concrete_data_types[kind](path)
+
+            scheme = self._schema_parser.match(uri)
+
+            if scheme is None:
+                scheme = self._default_schema
+            else:
+                scheme = scheme.group(1)
+
+            self.reader = self._concrete_schema[scheme](uri)
+
         except KeyError:
             raise NotImplementedError(
                 "{} cannot parse files of type '{}'".format(
-                    self.__class__.__name__, kind))
+                    self.__class__.__name__, scheme))
+        except AttributeError:
+            raise RuntimeError('Must pass in URI with schema.')
 
         self.band_indexes = range(1, self.reader.count + 1) \
             if indexes is None else indexes
@@ -95,9 +105,9 @@ class RasterData(collections.Sequence):
 
     def __getitem__(self, keys):
         if isinstance(keys, int):
-            return RasterData(self.path, indexes=[keys])
+            return RasterData(self.uri, indexes=[keys])
         elif all([isinstance(k, int) for k in keys]):
-            return RasterData(self.path, indexes=keys)
+            return RasterData(self.uri, indexes=keys)
         else:
             raise IndexError(
                 "Bands may only be indexed by an int or a list of ints"
@@ -152,12 +162,12 @@ class RasterData(collections.Sequence):
         return self.reader.count
 
     @property
-    def path(self):
-        return self.reader.path
+    def uri(self):
+        return self.reader.uri
 
     @property
     def name(self):
-        return os.path.splitext(os.path.basename(self.path))[0]
+        return os.path.splitext(os.path.basename(self.uri))[0]
 
 
 RasterData.discover_concrete_types()

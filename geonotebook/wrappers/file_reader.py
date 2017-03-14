@@ -1,8 +1,12 @@
 from collections import namedtuple
 from functools import wraps
+import os
+import re
 
 import numpy as np
+import pkg_resources as pr
 import rasterio as rio
+
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -27,11 +31,39 @@ def validate_index(func):
     return _validate_index
 
 
+def FileIOReader(uri):
+    ext = os.path.splitext(uri)[1][1:]
+
+    for ep in pr.iter_entry_points(group='geonotebook.wrappers.raster.file'):
+        if ep.name == ext:
+            return ep.load()(uri)
+
+    raise NotImplementedError(
+        "Could not parse '{}', extension '{}' has no reader.".format(uri, ext))
+
+
 class RasterIOReader(object):
-    def __init__(self, path, band_names=None):
-        self.path = path
+    _path_parser = re.compile(r'^.*?://(.*)$')
+
+    def __init__(self, uri, band_names=None):
+        self.uri = uri
         self.band_names = []
-        self.dataset = rio.open(path)
+        self._dataset = None
+
+    @property
+    def dataset(self):
+        if self._dataset is None:
+            self._dataset = rio.open(self.path)
+        return self._dataset
+
+    @property
+    def path(self):
+        try:
+            return self._path_parser.match(self.uri).group(1)
+        except AttributeError:
+            # Assume we were instantiated with the default uri scheme
+            # and that our path does not include scheme portion
+            return self.uri
 
     def __del__(self):
         self.dataset.close()
@@ -131,6 +163,6 @@ class RasterIOReader(object):
 
 
 class VRTReader(RasterIOReader):
-    def __init__(self, path, band_names=None):
-        super(VRTReader, self).__init__(path, band_names=band_names)
+    def __init__(self, uri, band_names=None):
+        super(VRTReader, self).__init__(uri, band_names=band_names)
         self.vrt_path = self.path

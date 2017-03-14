@@ -9,15 +9,15 @@ import pytest
 
 from geonotebook import layers
 from geonotebook.wrappers import RasterData, RasterDataCollection
-from geonotebook.wrappers.image import validate_index
+from geonotebook.wrappers.file_reader import validate_index
 
 from .conftest_data import DATA
 
 
 class MockReader(object):
-    def __init__(self, path):
-        self.path = path
-        self.bands = DATA[path]
+    def __init__(self, uri):
+        self.uri = uri
+        self.bands = DATA[uri]
         self.nodata = -9999.0
 
     def index(self, *args):
@@ -96,51 +96,61 @@ class MockReader(object):
 @contextmanager
 def enable_mock():
     RasterData.register("mock", MockReader)
+    RasterData._default_schema = 'mock'
 
     yield
 
-    if "mock" in RasterData._concrete_data_types:
-        del RasterData._concrete_data_types["mock"]
+    if "mock" in RasterData._concrete_schema:
+        del RasterData._concrete_schema["mock"]
+    RasterData._default_schema = 'file'
 
 
 @pytest.fixture
 def coords():
     RasterData.register("mock", MockReader)
+    RasterData._default_schema = 'mock'
 
     yield RasterData("coords.mock")
 
-    if "mock" in RasterData._concrete_data_types:
-        del RasterData._concrete_data_types["mock"]
+    if "mock" in RasterData._concrete_schema:
+        del RasterData._concrete_schema["mock"]
+    RasterData._default_schema = 'file'
 
 
 @pytest.fixture
 def missing():
     RasterData.register("mock", MockReader)
+    RasterData._default_schema = 'mock'
 
     yield RasterData("missing.mock")
 
-    if "mock" in RasterData._concrete_data_types:
-        del RasterData._concrete_data_types["mock"]
+    if "mock" in RasterData._concrete_schema:
+        del RasterData._concrete_schema["mock"]
+    RasterData._default_schema = 'file'
 
 
 @pytest.fixture
 def single():
     RasterData.register("mock", MockReader)
+    RasterData._default_schema = 'mock'
 
     yield RasterData("single.mock")
 
-    if "mock" in RasterData._concrete_data_types:
-        del RasterData._concrete_data_types["mock"]
+    if "mock" in RasterData._concrete_schema:
+        del RasterData._concrete_schema["mock"]
+    RasterData._default_schema = 'file'
 
 
 @pytest.fixture
 def rect():
     RasterData.register("mock", MockReader)
+    RasterData._default_schema = 'mock'
 
     yield RasterData("rect.mock")
 
-    if "mock" in RasterData._concrete_data_types:
-        del RasterData._concrete_data_types["mock"]
+    if "mock" in RasterData._concrete_schema:
+        del RasterData._concrete_schema["mock"]
+    RasterData._default_schema = 'file'
 
 
 # TimeSeriesLayer
@@ -151,47 +161,54 @@ class RDMock(object):
 
 @pytest.fixture
 def rasterdata_list():
-    old_tif = RasterData._concrete_data_types['tif']
-    RasterData.register("tif", MockReader)
-
+    RasterData.register("mock", MockReader)
+    RasterData._default_schema = 'mock'
     yield RasterDataCollection(['test_data1.tif',
                                 'test_data2.tif',
                                 'test_data3.tif'])
 
-    RasterData.register("tif", old_tif)
+    if "mock" in RasterData._concrete_schema:
+        del RasterData._concrete_schema["mock"]
+    RasterData._default_schema = 'file'
 
 
 # RasterDataCollection
 @pytest.fixture
 def rdc_rect():
     RasterData.register("mock", MockReader)
+    RasterData._default_schema = 'mock'
 
     yield RasterDataCollection([
         "rect1.mock", "rect2.mock", "rect3.mock"])
 
-    if "mock" in RasterData._concrete_data_types:
-        del RasterData._concrete_data_types["mock"]
+    if "mock" in RasterData._concrete_schema:
+        del RasterData._concrete_schema["mock"]
+    RasterData._default_schema = 'file'
 
 
 @pytest.fixture
 def rdc_single():
     RasterData.register("mock", MockReader)
+    RasterData._default_schema = 'mock'
 
     yield RasterDataCollection([
         "single1.mock", "single2.mock", "single3.mock"])
 
-    if "mock" in RasterData._concrete_data_types:
-        del RasterData._concrete_data_types["mock"]
+    if "mock" in RasterData._concrete_schema:
+        del RasterData._concrete_schema["mock"]
+    RasterData._default_schema = 'file'
 
 
 @pytest.fixture
 def rdc_one():
     RasterData.register("mock", MockReader)
+    RasterData._default_schema = 'mock'
 
     yield RasterDataCollection(["rect1.mock"])
 
-    if "mock" in RasterData._concrete_data_types:
-        del RasterData._concrete_data_types["mock"]
+    if "mock" in RasterData._concrete_schema:
+        del RasterData._concrete_schema["mock"]
+    RasterData._default_schema = 'file'
 
 
 # Geonotebook Layer fixtures
