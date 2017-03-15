@@ -230,7 +230,7 @@ class Geonotebook(object):
                     predicate=lambda x: ismethod(x) or isfunction(x)
                 ) if fn in cls.msg_types}
 
-        return cls._protocol.values()
+        return list(cls._protocol.values())
 
     def _send_msg(self, msg):
         """Send a message to the client.
@@ -509,6 +509,7 @@ class GeonotebookKernel(IPythonKernel):
         self.geonotebook._remote = Remote(self.comm.send, self._unwrap(msg))
         # Reply to the open comm,  this should probably be set up on
         # self.geonotebook._remote as an actual proceedure call
+
         self.comm.send({
             "method": "set_protocol",
             "data": self.geonotebook.get_protocol()
