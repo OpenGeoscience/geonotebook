@@ -1,65 +1,73 @@
-FROM base/archlinux:latest
+FROM debian:8.7
 
-RUN set -ex \
-    && pacman -Sy --noconfirm archlinux-keyring \
-    && pacman -Syu --noconfirm \
-    && pacman-db-upgrade \
-    && pacman -S --noconfirm \
-         ca-certificates \
-         ca-certificates-utils
+RUN apt-get update -y && apt-get upgrade -y
+RUN apt-get install -y gcc g++ make curl
 
-RUN set -ex \
-    && pacman -S --noconfirm \
-         git \
-         openssh \
-         npm \
-         autoconf \
-         automake \
-         gcc \
-         python2 \
-         python2-pip \
-         python2-cffi \
-         python2-lxml \
-         python2-pillow \
-         python2-numpy \
-         python2-scipy \
-         python2-pandas \
-         python2-matplotlib \
-         python2-seaborn \
-         python2-statsmodels \
-         python2-scikit-learn \
-         cython \
-         python2-futures \
-         gdal \
-         mapnik \
-         sed
+RUN apt-get install -y libgeos-dev
 
+RUN curl -O http://download.osgeo.org/gdal/2.1.3/gdal-2.1.3.tar.gz
+RUN tar -xzf gdal-2.1.3.tar.gz
 
-RUN set -ex \
-    && pip2 install \
-         notebook \
-         mapnik \
-         pyproj \
-         ipywidgets \
-         scikit-image
+WORKDIR gdal-2.1.3
+
+RUN ./configure
+RUN make -j$(nproc)
+RUN make install
+RUN ldconfig
+
+RUN apt-get install -y git \
+                       ssh \
+                       libffi-dev \
+                       libssl-dev \
+                       python-pip \
+                       python-cffi \
+                       python-lxml \
+                       python-pil \
+                       python-numpy \
+                       python-scipy \
+                       python-pandas \
+                       python-matplotlib \
+                       python-seaborn \
+                       python-concurrent.futures \
+                       cython \
+                       python-scikits-learn \
+                       python-scikits.statsmodels \
+                       python-skimage-lib
+
+# Generates pip2.7
+RUN pip install -U pip
+
+RUN pip2.7 install -U jupyter notebook \
+                   mapnik \
+                   pyproj \
+                   ipywidgets \
+                   scikit-image
 
 RUN jupyter nbextension enable --py widgetsnbextension --sys-prefix
 
 # Generate default config and disable authentication
-RUN /usr/sbin/jupyter-notebook --generate-config \
-    && sed -i s/#c.NotebookApp.token\ \=\ \'\'/c.NotebookApp.token\ \=\ \'\'/g \
-           /root/.jupyter/jupyter_notebook_config.py
+RUN jupyter-notebook --generate-config
+RUN sed -i "s/#c.NotebookApp.token = '<generated>'/c.NotebookApp.token = ''/" /root/.jupyter/jupyter_notebook_config.py
 
-RUN pip2 install https://github.com/OpenGeoscience/KTile/archive/master.zip
+# Install/setup NVM
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.1/install.sh | bash \
+    && . /root/.bashrc && nvm install v6.10.1 && ln -s /root/.nvm/versions/node/v6.10.1/bin/npm /usr/bin/npm
+
+RUN pip2.7 install https://github.com/OpenGeoscience/KTile/archive/master.zip
+
 
 ADD . /opt/geonotebook
-ADD devops/docker/jupyter.sh /jupyter.sh
+ADD ./devops/docker/jupyter.sh /jupyter.sh
 
-RUN pushd /opt/geonotebook \
-    && pip2 install . \
-    && jupyter serverextension enable --py geonotebook --sys-prefix \
-    && jupyter nbextension enable --py geonotebook --sys-prefix
+WORKDIR /opt/geonotebook
+
+RUN pip2.7 install -r prerequirements.txt && \
+    pip2.7 install -r requirements.txt && \
+    pip2.7 install . && \
+    jupyter serverextension enable --py geonotebook --sys-prefix && \
+    jupyter nbextension enable --py geonotebook --sys-prefix
 
 VOLUME /notebooks
 WORKDIR /notebooks
-CMD ../jupyter.sh
+
+ENTRYPOINT ["/jupyter.sh"]
