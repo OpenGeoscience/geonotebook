@@ -1,12 +1,20 @@
 import _ from 'underscore';
 
-import annotate from './jsonrpc/annotate';
-import constants from './jsonrpc/constants';
+import annotate from '../jsonrpc/annotate';
+import * as constants from '../jsonrpc/constants';
+
+/**
+ * Get 4 random hex digits for guid generation.
+ */
+
+function S4 () {
+  return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+}
 
 /**
  * A list of default colors to use for new annotations.
  */
-const annotation_color_palette = [
+const color_palette = [
   '#db5f57', // {r:219, g: 95, b: 87}
   '#dbae57', // {r:219, g:174, b: 87}
   '#b9db57', // {r:185, g:219, b: 87}
@@ -18,6 +26,7 @@ const annotation_color_palette = [
   '#c957db', // {r:201, g: 87, b:219}
   '#db579e'  // {r:219, g: 87, b:158}
 ];
+var color_counter = 0;
 
 /**
  * A list of methods that are available for the RPC mechanism.
@@ -53,16 +62,17 @@ const annotation_types = {
  * in `./maps/*` for concrete examples about implementing these
  * methods.
  *
- *   * constructor(node)
- *   * resize(size)
- *   * set_center(x, y, z)
- *   * add_annotation_layer(name)
- *   * add_osm_layer(name, url, vis, query)
- *   * add_wms_layer(name, url, vis, query)
- *   * add_vector_layer(name, data, vis, query)
- *   * remove_layer(name, layer)
- *   * add_annotation(type, geojson)
- *   * clear_annotations()
+ *   * _init_map()
+ *   * _resize(size)
+ *   * _set_center(x, y, z)
+ *   * _add_annotation_layer(name)
+ *   * _add_osm_layer(name, url, vis, query)
+ *   * _add_wms_layer(name, url, vis, query)
+ *   * _add_vector_layer(name, data, vis, query)
+ *   * _remove_layer(name, layer)
+ *   * _add_annotation(type, geojson)
+ *   * _clear_annotations()
+ *   * _trigger_draw(action)
  */
 class MapObject {
   /**
@@ -70,13 +80,10 @@ class MapObject {
    * @param {kernel} notebook The global geonotebook object
    * @param {function} MapClass A map renderer constructor
    */
-  constructor (notebook, MapClass) {
+  constructor (notebook) {
     this.notebook = notebook;
-    this.MapClass = MapClass;
     this.region = null;
     this.layers = {};
-    this._color_counter = -1;
-    this._id = 0;
     this.msg_types = msg_types;
   }
 
@@ -84,7 +91,7 @@ class MapObject {
    * Initialize the map renderer object.
    */
   init_map () {
-    this.mapObject = new this.MapClass(this.node);
+    this._init_map();
     return true;
   }
 
@@ -98,8 +105,7 @@ class MapObject {
     if (x < -180.0 || x > 180.0 || y < -90.0 || y > 90.0 || z < 0) {
       throw new constants.InvalidParams('Invalid parameters sent to set_center!');
     }
-    const center = this.mapObject.set_center(x, y, z);
-    return center;
+    return this._set_center(x, y, z);
   }
 
   /**
@@ -121,15 +127,15 @@ class MapObject {
     this.remove_layer(layer_name);
 
     if (layer_type === 'annotation') {
-      layer = this.mapObject.add_annotation_layer(layer_name);
+      layer = this._add_annotation_layer(layer_name);
     } else if (layer_type === 'wms') {
-      layer = this.mapObject.add_wms_layer(layer_name, vis_url, vis_params, query_params);
+      layer = this._add_wms_layer(layer_name, vis_url, vis_params, query_params);
     } else if (layer_type === 'osm') {
-      layer = this.mapObject.add_osm_layer(layer_name, vis_url, vis_params, query_params);
+      layer = this._add_osm_layer(layer_name, vis_url, vis_params, query_params);
     } else if (layer_type === 'vector') {
-      layer = this.mapObject.add_vector_layer(layer_name, vis_url, vis_params, query_params);
+      layer = this._add_vector_layer(layer_name, vis_url, vis_params, query_params);
     } else {
-      layer = this.mapObject.add_tiled_layer(layer_name, vis_url, vis_params, query_params);
+      layer = this._add_tiled_layer(layer_name, vis_url, vis_params, query_params);
     }
 
     if (layer) {
@@ -139,7 +145,7 @@ class MapObject {
   }
 
   add_annotation_layer (name) {
-    this.mapObject.add_annotation_layer(name);
+    this._add_annotation_layer(name);
     return name;
   }
 
@@ -153,13 +159,25 @@ class MapObject {
   }
 
   /**
+   * Return a layer object given a name.
+   *
+   * @param {string} layer_name The name of the layer to remove
+   */
+  get_layer (layer_name) {
+    if (_.has(this.layers, layer_name)) {
+      return this.layers[layer_name];
+    }
+    return null;
+  }
+
+  /**
    * Remove a layer from the map.
    *
    * @param {string} layer_name The name of the layer to remove
    */
   remove_layer (layer_name) {
     if (_.has(this.layers, layer_name)) {
-      this.mapObject.remove_layer(layer_name, this.layers[layer_name]);
+      this._remove_layer(layer_name, this.layers[layer_name]);
       delete this.layers[layer_name];
     }
     return true;
@@ -173,22 +191,21 @@ class MapObject {
    * @param {object} kwargs Optional arguments for naming and styling
    */
   add_annotation (type, args, kwargs) {
-    if (_.has(annotation_types, type)) {
+    if (!_.has(annotation_types, type)) {
       throw new constants.InvalidParams('Invalid annotation type.');
     }
 
     let coordinates = args;
     let id = kwargs.id;
 
-    if (type === 'Point') {
+    if (type === 'point') {
       coordinates = args[0];
     } else {
       coordinates = [coordinates[0]];
     }
 
     if (_.isUndefined(id)) {
-      id = this.id;
-      this.id += 1;
+      id = this.get_id();
     }
 
     const name = kwargs.name || type + ' ' + id;
@@ -207,7 +224,7 @@ class MapObject {
       id
     };
 
-    this.mapObject.add_annotation(type, geojson);
+    this._add_annotation(type, geojson);
 
     return {
       id,
@@ -220,7 +237,7 @@ class MapObject {
    * Remove all rendered annotations from the map.
    */
   clear_annotations () {
-    this.mapObject.clear_annotations();
+    this._clear_annotations();
     return true;
   }
 
@@ -234,16 +251,8 @@ class MapObject {
       width: $el.width(),
       height: $el.height()
     };
-    this.mapObject.resize(size);
+    this._resize(size);
     return size;
-  }
-
-  /**
-   * Return a new color and increment the internal color counter.
-   */
-  next_color () {
-    this._color_counter += 1;
-    return annotation_color_palette[this._color_counter % annotation_color_palette.length];
   }
 
   /**
@@ -269,6 +278,45 @@ class MapObject {
         optional: args.filter(function (arg) { return !!arg.default; })
       };
     });
+  }
+
+  /**
+   * Respond to an annotation button click by putting the map into
+   * "draw mode".  This is passed off to the map renderer which should
+   * provide an implementation.  The client should return a promise
+   * that resolves when the draw is complete.
+   */
+  trigger_draw (action) {
+    return this._trigger_draw(action);
+  }
+
+  /**
+   * Called after an annotation has been successfully generated on
+   * the client to propagate the annotation to the server.
+   */
+  on_add_annotation (type, coordinates, meta) {
+    return this.notebook._remote.add_annotation_from_client(
+      type, coordinates, meta
+    ).then(
+      function () {
+        console.log('annotation added');
+      }, this.rpc_error.bind(this)
+    );
+  }
+
+  /**
+   * Return the next color from our color palette.
+   */
+  next_color () {
+    color_counter += 1;
+    return color_palette[color_counter % color_palette.length];
+  }
+
+  /**
+   * Return a random guid.
+   */
+  get_id () {
+    return (S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4());
   }
 
   rpc_error (error) {

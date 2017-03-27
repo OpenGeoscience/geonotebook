@@ -1,9 +1,8 @@
 import _ from 'underscore';
 import Split from 'split.js';
 
-import GeoJSMap from './map/geojs';
-import OlMap from './map/ol';
-import MapObject from './MapObject';
+import MapObject from './map/geojs';
+// import MapObject from './map/ol';
 import {
   is_response,
   is_request,
@@ -23,7 +22,7 @@ var Geonotebook = function (Jupyter, events) {
   this._remote = null;
 
   this.init_html_and_css();
-  this.map = new MapObject(this, GeoJSMap);
+  this.map = new MapObject(this);
   this.register_events(Jupyter, events);
   this.load_annotation_buttons(Jupyter);
   Jupyter.map = this.map;
@@ -72,7 +71,7 @@ Geonotebook.prototype.resolve_arg_list = function (fn, msg) {
       } else if (arg['default']) {
         return undefined;
       } else {
-        throw constants.InvalidParam(
+        throw constants.InvalidParams(
           msg.method + ' did not recieve a required param ' + arg['key']);
       }
     });
@@ -201,8 +200,7 @@ Geonotebook.prototype.bind_key_to_geonotebook_event = function (Jupyter, key_bin
 
   action_opts = action_opts || {};
   action_opts.handler = function () {
-    this.map.triggerDraw(action_name);
-    // this.map.geojsmap.geoTrigger(prefix + ':' + action_name);
+    this.map.trigger_draw(action_name);
   }.bind(this);
 
   var full_action_name = Jupyter.actions.register(action_opts, action_name, prefix);

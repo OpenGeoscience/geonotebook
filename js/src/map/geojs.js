@@ -5,29 +5,30 @@ import GeoMap from 'geojs/map';
 import JsonReader from 'geojs/jsonReader';
 import event from 'geojs/event';
 import { pointAnnotation, rectangleAnnotation, polygonAnnotation } from 'geojs/annotation';
-import { transformCoordinates } from 'geojs/transform';
+
+import BaseMap from './base';
 
 const geo_event = event;
 
-class GeoJSMap {
-  constructor (node) {
+class GeoJSMap extends BaseMap {
+  _init_map () {
     this.geojsmap = GeoMap({
-      node,
+      node: this.node,
       allowRotation: false
     });
   }
 
-  resize (size) {
+  _resize (size) {
     this.geojsmap.size(size);
   }
 
-  set_center (x, y, z) {
+  _set_center (x, y, z) {
     this.geojsmap.center({x, y});
     this.geojsmap.zoom(z);
     return [x, y, z];
   }
 
-  add_annotation_layer (name) {
+  _add_annotation_layer (name) {
     var layer = this.geojsmap.createLayer('annotation', {
       annotations: ['rectangle', 'point', 'polygon']
     });
@@ -49,7 +50,7 @@ class GeoJSMap {
     return layer;
   }
 
-  add_osm_layer (name, url, vis, query) {
+  _add_osm_layer (name, url, vis, query) {
     var opts = {};
     if (vis.attribution) {
       opts.attribution = vis.attribution;
@@ -65,7 +66,7 @@ class GeoJSMap {
     return osm;
   }
 
-  add_tiled_layer (name, url, vis, query) {
+  _add_tiled_layer (name, url, vis, query) {
     var layer = this.geojsmap.createLayer('osm', {
       attribution: null,
       keepLower: false
@@ -85,7 +86,7 @@ class GeoJSMap {
     return layer;
   }
 
-  add_wms_layer (name, url, vis, query) {
+  _add_wms_layer (name, url, vis, query) {
     var projection = query['projection'] || 'EPSG:3857';
 
     var wms = this.geojsmap.createLayer('osm', {
@@ -132,7 +133,7 @@ class GeoJSMap {
     return wms;
   }
 
-  add_vector_layer (name, url, vis, query) {
+  _add_vector_layer (name, url, vis, query) {
     var data = url;
     var layer = this.geojsmap.createLayer('feature');
     vis = vis || {};
@@ -173,11 +174,11 @@ class GeoJSMap {
     return layer;
   }
 
-  remove_layer (name, layer) {
+  _remove_layer (name, layer) {
     this.geojsmap.deleteLayer(layer);
   }
 
-  add_annotation (type, geojson) {
+  _add_annotation (type, geojson) {
     /*
      * This is an ugly hack to get around the fact that geojs doesn't return
      * the created annotation object.  Currently, the only way to get this
@@ -200,32 +201,37 @@ class GeoJSMap {
     annotation_layer.geoOn(geo_event.annotation.add, _handler);
     const coordinates = geojson.geometry.coordinates;
     const style = geojson.properties;
+    _.defaults(style, {
+      fillColor: style.rgb,
+      fillOpacity: 0.8,
+      lineWidth: 2
+    });
 
     if (type === 'point') {
       annotation_layer.addAnnotation(pointAnnotation({
-        position: transformCoordinates(this.geojsmap.ingcs(), this.geojsmap.gcs(), {
+        position: {
           x: coordinates[0],
           y: coordinates[1]
-        }),
+        },
         style
       }));
     } else if (type === 'rectangle') {
       annotation_layer.addAnnotation(rectangleAnnotation({
         corners: _.map(coordinates[0], (coords) => {
-          return transformCoordinates(this.geojsmap.ingcs(), this.geojsmap.gcs(), {
+          return {
             x: coords[0],
             y: coords[1]
-          });
+          };
         }),
         style
       }));
     } else if (type === 'polygon') {
       annotation_layer.addAnnotation(polygonAnnotation({
         vertices: _.map(coordinates[0], (coords) => {
-          return transformCoordinates(this.geojsmap.ingcs(), this.geojsmap.gcs(), {
+          return {
             x: coords[0],
             y: coords[1]
-          });
+          };
         }),
         style
       }));
@@ -245,7 +251,7 @@ class GeoJSMap {
     }
   }
 
-  clear_annotations () {
+  _clear_annotations () {
     var annotation_layer = this.get_layer('annotation');
     return annotation_layer.removeAllAnnotations();
   }
@@ -257,16 +263,20 @@ class GeoJSMap {
     }
   }
 
-  get_layer (name) {
+  _get_layer (name) {
     return _.find(this.geojsmap.layers(),
                     function (l) { return l.name() === name; });
+  }
+
+  _trigger_draw (action) {
+    this.geojsmap.geoTrigger('geonotebook:' + action);
   }
 
   _set_layer_zindex (layer, index) {
     if (index !== undefined) {
       var annotation_layer = this.get_layer('annotation');
       layer.zIndex(index);
-      if (annotation_layer !== undefined) {
+      if (annotation_layer !== null) {
               // Annotation layer should always be on top
         var max = _.max(_.invoke(this.geojsmap.layers(), 'zIndex'));
         annotation_layer.zIndex(max + 1);
@@ -288,7 +298,6 @@ class GeoJSMap {
     annotation.options('style').fillOpacity = 0.8;
     annotation.options('style').strokeWidth = 2;
 
-    /* Provide a callback in the constructor for this:
     var annotation_meta = {
       id: annotation.id(),
       name: annotation.name(),
@@ -299,18 +308,7 @@ class GeoJSMap {
       annotation.coordinates('EPSG:4326'),
       annotation.type()
     );
-
-    this.notebook._remote.add_annotation_from_client(
-          annotation.type(),
-          coordinates,
-          annotation_meta
-      ).then(
-          function () {
-            annotation.layer().modified();
-            annotation.draw();
-          },
-          this.rpc_error.bind(this));
-    */
+    this.on_add_annotation(annotation.type(), coordinates, annotation_meta);
   }
 }
 
