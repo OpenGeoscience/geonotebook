@@ -46,7 +46,7 @@
 
 
 # Deploy geoserver
-- include: geoserver/deploy.yml
+#- include: geoserver/deploy.yml
 
 
 - name: Provisioning Jupyter Hub, install geonotebook
@@ -54,10 +54,14 @@
   become: yes
   become_user: root
   roles:
+    - role: geerlingguy.nodejs
+      become: yes
     - role: jupyterhub
       jupyterpw: "{{ jupyter_user_password }}"
+    - role: ktile
+      become: yes
     - role: geonotebook
-      geonotebook_version: master
+      geonotebook_version: jupyterhub-compat
       use_system_python_gdal: true
 
   post_tasks:

@@ -117,13 +117,11 @@
   when: geonotebook_auth_enabled
 
 - name: Enable geonotebook server extension
-  command: "jupyter serverextension enable --user --py geonotebook"
-  args:
-    creates: "{{ ansible_user_dir }}/.jupyter/jupyter_notebook_config.json"
+  command: "jupyter serverextension enable --sys-prefix --py geonotebook"
+
 
 - name: Enable geonotebook notebook extension
-  command: "jupyter nbextension enable --user --py geonotebook"
-  args:
-    creates: "{{ ansible_user_dir }}/.jupyter/nbconfig/notebook.json"
+  command: "jupyter nbextension enable --sys-prefix --py geonotebook"
 
-- include: daemon.yml
+
+# - include: daemon.yml

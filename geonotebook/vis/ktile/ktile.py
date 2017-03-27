@@ -84,12 +84,12 @@ class Ktile(object):
 
     def start_kernel(self, kernel):
         kernel_id = get_kernel_id(kernel)
-        requests.post("{}/{}".format(self.base_url, kernel_id))
+        requests.post("{}/{}".format(self.base_url, kernel_id), verify=False)
         # Error checking on response!
 
     def shutdown_kernel(self, kernel):
         kernel_id = get_kernel_id(kernel)
-        requests.delete("{}/{}".format(self.base_url, kernel_id))
+        requests.delete("{}/{}".format(self.base_url, kernel_id), verify=False)
 
     # This function is caleld inside the tornado web app
     # from jupyter_load_server_extensions
@@ -198,7 +198,7 @@ class Ktile(object):
         # Make the Request
         base_url = '{}/{}/{}'.format(self.base_url, kernel_id, name)
 
-        r = requests.post(base_url, json={
+        r = requests.post(base_url, verify=False, json={
             "provider": {
                 "class": "geonotebook.vis.ktile.provider:MapnikPythonProvider",
                 "kwargs": options

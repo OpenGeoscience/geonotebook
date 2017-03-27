@@ -14,8 +14,6 @@
     - python-setuptools
     - python-dev
     - sudo
-    - npm
-    - nodejs-legacy
     - git
 
 - name: install npm package configurable-http-proxy

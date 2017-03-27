@@ -98,7 +98,6 @@
   wait_for:
     host: "{{ item.public_dns_name }}"
     port: 22
-    delay: 20
     timeout: "{{ ec2_launch_instance_timeout }}"
     state: started
   # Note: tagged_instances will include launched instances
