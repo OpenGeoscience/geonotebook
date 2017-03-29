@@ -8,5 +8,9 @@ var define_plugin = new webpack.DefinePlugin({
 
 module.exports = [
   define_plugin,
-  new ExtractTextPlugin('styles.css')
+  new ExtractTextPlugin('styles.css'),
+  new webpack.ProvidePlugin({
+    jQuery: 'jquery',
+    $: 'jquery'
+  })
 ];

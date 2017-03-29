@@ -69,6 +69,7 @@ const annotation_types = {
  *   * _add_osm_layer(name, url, vis, query)
  *   * _add_wms_layer(name, url, vis, query)
  *   * _add_vector_layer(name, data, vis, query)
+ *   * _add_tiled_layer(name, data, vis, query)
  *   * _remove_layer(name, layer)
  *   * _add_annotation(type, geojson)
  *   * _clear_annotations()
@@ -155,7 +156,7 @@ class MapObject {
    * call to the map renderer if there are performance issues.
    */
   update_layer (layer_name, vis_url, vis_params, query_params) {
-    this.add_layer(layer_name, vis_url, vis_params, query_params);
+    return this.add_layer(layer_name, vis_url, vis_params, query_params);
   }
 
   /**
@@ -298,8 +299,8 @@ class MapObject {
     return this.notebook._remote.add_annotation_from_client(
       type, coordinates, meta
     ).then(
-      function () {
-        console.log('annotation added');
+      () => {
+        this.debug('annotation added');
       }, this.rpc_error.bind(this)
     );
   }
