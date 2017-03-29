@@ -1,8 +1,7 @@
 import _ from 'underscore';
 import Split from 'split.js';
 
-import MapObject from './map/geojs';
-// import MapObject from './map/ol';
+import MapObject from 'map_renderer';
 import {
   is_response,
   is_request,
