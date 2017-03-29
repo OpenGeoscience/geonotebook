@@ -25,17 +25,7 @@ This does several things.
 
 **Second**,  it maps a host system path ```/path/to/your/notebooks``` to the docker containers ```/notebooks``` directory.  This ensures that the notebooks you create, edit, and save are available on your host system,  and are not *destroyed* when the you exit the container.
 
-**Third** the container is run with an interactive terminal,  this is important because the output of the jupyter command will include a link that you must click to start up the notebook.  This output will look like the following:
-
-```
-[C 20:30:42.834 NotebookApp] 
-    
-    Copy/paste this URL into your browser when you connect for the first time,
-    to login with a token:
-        http://localhost:8888/?token=4a4fe605780711fb0aea99b55836142c95af157277ac25d5
-
-```
-You will not be able to log in to the notebook server without this link!
+**Third**, the notebook starts in an interactive terminal and is accessible through http://localhost:8888.
 
 **Finally**,  we include the ```--rm``` option to clean up the notebook after you exit the process.
 
