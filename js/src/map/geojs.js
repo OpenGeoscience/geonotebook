@@ -310,6 +310,10 @@ class GeoJSMap extends BaseMap {
     );
     this.on_add_annotation(annotation.type(), coordinates, annotation_meta);
   }
+
+  _screenshot () {
+    return this.geojsmap.screenshot();
+  }
 }
 
 export default GeoJSMap;

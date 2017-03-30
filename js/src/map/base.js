@@ -74,6 +74,7 @@ const annotation_types = {
  *   * _add_annotation(type, geojson)
  *   * _clear_annotations()
  *   * _trigger_draw(action)
+ *   * _screenshot()
  */
 class MapObject {
   /**
@@ -289,6 +290,14 @@ class MapObject {
    */
   trigger_draw (action) {
     return this._trigger_draw(action);
+  }
+
+  /**
+   * Take a screenshot of the current map view and return promise
+   * that resolves with a data URI of a png image.
+   */
+  screenshot () {
+    return this._screenshot();
   }
 
   /**

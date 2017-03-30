@@ -22,7 +22,8 @@ class MockImplementation extends MapObject {
       '_remove_layer',
       '_add_annotation',
       '_clear_annotations',
-      '_trigger_draw'
+      '_trigger_draw',
+      '_screenshot'
     ];
     super({
       _remote: {
@@ -398,6 +399,13 @@ describe('base map object', () => {
   it('get_protocol', () => {
     const protocol = map.get_protocol();
     expect(_.pluck(protocol, 'procedure')).to.eql(map.msg_types);
+  });
+
+  it('screenshot', () => {
+    map._screenshot.returns(Promise.resolve(''));
+    return map.screenshot().then(() => {
+      sinon.assert.calledOnce(map._screenshot);
+    });
   });
 
   it('on_add_annotation', () => {

@@ -256,7 +256,7 @@ Geonotebook.prototype.load_annotation_buttons = function (Jupyter) {
 
         cell.output_area.outputs = goodOutputs;
 
-        this.map.geojsmap.screenshot().then(function (dataUri) {
+        this.map.screenshot().then(function (dataUri) {
           cell.output_area.append_output({
             output_type: 'display_data',
             data: {

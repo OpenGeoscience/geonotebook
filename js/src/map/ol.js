@@ -74,7 +74,8 @@ class OlMap extends BaseMap {
         url: url.replace('{s}', 'a'),
         attributions: new Attribution({
           html: vis.attribution || ''
-        })
+        }),
+        crossOrigin: 'anonymous'
       })
     }));
 
@@ -91,7 +92,8 @@ class OlMap extends BaseMap {
         url: `${url}/{x}/{y}/{z}.png?${params}`,
         attributions: new Attribution({
           html: vis.attribution || ''
-        })
+        }),
+        crossOrigin: 'anonymous'
       })
     }));
 
@@ -105,7 +107,8 @@ class OlMap extends BaseMap {
         url: url,
         params: {
           TILED: true
-        }
+        },
+        crossOrigin: 'anonymous'
       })
     });
 
@@ -256,6 +259,15 @@ class OlMap extends BaseMap {
       var [coordinates, meta] = this._annotation_handler(evt.feature);
       this.olmap.removeInteraction(this._draw);
       this.on_add_annotation(type, coordinates, meta);
+    });
+  }
+
+  _screenshot () {
+    return new Promise((resolve) => {
+      this.olmap.once('postcompose', (evt) => {
+        resolve(evt.context.canvas.toDataURL());
+      });
+      this.olmap.renderSync();
     });
   }
 }
