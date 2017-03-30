@@ -121,6 +121,7 @@ class MapObject {
    * @param {string|object} vis_url A base url for fetch tiled data
    * @param {object} vis_params Parameters for styling the layer
    * @param {object} query_params Query parameters added to tile requests
+   * @returns {string} The layer name on success
    */
   add_layer (layer_name, vis_url, vis_params, query_params) {
     let layer = null;
@@ -146,6 +147,17 @@ class MapObject {
     return layer_name;
   }
 
+  /**
+   * Add an annotation layer to the map.  Generally, the
+   * map only has one annotation layer that is create
+   * immediately after the map is initialized.
+   *
+   * @param {string} layer_name A unique layer name
+   * @param {string|object} vis_url A base url for fetch tiled data
+   * @param {object} vis_params Parameters for styling the layer
+   * @param {object} query_params Query parameters added to tile requests
+   * @returns {string} The layer name on success
+   */
   add_annotation_layer (name) {
     this._add_annotation_layer(name);
     return name;
@@ -155,6 +167,8 @@ class MapObject {
    * Update a layer with new options.  This currently just removes and
    * re-adds the layer, but in the future it may be optimized with a new
    * call to the map renderer if there are performance issues.
+   *
+   * @
    */
   update_layer (layer_name, vis_url, vis_params, query_params) {
     return this.add_layer(layer_name, vis_url, vis_params, query_params);
@@ -164,6 +178,7 @@ class MapObject {
    * Return a layer object given a name.
    *
    * @param {string} layer_name The name of the layer to remove
+   * @returns {object} A layer object from the underlying renderer
    */
   get_layer (layer_name) {
     if (_.has(this.layers, layer_name)) {
@@ -191,6 +206,10 @@ class MapObject {
    * @param {point|rectangle|polygon} type The annotation type
    * @param {array} args The coordinates of the annotation geometry
    * @param {object} kwargs Optional arguments for naming and styling
+   * @returns {object}
+   *    A mapping given the id, name, and fill color of the
+   *    annotation.  Defaults are used if they were not provided
+   *    by kwargs.
    */
   add_annotation (type, args, kwargs) {
     if (!_.has(annotation_types, type)) {
@@ -269,6 +288,8 @@ class MapObject {
    * in msg_types. This will be passed to the Python geonotebook object and
    * will initialize its RPC object so JS map frunctions can be called from
    * the Python environment.
+   *
+   * @returns {object[]} An array of RPC definitions
    */
   get_protocol () {
     return _.map(this.msg_types, (msg_type) => {
@@ -287,6 +308,10 @@ class MapObject {
    * "draw mode".  This is passed off to the map renderer which should
    * provide an implementation.  The client should return a promise
    * that resolves when the draw is complete.
+   *
+   * @param {string} action
+   *    The type of draw action to trigger: point, rectangle, polygon
+   * @returns {promise}
    */
   trigger_draw (action) {
     return this._trigger_draw(action);
@@ -295,6 +320,8 @@ class MapObject {
   /**
    * Take a screenshot of the current map view and return promise
    * that resolves with a data URI of a png image.
+   *
+   * @returns {promise}
    */
   screenshot () {
     return this._screenshot();
@@ -303,6 +330,11 @@ class MapObject {
   /**
    * Called after an annotation has been successfully generated on
    * the client to propagate the annotation to the server.
+   *
+   * @param {string} type The annotation type
+   * @param {object[]} coordinates A geojson-like coordinate array
+   * @param {object} meta Additional metadata attached to the annotation
+   * @returns {promise}
    */
   on_add_annotation (type, coordinates, meta) {
     return this.notebook._remote.add_annotation_from_client(
@@ -316,6 +348,7 @@ class MapObject {
 
   /**
    * Return the next color from our color palette.
+   * @returns {string} A color represented as RGB hex
    */
   next_color () {
     color_counter += 1;
@@ -329,10 +362,16 @@ class MapObject {
     return (S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4());
   }
 
+  /**
+   * A standard handler for comm errors.
+   */
   rpc_error (error) {
     console.log('JSONRPCError(' + error.code + '): ' + error.message); // eslint-disable-line no-console
   }
 
+  /**
+   * A debug logger.
+   */
   debug (msg) {
     console.log(msg); // eslint-disable-line no-console
   }
