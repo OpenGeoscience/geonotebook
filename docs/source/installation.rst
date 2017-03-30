@@ -42,7 +42,7 @@ Basic Install
 
 Development Install
 ^^^^^^^^^^^^^^^^^^^
-When developing geonotebook, it is often helpful to install packages as a reference to the
+When developing GeoNotebook, it is often helpful to install packages as a reference to the
 checked out repository rather than copying them to the system `site-packages`.  A "development
 install" will allow you to make live changes to python or javascript without reinstalling the
 package.
@@ -72,7 +72,7 @@ Vagrant Install
     # Start and provision virtual machine
     vagrant up
 
-    # See Geonotebook is running at http://localhost:8888
+    # See GeoNotebook is running at http://localhost:8888
 
 
 Configurable Options
@@ -89,25 +89,25 @@ $$$$$$$$$$$$$$$$$$$$
 |                            | (defaults to 2).                                       |
 +----------------------------+--------------------------------------------------------+
 | GEONOTEBOOK\_DIR           | Documentation for this can be found in the             |
-|                            | `Geonotebook role docs`_.                              |
+|                            | `GeoNotebook role docs`_.                              |
 +----------------------------+--------------------------------------------------------+
 | GEONOTEBOOK\_VERSION       | Documentation for this can be found in the             |
-|                            | `Geonotebook role docs`_.                              |
+|                            | `GeoNotebook role docs`_.                              |
 +----------------------------+--------------------------------------------------------+
 | GEONOTEBOOK\_UPDATE        | Documentation for this can be found in the             |
-|                            | `Geonotebook role docs`_.                              |
+|                            | `GeoNotebook role docs`_.                              |
 +----------------------------+--------------------------------------------------------+
 | GEONOTEBOOK\_FORCE         | Documentation for this can be found in the             |
-|                            | `Geonotebook role docs`_.                              |
+|                            | `GeoNotebook role docs`_.                              |
 +----------------------------+--------------------------------------------------------+
 | GEONOTEBOOK\_AUTH\_ENABLED | Documentation for this can be found in the             |
-|                            | `Geonotebook role docs`_.                              |
+|                            | `GeoNotebook role docs`_.                              |
 +----------------------------+--------------------------------------------------------+
 | GEONOTEBOOK\_AUTH\_TOKEN   | Documentation for this can be found in the             |
-|                            | `Geonotebook role docs`_.                              |
+|                            | `GeoNotebook role docs`_.                              |
 +----------------------------+--------------------------------------------------------+
 
-.. _Geonotebook role docs: devops/roles/geonotebook
+.. _GeoNotebook role docs: devops/roles/geonotebook
 
 .. warning:: By default, Jupyter authentication is disabled in the Vagrant environment as it's meant to be a development environment. Jupyter authentication should always be enabled on production systems.
 
@@ -116,7 +116,7 @@ $$$$$$$$$$$$$$$$$$$$
 
 Docker Install
 ^^^^^^^^^^^^^^
-Geonotebook relies on a complex stack of technologies that are not always easy to install and properly configure. To ease this complexity we provide a docker container for running the notebook on docker compatible systems. To install docker on your system please see docker's `documentation <https://docs.docker.com/engine/installation/>`_ for your operating system.
+GeoNotebook relies on a complex stack of technologies that are not always easy to install and properly configure. To ease this complexity we provide a docker container for running the notebook on docker compatible systems. To install docker on your system please see Docker's `documentation <https://docs.docker.com/engine/installation/>`_ for your operating system.
 
 First you must build the docker container.  After checking out the current repository, you can run ::
 
@@ -136,17 +136,7 @@ This does several things.
 
 **Second**,  it maps a host system path ``/path/to/your/notebooks`` to the docker containers ``/notebooks`` directory.  This ensures that the notebooks you create, edit, and save are available on your host system,  and are not *destroyed* when the you exit the container.
 
-**Third** the container is run with an interactive terminal,  this is important because the output of the jupyter command will include a link that you must click to start up the notebook.  This output will look like the following: ::
-
-
-    [C 20:30:42.834 NotebookApp]
-
-        Copy/paste this URL into your browser when you connect for the first time,
-        to login with a token:
-            http://localhost:8888/?token=4a4fe605780711fb0aea99b55836142c95af157277ac25d5
-
-
-You will not be able to log in to the notebook server without this link!
+**Third**, the notebook starts in an interactive terminal and is accessible through http://localhost:8888.
 
 **Finally**,  we include the ``--rm`` option to clean up the notebook after you exit the process.
 
@@ -160,7 +150,7 @@ You will not be able to log in to the notebook server without this link!
 
 Configuring
 ^^^^^^^^^^^
-Geonotebook relies on a configuration for several of its options. The system will merge configuration files in the following precedence:
+GeoNotebook relies on a configuration for several of its options. The system will merge configuration files in the following precedence:
 
 - /etc/geonotebook.ini
 - /usr/etc/geonotebook.ini
@@ -172,4 +162,4 @@ Geonotebook relies on a configuration for several of its options. The system wil
 
 The  `default configuration <https://github.com/OpenGeoscience/geonotebook/blob/master/config/geonotebook.ini>`_ is installed in ``sys.prefix``/etc/geonotebook.ini.
 
-.. seealso:: Verifying the functionality of Geonotebook is detailed in the :ref:`automated-testing` section.
+.. seealso:: Verifying the functionality of GeoNotebook is detailed in the :ref:`automated-testing` section.
