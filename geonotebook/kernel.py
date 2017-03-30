@@ -177,8 +177,6 @@ class Remote(object):
 
 
 class Geonotebook(object):
-    """Geonotebook object"""
-
     msg_types = ['get_protocol', 'set_center', 'add_annotation_from_client',
                  'get_map_state']
 
@@ -363,7 +361,7 @@ class Geonotebook(object):
             .then(_set_center, self.rpc_error).catch(self.callback_error)
 
     def get_map_state(self):
-        """Get the state of the map
+        """Get the state of the map.
 
         :returns: JSON serializable dictionary.
         :rtype: dict
@@ -373,9 +371,9 @@ class Geonotebook(object):
     def add_layer(self, data, name=None, vis_url=None, **kwargs):
         """Create the GeonotebookLayer.
 
-        If vis_url is none,  this will take data_path and upload it to the configured vis_server,
-        this will make the visualization url available through the 'vis_url' attribute on the layer
-        object.
+        If vis_url is none,  this will take data_path and upload it to the
+        configured vis_server, this will make the visualization url available
+        through the 'vis_url' attribute on the layer object.
 
         :param data:
         :param name:
@@ -484,8 +482,6 @@ class Geonotebook(object):
 
 
 class GeonotebookKernel(IPythonKernel):
-    """GeonotebookKernel docblock"""
-
     def _unwrap(self, msg):
         """Unwrap a Comm message.
 
