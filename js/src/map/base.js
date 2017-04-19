@@ -37,6 +37,7 @@ const msg_types = [
   'debug',
   'add_layer',
   'update_layer',
+  'replace_layer',
   'add_annotation_layer',
   'clear_annotations',
   'remove_layer',
@@ -168,10 +169,53 @@ class MapObject {
    * re-adds the layer, but in the future it may be optimized with a new
    * call to the map renderer if there are performance issues.
    *
-   * @
+   * @param {string} layer_name The name of the layer to add
+   * @param {string|object} vis_url A base url for fetch tiled data
+   * @param {object} vis_params Parameters for styling the layer
+   * @param {object} query_params Query parameters added to tile requests
+   * @returns {string} The layer name on success
    */
   update_layer (layer_name, vis_url, vis_params, query_params) {
     return this.add_layer(layer_name, vis_url, vis_params, query_params);
+  }
+
+  /**
+   * Replace a layer with another keeping the z-index of the
+   * old layer.
+   *
+   * @param {string} prev_layer The name of an existing layer
+   * @param {string} layer_name The name of the layer to add
+   * @param {string|object} vis_url A base url for fetch tiled data
+   * @param {object} vis_params Parameters for styling the layer
+   * @param {object} query_params Query parameters added to tile requests
+   * @returns {string} The new layer name on success
+   */
+  replace_layer (prev_layer, layer_name, vis_url, vis_params, query_params) {
+    if (this.update_layer(prev_layer, vis_url, vis_params, query_params) === prev_layer) {
+      return this.rename_layer(prev_layer, layer_name);
+    }
+  }
+
+  /**
+   * Rename an existing layer.  If a layer already exists with
+   * the new name, it will be removed first.
+   *
+   * @param {string} old_name An existing layer name
+   * @param {string} new_name The new layer name
+   * @return {string} The new layer name on success
+   */
+  rename_layer (old_name, new_name) {
+    var layer = this.get_layer(old_name);
+    if (!layer) {
+      return null;
+    }
+
+    if (this.get_layer(new_name)) {
+      this.remove_layer(new_name);
+    }
+    delete this._layers[old_name];
+    this._layers[new_name] = layer;
+    return new_name;
   }
 
   /**

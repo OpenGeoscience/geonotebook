@@ -95,7 +95,7 @@ class GeoJSMap extends BaseMap {
     });
 
       // make sure zindex is explicitly set
-    this._set_layer_zindex(wms, query['zIndex']);
+    this._set_layer_zindex(wms, vis['zIndex']);
 
     wms.name(name);
 
