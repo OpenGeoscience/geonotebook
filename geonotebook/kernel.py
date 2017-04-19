@@ -345,6 +345,15 @@ class Geonotebook(object):
     # Remote RPC wrappers #
 
     def set_center(self, x, y, z):
+        """Set the center of the map.
+
+        :param x:
+        :param y:
+        :param z:
+        :returns:
+        :rtype:
+
+        """
         def _set_center(result):
             self.x, self.y, self.z = result
 
@@ -352,15 +361,26 @@ class Geonotebook(object):
             .then(_set_center, self.rpc_error).catch(self.callback_error)
 
     def get_map_state(self):
+        """Get the state of the map.
+
+        :returns: JSON serializable dictionary.
+        :rtype: dict
+        """
         return self.serialize()
 
     def add_layer(self, data, name=None, vis_url=None, **kwargs):
+        """Create the GeonotebookLayer.
 
-        # Create the GeonotebookLayer -  if vis_url is none,  this will take
-        # data_path and upload it to the configured vis_server,  this will make
-        # the visualization url available through the 'vis_url' attribute
-        # on the layer object.
+        If vis_url is none,  this will take data_path and upload it to the
+        configured vis_server, this will make the visualization url available
+        through the 'vis_url' attribute on the layer object.
 
+        :param data:
+        :param name:
+        :param vis_url:
+        :returns:
+        :rtype:
+        """
         # Make sure we pass in kernel_id to the layer,  then to the vis_server
         # Otherwise we cant generate the coorect vis_url.
 
