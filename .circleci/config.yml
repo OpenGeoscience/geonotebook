@@ -2,14 +2,18 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ubuntu:16.04
-    working_directory: /home/ubuntu/geonotebook
+      - image: geonotebook/geonotebook_base:latest
+    working_directory: /root/geonotebook
     steps:
       - checkout
       - run:
-          name: Update System
+          name: Install Rereqs and run tests
           command: |
-            apt-get update
+            mkdir -p $CIRCLE_TEST_REPORTS/{eslint,pytest}
+            mkdir -p $CIRCLE_ARTIFACTS/coverage
+            pip install -r prerequirements.txt
+            tox --result-json $CIRCLE_ARTIFACTS/tox-result.json -- --cov-report html:$CIRCLE_ARTIFACTS/coverage --cov-report xml:$CIRCLE_ARTIFACTS/coverage.xml --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
+
 
 
 #dependencies:
