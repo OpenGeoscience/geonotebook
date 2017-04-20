@@ -205,6 +205,9 @@ class MapObject {
    * @return {string} The new layer name on success
    */
   rename_layer (old_name, new_name) {
+    if (old_name === new_name) {
+      return new_name;
+    }
     var layer = this.get_layer(old_name);
     if (!layer) {
       return null;
@@ -213,8 +216,8 @@ class MapObject {
     if (this.get_layer(new_name)) {
       this.remove_layer(new_name);
     }
-    delete this._layers[old_name];
-    this._layers[new_name] = layer;
+    delete this.layers[old_name];
+    this.layers[new_name] = layer;
     return new_name;
   }
 
