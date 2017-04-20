@@ -59,7 +59,12 @@ class KtileConfigManager(MutableMapping):
         if layer_name not in self._configs[kernel_id].layers:
             self._configs[kernel_id].layers[layer_name] = layer
 
-        return layer.provider.generate_vrt()
+        try:
+            layer.provider.generate_vrt()
+        except AttributeError:
+            pass
+
+        return True
 
 
 # Ktile vis_server,  this is not a persistent object
