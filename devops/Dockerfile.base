@@ -81,6 +81,9 @@ RUN cd /root/python-mapnik && \
 #       won't run AT ALL if python-mapnik isn't installed
 RUN pip install /root/python-mapnik/dist/*.whl
 
+# Install nvm,  and nodejs v6
+RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.1/install.sh | bash \
+    && . /root/.bashrc && nvm install v6.10.1 && ln -s /root/.nvm/versions/node/v6.10.1/bin/npm /usr/bin/npm
 
 WORKDIR /root
 

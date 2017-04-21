@@ -7,41 +7,35 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Rereqs and run tests
+          name: Install requirements, build JS
           command: |
-            mkdir -p $CIRCLE_TEST_REPORTS/{eslint,pytest}
-            mkdir -p $CIRCLE_ARTIFACTS/coverage
+            mkdir -p /tmp/report/{eslint,pytest}
+            mkdir -p /tmp/coverage
+            source /root/.nvm/nvm.sh && nvm use v6
+            npm config set progress false
+            npm install --prefix js
             pip install -r prerequirements.txt
-            tox --result-json $CIRCLE_ARTIFACTS/tox-result.json -- --cov-report html:$CIRCLE_ARTIFACTS/coverage --cov-report xml:$CIRCLE_ARTIFACTS/coverage.xml --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
+      - run:
+          name: Run Tests
+          command: |
+            source /root/.nvm/nvm.sh && nvm use v6
+            tox --result-json /tmp/coverage/tox-result.json -- \
+                --cov-report html:/tmp/coverage \
+                --cov-report xml:/tmp/coverage/coverage.xml \
+                --junitxml=/tmp/report/pytest/JUnit.xml
+            npm run --silent --prefix js lint:ci > /tmp/report/eslint/JUnit.xml
+            # FIREFOX_BIN=firefox.ubuntu npm run test --prefix js -- --browsers=Firefox,Chrome && mv js/coverage $CIRCLE_ARTIFACTS/js_coverage
+            # bash <(curl -s https://codecov.io/bash)
+      - store_artifacts:
+          path: /tmp/coverage
+          destination: coverage
 
+      - store_artifacts:
+          path: /tmp/report
+          destination: report
 
+      - store_test_results:
+          path: /tmp/report/eslint/
 
-#dependencies:
-#  cache_directories:
-#    - js/node_modules
-#  override:
-#    - sudo add-apt-repository -y ppa:ubuntugis
-#    - sudo apt-get -q update -y
-#    - sudo apt-get install -q -y firefox
-#    - sudo apt-get install -q -y libgeos-c1v5
-#    - sudo apt-get install -q -y libgdal20
-#    - sudo apt-get install -q -y gdal-bin libgdal-dev python3-numpy python-numpy
-#    - sudo apt-get install -q -y libzmq3-dev
-#    - pip install -U pip
-#    - pip install tox tox-pyenv entrypoints
-#    - pyenv local 2.7.12 3.5.2
-#    - nvm use v6
-#    - npm config set progress false
-#    - npm install --prefix js  # make sure node_modules is cached
-#
-#test:
-#  pre:
-#    - mkdir -p $CIRCLE_TEST_REPORTS/{eslint,pytest}
-#    - mkdir -p $CIRCLE_ARTIFACTS/coverage
-#    - pip install -r prerequirements.txt
-#  override:
-#    - tox --result-json $CIRCLE_ARTIFACTS/tox-result.json -- --cov-report html:$CIRCLE_ARTIFACTS/coverage --cov-report xml:$CIRCLE_ARTIFACTS/coverage.xml --junitxml=$CIRCLE_TEST_REPORTS/pytest/JUnit.xml
-#    - npm run --silent --prefix js lint:ci > $CIRCLE_TEST_REPORTS/eslint/JUnit.xml
-#    - FIREFOX_BIN=firefox.ubuntu npm run test --prefix js -- --browsers=Firefox,Chrome && mv js/coverage $CIRCLE_ARTIFACTS/js_coverage
-#  post:
-#    - bash <(curl -s https://codecov.io/bash)
+      - store_test_results:
+          path: /tmp/report/pytest/
