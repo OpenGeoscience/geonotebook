@@ -25,7 +25,7 @@ jobs:
                 --junitxml=/tmp/report/pytest/JUnit.xml
             npm run --silent --prefix js lint:ci > /tmp/report/eslint/JUnit.xml
             # FIREFOX_BIN=firefox.ubuntu npm run test --prefix js -- --browsers=Firefox,Chrome && mv js/coverage $CIRCLE_ARTIFACTS/js_coverage
-            # bash <(curl -s https://codecov.io/bash)
+            bash <(curl -s https://codecov.io/bash) -s /tmp/coverage
       - store_artifacts:
           path: /tmp/coverage
           destination: coverage
