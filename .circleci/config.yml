@@ -1,0 +1,41 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: geonotebook/geonotebook_base:latest
+    working_directory: /root/geonotebook
+    steps:
+      - checkout
+      - run:
+          name: Install requirements, build JS
+          command: |
+            mkdir -p /tmp/report/{eslint,pytest}
+            mkdir -p /tmp/coverage
+            source /root/.nvm/nvm.sh && nvm use v6
+            npm config set progress false
+            npm install --prefix js
+            pip install -r prerequirements.txt
+      - run:
+          name: Run Tests
+          command: |
+            source /root/.nvm/nvm.sh && nvm use v6
+            tox --result-json /tmp/coverage/tox-result.json -- \
+                --cov-report html:/tmp/coverage \
+                --cov-report xml:/tmp/coverage/coverage.xml \
+                --junitxml=/tmp/report/pytest/JUnit.xml
+            npm run --silent --prefix js lint:ci > /tmp/report/eslint/JUnit.xml
+            # FIREFOX_BIN=firefox.ubuntu npm run test --prefix js -- --browsers=Firefox,Chrome && mv js/coverage $CIRCLE_ARTIFACTS/js_coverage
+            bash <(curl -s https://codecov.io/bash) -s /tmp/coverage
+      - store_artifacts:
+          path: /tmp/coverage
+          destination: coverage
+
+      - store_artifacts:
+          path: /tmp/report
+          destination: report
+
+      - store_test_results:
+          path: /tmp/report/eslint/
+
+      - store_test_results:
+          path: /tmp/report/pytest/
