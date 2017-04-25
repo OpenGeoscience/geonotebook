@@ -1,7 +1,7 @@
 import _ from 'underscore';
 import Split from 'split.js';
 
-import MapObject from './MapObject';
+import MapObject from 'map_renderer';
 import {
   is_response,
   is_request,
@@ -70,7 +70,7 @@ Geonotebook.prototype.resolve_arg_list = function (fn, msg) {
       } else if (arg['default']) {
         return undefined;
       } else {
-        throw constants.InvalidParam(
+        throw constants.InvalidParams(
           msg.method + ' did not recieve a required param ' + arg['key']);
       }
     });
@@ -199,7 +199,7 @@ Geonotebook.prototype.bind_key_to_geonotebook_event = function (Jupyter, key_bin
 
   action_opts = action_opts || {};
   action_opts.handler = function () {
-    this.map.geojsmap.geoTrigger(prefix + ':' + action_name);
+    this.map.trigger_draw(action_name);
   }.bind(this);
 
   var full_action_name = Jupyter.actions.register(action_opts, action_name, prefix);
@@ -256,7 +256,7 @@ Geonotebook.prototype.load_annotation_buttons = function (Jupyter) {
 
         cell.output_area.outputs = goodOutputs;
 
-        this.map.geojsmap.screenshot().then(function (dataUri) {
+        this.map.screenshot().then(function (dataUri) {
           cell.output_area.append_output({
             output_type: 'display_data',
             data: {

@@ -12,6 +12,13 @@ module.exports = [
     test: /.js$/,
     loader: 'unlazy'
   }, {
+    test: /ol\/.*\.js$/,
+    loader: 'babel-loader',
+    query: {
+      presets: [],
+      plugins: ['transform-es2015-modules-commonjs']
+    }
+  }, {
     test: /\.css$/,
     exclude: /node_modules/,
     loaders: [
