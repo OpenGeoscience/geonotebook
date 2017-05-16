@@ -46,7 +46,7 @@ RUN pip2.7 install -U jupyter notebook \
 RUN jupyter nbextension enable --py widgetsnbextension --sys-prefix
 
 # Generate default config and disable authentication
-RUN jupyter-notebook --generate-config
+RUN jupyter-notebook --generate-config --allow-root
 RUN sed -i "s/#c.NotebookApp.token = '<generated>'/c.NotebookApp.token = ''/" /root/.jupyter/jupyter_notebook_config.py
 
 # Install/setup NVM
@@ -61,7 +61,7 @@ ADD ./devops/docker/jupyter.sh /jupyter.sh
 
 WORKDIR /opt/geonotebook
 
-RUN pip2.7 install -r prerequirements.txt && \
+RUN .  /root/.bashrc && pip2.7 install -r prerequirements.txt && \
     pip2.7 install -r requirements.txt && \
     pip2.7 install . && \
     jupyter serverextension enable --py geonotebook --sys-prefix && \
