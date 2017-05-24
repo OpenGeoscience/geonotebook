@@ -1,8 +1,7 @@
 ## GeoNotebook [![CircleCI](https://circleci.com/gh/OpenGeoscience/geonotebook.svg?style=shield)](https://circleci.com/gh/OpenGeoscience/geonotebook) [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/OpenGeoscience/geonotebook)
 GeoNotebook is an application that provides client/server
 environment with interactive visualization and analysis capabilities
-using [Jupyter](http://jupyter.org), [GeoJS]
-(http://www.github.com/OpenGeoscience/geojs) and other open source tools.
+using [Jupyter](http://jupyter.org), [GeoJS](http://www.github.com/OpenGeoscience/geojs) and other open source tools.
 Jointly developed by  [Kitware](http://www.kitware.com) and
 [NASA Ames](https://www.nasa.gov/centers/ames/home/index.html).
 
