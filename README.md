@@ -5,6 +5,7 @@ using [Jupyter](http://jupyter.org), [GeoJS](http://www.github.com/OpenGeoscienc
 Jointly developed by  [Kitware](http://www.kitware.com) and
 [NASA Ames](https://www.nasa.gov/centers/ames/home/index.html).
 
+Documentation for GeoNotebook can be found at http://geonotebook.readthedocs.io.
 
 ## Screenshots
 ![screen shot](https://data.kitware.com/api/v1/file/5898b1788d777f07219fcafb/download?contentDisposition=inline)
