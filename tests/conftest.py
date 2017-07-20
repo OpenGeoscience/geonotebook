@@ -6,6 +6,7 @@ import os
 
 import numpy as np
 import pytest
+from rasterio.crs import CRS
 
 from geonotebook import layers
 from geonotebook.wrappers import RasterData, RasterDataCollection
@@ -39,6 +40,10 @@ class MockReader(object):
     def bounds(self):
         lat, lon = self.bands[0].shape
         return (0, 0, lat, lon)
+
+    @property
+    def crs(self):
+        return CRS.from_string("EPSG:4326")
 
     def get_band_ix(self, indexes, x, y):
         return list(self.get_band_data(i)[y, x]
