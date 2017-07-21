@@ -41,7 +41,8 @@ RUN pip2.7 install -U jupyter notebook \
                    mapnik \
                    pyproj \
                    ipywidgets \
-                   scikit-image
+                   scikit-image \
+                   pyOpenSSL
 
 RUN jupyter nbextension enable --py widgetsnbextension --sys-prefix
 
