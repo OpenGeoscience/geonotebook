@@ -158,6 +158,10 @@ class RasterData(collections.Sequence):
             (ulx, uly)])
 
     @property
+    def crs(self):
+        return self.reader.crs
+
+    @property
     def count(self):
         return self.reader.count
 

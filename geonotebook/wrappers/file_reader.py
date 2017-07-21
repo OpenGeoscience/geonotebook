@@ -6,7 +6,9 @@ import re
 import numpy as np
 import pkg_resources as pr
 import rasterio as rio
+from rasterio.crs import CRS
 
+from geonotebook.utils import transform_coordinates
 
 BBox = namedtuple('BBox', ['ulx', 'uly', 'lrx', 'lry'])
 
@@ -69,6 +71,12 @@ class RasterIOReader(object):
         self.dataset.close()
 
     def index(self, *args, **kwargs):
+        target_srs = self.crs
+        # Annotations are always in WGS84
+        source_srs = CRS.from_string("EPSG:4326")
+
+        args = transform_coordinates(source_srs, target_srs,
+                                     [args[0]], [args[1]])
         return self.dataset.index(*args, **kwargs)
 
     def read(self, *args, **kwargs):
@@ -88,6 +96,10 @@ class RasterIOReader(object):
         return self.dataset.width
 
     @property
+    def crs(self):
+        return self.dataset.crs
+
+    @property
     def bounds(self):
         return BBox(self.dataset.bounds.left,
                     self.dataset.bounds.top,
@@ -98,7 +110,16 @@ class RasterIOReader(object):
         return convert(self.dataset.tags(index)[prop])
 
     def get_band_ix(self, indexes, x, y):
-        return list(self.dataset.sample([(x, y)], indexes=indexes))[0]
+        # Reproject to native data coordinates
+        target_srs = self.crs
+        # Annotations are always in WGS84
+        source_srs = CRS.from_string("EPSG:4326")
+
+        transformed_x, transformed_y = transform_coordinates(source_srs,
+                                                             target_srs,
+                                                             [x], [y])
+        return list(self.dataset.sample([(transformed_x, transformed_y)],
+                                        indexes=indexes))[0]
 
     # Band level API
     @validate_index

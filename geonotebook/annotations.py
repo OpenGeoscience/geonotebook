@@ -1,7 +1,10 @@
 import numpy as np
+from rasterio.crs import CRS
 from rasterio.features import rasterize
 from shapely.geometry import Point as sPoint
 from shapely.geometry import Polygon as sPolygon
+
+from geonotebook.utils import transform_coordinates
 
 
 class Annotation(object):
@@ -93,7 +96,14 @@ class Polygon(Annotation, sPolygon):
         # shape is outside the dataset,  intersect with the rasterdata
         # shape to make sure we don't try to select/mask data that is
         # outside the bounds of our dataset.
-        clipped = self.intersection(raster_data.shape)
+
+        # Convert the image corner coordinates to WGS84
+        trgt_srs = CRS.from_string("EPSG:4326")
+        src_srs = raster_data.crs
+        transformed = [transform_coordinates(src_srs, trgt_srs, [i[0]], [i[1]])
+                       for i in raster_data.shape.exterior.coords]
+        reprojected_data_extent = sPolygon(transformed)
+        clipped = self.intersection(reprojected_data_extent)
 
         # Polygon is completely outside the dataset, return whatever
         # would have been returned by get_data()
