@@ -244,7 +244,7 @@ class MapObject {
       this._remove_layer(layer_name, this.layers[layer_name]);
       delete this.layers[layer_name];
     }
-    return true;
+    return layer_name;
   }
 
   /**
