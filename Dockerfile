@@ -1,4 +1,4 @@
-FROM debian:8.7
+FROM ubuntu:16.04
 
 RUN apt-get update -y && apt-get upgrade -y
 RUN apt-get install -y gcc g++ make curl
@@ -19,6 +19,7 @@ RUN apt-get install -y git \
                        ssh \
                        libffi-dev \
                        libssl-dev \
+                       libproj-dev \
                        python-pip \
                        python-cffi \
                        python-lxml \
@@ -63,7 +64,7 @@ ADD ./devops/docker/jupyter.sh /jupyter.sh
 WORKDIR /opt/geonotebook
 
 RUN .  /root/.bashrc && pip2.7 install -r prerequirements.txt && \
-    pip2.7 install -r requirements.txt && \
+    pip2.7 install -U -r requirements.txt && \
     pip2.7 install . && \
     jupyter serverextension enable --py geonotebook --sys-prefix && \
     jupyter nbextension enable --py geonotebook --sys-prefix
