@@ -37,6 +37,7 @@
     "expose-loader": "^0.7.1",
     "extract-text-webpack-plugin": "^1.0.1",
     "geojs": "^0.12.2",
+    "gl-mat3": "^1.0.0",
     "gl-mat4": "^1.1.4",
     "gl-vec2": "^1.0.0",
     "gl-vec3": "^1.0.3",
