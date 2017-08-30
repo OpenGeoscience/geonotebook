@@ -230,7 +230,7 @@ class Geonotebook(object):
                     predicate=lambda x: ismethod(x) or isfunction(x)
                 ) if fn in cls.msg_types}
 
-        return cls._protocol.values()
+        return list(cls._protocol.values())
 
     def _send_msg(self, msg):
         """Send a message to the client.
@@ -256,7 +256,7 @@ class Geonotebook(object):
                     for p in self._protocol[method]['required']]
         except KeyError:
             raise jsonrpc.InvalidParams(
-                u"missing required params for method: %s" % method
+                "missing required params for method: %s" % method
             )
 
         kwargs = {p['key']: param_hash[p['key']]['value']
@@ -281,7 +281,7 @@ class Geonotebook(object):
         # Otherwise process the request from the remote RPC client.
         elif is_request(msg):
             method, params = msg['method'], msg['params']
-            if method in self._protocol.keys():
+            if method in list(self._protocol.keys()):
                 try:
                     args, kwargs = self._reconcile_parameters(method, params)
 
@@ -489,10 +489,10 @@ class GeonotebookKernel(IPythonKernel):
             self.geonotebook._send_msg(
                 json_rpc_result(None, e.tojson(), msg['id'])
             )
-            self.log.error(u"JSONRPCError (%s): %s" % (e.code, e.message))
+            self.log.error("JSONRPCError (%s): %s" % (e.code, e.message))
 
         except Exception as e:
-            self.log.error(u"Error processing msg: {}".format(str(e)))
+            self.log.error("Error processing msg: {}".format(str(e)))
 
     def handle_comm_open(self, comm, msg):
         """Handle opening a comm.
