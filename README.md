@@ -24,7 +24,7 @@ For default tile serving
 
 ### Clone the repo:
 ```bash
-git clone git@github.com:OpenGeoscience/geonotebook.git
+git clone https://github.com/OpenGeoscience/geonotebook.git
 cd geonotebook
 ```
 ### Make a virtualenv, install jupyter[notebook], install geonotebook
