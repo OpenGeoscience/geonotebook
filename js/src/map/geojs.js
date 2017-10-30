@@ -275,7 +275,7 @@ class GeoJSMap extends BaseMap {
   _set_layer_zindex (layer, index) {
     if (index !== undefined) {
       var annotation_layer = this.get_layer('annotation');
-      layer.zIndex(index);
+      layer.zIndex(index, true);
       if (annotation_layer !== null) {
               // Annotation layer should always be on top
         var max = _.max(_.invoke(this.geojsmap.layers(), 'zIndex'));
