@@ -1,6 +1,6 @@
 var path = require('path');
 
-var renderer = process.env.GEONOTEBOOK_MAP_RENDERER || 'geojs';
+var renderer = process.env.GEONOTEBOOK_MAP_RENDERER || 'ol';
 
 module.exports = {
   alias: {
