@@ -60,6 +60,7 @@ RUN pip2.7 install https://github.com/OpenGeoscience/KTile/archive/master.zip
 
 ADD . /opt/geonotebook
 ADD ./devops/docker/jupyter.sh /jupyter.sh
+ADD ./notebooks/HistomicsTK.ipynb /HistomicsTK.ipynb
 
 WORKDIR /opt/geonotebook
 
@@ -74,6 +75,6 @@ RUN .  /root/.bashrc && pip2.7 install -r prerequirements.txt && \
     jupyter nbextension enable --py geonotebook --sys-prefix
 
 VOLUME /notebooks
-WORKDIR /notebooks
+WORKDIR /
 
 ENTRYPOINT ["/jupyter.sh"]
