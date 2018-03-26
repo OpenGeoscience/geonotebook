@@ -64,7 +64,7 @@ ADD ./devops/docker/jupyter.sh /jupyter.sh
 WORKDIR /opt/geonotebook
 
 RUN .  /root/.bashrc && pip2.7 install -r prerequirements.txt && \
-    pip2.7 install -U -r requirements.txt && \
+    pip2.7 install -U -r requirements-freeze.txt && \
     pip2.7 install . && \
     pip2.7 install scikit-build ctk-cli && \
     pip2.7 install -e 'git+https://github.com/girder/large_image.git#egg=large_image' && \
