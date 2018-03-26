@@ -61,7 +61,7 @@ class OlMap extends BaseMap {
 
   _add_annotation_layer () {
     this._overlay = new VectorLayer({
-      source: new VectorSource({features: this._annotations}),
+      source: new VectorSource({features: this._annotations, wrapX: false}),
       style: (feature) => this._style_feature(feature),
       opacity: 0.8
     });
