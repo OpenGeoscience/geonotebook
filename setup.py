@@ -274,7 +274,8 @@ setup(
         "notebook",
         "fiona",
         "mapnik",
-        "shapely"
+        "shapely",
+        "tornado<5.0"
     ],
     cmdclass={
         'install': CustomInstall,
