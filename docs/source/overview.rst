@@ -15,7 +15,7 @@ GeoNotebook's concrete goals are to provide a web based analysis tool that:
 Audience
 ^^^^^^^^
 
-GeoNotebook is designed to appeal too, and hopefully meet the needs of, several audiences:
+GeoNotebook is designed to appeal to, and hopefully meet the needs of, several audiences:
 
   * Geospatial experts who are interested in using state of the art data science tools like the Jupyter Notebook to explore their data and share their findings.
   * Data scientists who are already using the python data analytics stack (e.g. numpy, pandas, matplotlib, jupyter, etc) but find current geospatial libraries to be confusing or burdensome.
